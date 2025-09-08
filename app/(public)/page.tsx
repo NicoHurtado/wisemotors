@@ -1,0 +1,99 @@
+'use client';
+
+import { HeroSearch } from '@/components/landing/HeroSearch';
+import { Recommendations } from '@/components/landing/Recommendations';
+import { HowItWorks } from '@/components/landing/HowItWorks';
+import { Button } from '@/components/ui/button';
+import { routes } from '@/lib/urls';
+import { useVehicles } from '@/hooks/useVehicles';
+import { useEffect, useState } from 'react';
+import { AIResultsLoader } from '@/components/vehicles/AIResultsLoader';
+import { AIPodium } from '@/components/vehicles/AIPodium';
+import { useSearchParams } from 'next/navigation';
+
+export default function HomePage() {
+  const searchParams = useSearchParams();
+  const query = searchParams.get('q') || '';
+  const { vehicles: recommendedVehicles, loading, error } = useVehicles({ 
+    recommended: true, 
+    limit: 3 
+  });
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [aiResults, setAiResults] = useState<any[] | null>(null);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!query) {
+        setAiResults(null);
+        return;
+      }
+      setLoadingAI(true);
+      setAiResults(null);
+      try {
+        const resp = await fetch('/api/ai/recommendations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: query })
+        });
+        const data = await resp.json();
+        setAiResults(data.results || []);
+      } catch (e) {
+        console.error(e);
+        setAiResults([]);
+      } finally {
+        setLoadingAI(false);
+      }
+    };
+    run();
+  }, [query]);
+
+  return (
+    <>
+      {/* Hero Section */}
+      <section className="py-20 bg-hero">
+        <div className="container mx-auto px-4">
+          <HeroSearch 
+            initialQuery={query} 
+            showFilters={!loadingAI && aiResults && aiResults.length > 0} 
+          />
+        </div>
+      </section>
+
+      {query && (
+        <section className="py-6">
+          <div className="container mx-auto px-4">
+            {loadingAI && <AIResultsLoader />}
+            {!loadingAI && aiResults && aiResults.length > 0 && (
+              <AIPodium results={aiResults as any} />
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Recommendations Section */}
+      <Recommendations vehicles={recommendedVehicles} loading={loading} error={error} />
+
+      {/* How It Works Section */}
+      <HowItWorks />
+
+      {/* CTA Section */}
+      <section className="py-16">
+        <div className="container mx-auto px-4 text-center">
+          <div className="max-w-2xl mx-auto space-y-6">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+              ¿Listo para encontrar tu vehículo ideal?
+            </h2>
+            <p className="text-muted-foreground text-lg">
+              Explora nuestro catálogo completo y encuentra la opción perfecta para ti
+            </p>
+            <Button asChild size="lg" variant="wise" className="text-lg px-8 py-4">
+              <a href={routes.vehicles}>
+                Ver todos los vehículos
+              </a>
+            </Button>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}

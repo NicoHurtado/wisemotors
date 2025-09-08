@@ -1,0 +1,144 @@
+'use client';
+
+import { Heart, Zap, Car, Clock, BookOpen, MapPin } from 'lucide-react';
+import { formatPrice } from '@/lib/utils';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+
+interface VehicleSpecificationsProps {
+  vehicle: any;
+}
+
+export function VehicleSpecifications({ vehicle }: VehicleSpecificationsProps) {
+  const router = useRouter();
+  const { user } = useAuth();
+  const { isFavorite, toggleFavorite, loading: favoriteLoading } = useFavorites();
+
+  const handleFavoriteClick = async () => {
+    if (!user) {
+      // Redirigir al login si no está autenticado
+      router.push('/login');
+      return;
+    }
+
+    try {
+      await toggleFavorite(vehicle.id);
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      // Aquí podrías mostrar un toast de error
+    }
+  };
+
+  return (
+    <div className="w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column - Price and Specifications */}
+        <div className="lg:col-span-2">
+          {/* Price and Favorite Button */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="text-4xl font-bold text-gray-900">
+              {formatPrice(vehicle.price)}
+            </div>
+            <button 
+              onClick={handleFavoriteClick}
+              disabled={favoriteLoading}
+              className="w-12 h-12 bg-white rounded-full shadow-soft flex items-center justify-center hover:bg-gray-50 transition-colors border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label={isFavorite(vehicle.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+            >
+              <Heart 
+                className={`w-6 h-6 transition-colors ${
+                  isFavorite(vehicle.id) ? 'fill-wise text-wise' : 'text-gray-600'
+                }`}
+              />
+            </button>
+          </div>
+          
+          {/* Vehicle Specifications - 2x2 Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Brand Row */}
+            <div className="flex items-center p-4 bg-white rounded-2xl border border-gray-200">
+              <div className="w-12 h-12 bg-wise/20 rounded-full flex items-center justify-center mr-4">
+                <BookOpen className="w-6 h-6 text-wise" />
+              </div>
+              <div className="flex-1">
+                <div className="text-sm text-gray-600">Marca</div>
+                <div className="text-lg font-semibold text-gray-900">{vehicle.brand || 'N/A'}</div>
+              </div>
+            </div>
+            
+            {/* Vehicle Type Row */}
+            <div className="flex items-center p-4 bg-white rounded-2xl border border-gray-200">
+              <div className="w-12 h-12 bg-wise/20 rounded-full flex items-center justify-center mr-4">
+                <Car className="w-6 h-6 text-wise" />
+              </div>
+              <div className="flex-1">
+                <div className="text-sm text-gray-600">Tipo de vehículo</div>
+                <div className="text-lg font-semibold text-gray-900">{vehicle.type || 'N/A'}</div>
+              </div>
+            </div>
+            
+            {/* Year Row */}
+            <div className="flex items-center p-4 bg-white rounded-2xl border border-gray-200">
+              <div className="w-12 h-12 bg-wise/20 rounded-full flex items-center justify-center mr-4">
+                <Clock className="w-6 h-6 text-wise" />
+              </div>
+              <div className="flex-1">
+                <div className="text-sm text-gray-600">Año</div>
+                <div className="text-lg font-semibold text-gray-900">{vehicle.year || 'N/A'}</div>
+              </div>
+            </div>
+            
+            {/* Engine Row */}
+            <div className="flex items-center p-4 bg-white rounded-2xl border border-gray-200">
+              <div className="w-12 h-12 bg-wise/20 rounded-full flex items-center justify-center mr-4">
+                <Zap className="w-6 h-6 text-wise" />
+              </div>
+              <div className="flex-1">
+                <div className="text-sm text-gray-600">Motor</div>
+                <div className="text-lg font-semibold text-gray-900">
+                  {vehicle.specifications?.combustion?.displacement || 
+                   vehicle.specifications?.hybrid?.displacement || 
+                   vehicle.specifications?.phev?.displacement || 
+                   vehicle.specifications?.electric?.batteryCapacity || 
+                   vehicle.engine || 'N/A'} 
+                  {vehicle.specifications?.combustion?.displacement || 
+                   vehicle.specifications?.hybrid?.displacement || 
+                   vehicle.specifications?.phev?.displacement ? ' cc' : 
+                   vehicle.specifications?.electric?.batteryCapacity ? ' kWh' : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Right Column - Dealerships */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-2xl shadow-soft p-6 sticky top-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Disponible en:
+            </h3>
+            <div className="space-y-4">
+              {vehicle.dealerships?.map((dealership: any) => (
+                <div key={dealership.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 bg-wise rounded-full flex items-center justify-center mr-3">
+                      <MapPin className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{dealership.name}</p>
+                      <p className="text-sm text-gray-600">{dealership.location}</p>
+                    </div>
+                  </div>
+                  <button className="px-4 py-2 bg-wise text-white rounded-lg hover:bg-wise-dark transition-colors text-sm">
+                    Agendar aquí
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("user") // user, admin
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  favorites Favorite[]
+
+  @@map("users")
+}
+
+model Dealer {
+  id          String   @id @default(cuid())
+  name        String
+  location    String
+  address     String
+  phone       String
+  email       String
+  status      String   @default("Activo") // Activo, Inactivo, En construcción
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  vehicleDealers VehicleDealer[]
+  vehicles       Vehicle[]       @relation("DealerVehicles")
+
+  @@map("dealers")
+}
+
+model Vehicle {
+  id          String   @id @default(cuid())
+  brand       String
+  model       String
+  year        Int
+  price       Float
+  type        String   // Sedán, SUV, Pickup, etc.
+  vehicleType String   // Automóvil, Deportivo, Todoterreno, etc.
+  fuelType    String   // Gasolina, Diesel, Eléctrico, etc.
+  history     String?  // Historial del vehículo
+  wiseCategories String? // Categorías personalizadas WiseMotors
+  
+  // Especificaciones como JSON para flexibilidad
+  specifications String
+  
+  // Relaciones
+  vehicleDealers VehicleDealer[]
+  dealers        Dealer[]        @relation("DealerVehicles")
+  images         VehicleImage[]
+  favorites      Favorite[]
+  
+  // Metadatos
+  status      String   @default("Disponible") // Disponible, Reservado, Vendido
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("vehicles")
+}
+
+model VehicleImage {
+  id        String   @id @default(cuid())
+  url       String
+  alt       String?
+  type      String   @default("gallery") // gallery, exterior, interior
+  order     Int      @default(0)
+  
+  // Relación con vehículo
+  vehicleId String
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@map("vehicle_images")
+}
+
+model VehicleDealer {
+  id          String @id @default(cuid())
+  vehicleId   String
+  dealerId    String
+  isAvailable Boolean @default(true)
+  createdAt   DateTime @default(now())
+  
+  // Relaciones
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  dealer  Dealer  @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+  
+  @@unique([vehicleId, dealerId])
+  @@map("vehicle_dealers")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  vehicleId String
+  createdAt DateTime @default(now())
+  
+  // Relaciones
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, vehicleId])
+  @@map("favorites")
+}
