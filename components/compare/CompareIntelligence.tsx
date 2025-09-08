@@ -378,7 +378,7 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="p-4 bg-gradient-to-r from-wise/10 to-purple-100 rounded-lg">
+            <div className="p-4 bg-gradient-to-r from-wise/10 to-wise/5 rounded-lg">
               <h4 className="font-semibold text-gray-900 mb-2">💡 Insights Clave:</h4>
               <ul className="space-y-1 text-sm text-gray-700">
                 <li>• La IA analizó {vehiclesWithSpecs.length} vehículos en {aiAnalysis.length} categorías</li>

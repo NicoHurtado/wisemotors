@@ -21,8 +21,8 @@ export default function AdminPage() {
               ℹ️ Este usuario tiene acceso completo a la aplicación + Dashboard Admin
             </p>
           </div>
-          <div className="mt-4 p-4 bg-purple-100 border border-purple-300 rounded-lg">
-            <p className="text-purple-800 font-medium">
+          <div className="mt-4 p-4 bg-wise/10 border border-wise/20 rounded-lg">
+            <p className="text-wise font-medium">
               🔒 Solo usuarios con email: adminwise@wisemotors.co y contraseña correcta pueden acceder aquí
             </p>
           </div>

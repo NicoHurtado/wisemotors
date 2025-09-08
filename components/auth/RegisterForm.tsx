@@ -7,13 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { registerSchema, type RegisterInput } from '@/lib/schemas/auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function RegisterForm() {
   const router = useRouter();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<RegisterInput>({
-    name: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -48,9 +50,17 @@ export function RegisterForm() {
       const data = await response.json();
 
       if (response.ok) {
-        // Registro exitoso
-        alert('Usuario registrado exitosamente!');
-        router.push('/login');
+        // Registro exitoso - iniciar sesión automáticamente
+        const userWithRole = {
+          ...data.user,
+          role: data.user.email === 'adminwise@wisemotors.co' ? 'admin' : 'user'
+        };
+        
+        // Iniciar sesión automáticamente
+        login(userWithRole, data.token);
+        
+        // Redirigir a la página principal
+        window.location.href = '/';
       } else {
         setError(data.error || 'Error al registrar usuario');
       }
@@ -69,16 +79,16 @@ export function RegisterForm() {
     <div className="w-full max-w-md mx-auto">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <Label htmlFor="name">Nombre completo</Label>
+          <Label htmlFor="username">Nombre de usuario</Label>
           <Input
-            id="name"
-            name="name"
+            id="username"
+            name="username"
             type="text"
-            value={formData.name}
+            value={formData.username}
             onChange={handleChange}
             required
             className="mt-1"
-            placeholder="Tu nombre completo"
+            placeholder="Tu nombre de usuario"
           />
         </div>
 

@@ -51,9 +51,9 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
         wise: {
-          DEFAULT: "#8B5CF6", // Purple for Wise branding
-          light: "#A78BFA",
-          dark: "#7C3AED",
+          DEFAULT: "#881cb7", // Purple for Wise branding
+          light: "#a855f7",
+          dark: "#7c2d12",
         },
       },
       borderRadius: {

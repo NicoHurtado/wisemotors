@@ -15,7 +15,7 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<LoginInput>({
-    email: '',
+    emailOrUsername: '',
     password: ''
   });
 
@@ -71,8 +71,6 @@ export function LoginForm() {
         // Usar window.location.href para asegurar que la página se recargue
         // y el estado se sincronice correctamente
         window.location.href = '/';
-        
-        alert('Inicio de sesión exitoso!');
       } else {
         setError(data.error || 'Error al iniciar sesión');
       }
@@ -91,16 +89,16 @@ export function LoginForm() {
     <div className="w-full max-w-md mx-auto">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="emailOrUsername">Email o Nombre de usuario</Label>
           <Input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
+            id="emailOrUsername"
+            name="emailOrUsername"
+            type="text"
+            value={formData.emailOrUsername}
             onChange={handleChange}
             required
             className="mt-1"
-            placeholder="tu@email.com"
+            placeholder="tu@email.com o tu_usuario"
           />
         </div>
 

@@ -198,11 +198,11 @@ export function CompareRadar({ vehicles }: CompareRadarProps) {
 
   function getVehicleColor(index: number): string {
     const colors = [
-      'rgb(99, 102, 241)', // Indigo
+      'rgb(136, 28, 183)', // Wise Purple
       'rgb(239, 68, 68)',  // Red
       'rgb(34, 197, 94)',  // Green
       'rgb(245, 158, 11)', // Yellow
-      'rgb(168, 85, 247)', // Purple
+      'rgb(136, 28, 183)', // Wise Purple
     ];
     return colors[index % colors.length];
   }

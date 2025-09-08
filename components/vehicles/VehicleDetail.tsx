@@ -560,7 +560,7 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
               {/* Dimensions */}
               <div className="rounded-2xl shadow-soft p-6 bg-white">
                 <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center mr-3">
+                  <div className="w-10 h-10 bg-wise rounded-full flex items-center justify-center mr-3">
                     <span className="text-white text-xl">📏</span>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">Dimensiones</h3>
@@ -633,7 +633,7 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
               {/* Interior */}
               <div className="rounded-2xl shadow-soft p-6 bg-white">
                 <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center mr-3">
+                  <div className="w-10 h-10 bg-wise rounded-full flex items-center justify-center mr-3">
                     <span className="text-white text-xl">🚪</span>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">Interior</h3>

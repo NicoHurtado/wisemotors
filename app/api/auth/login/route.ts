@@ -10,9 +10,14 @@ export async function POST(request: NextRequest) {
     // Validar datos de entrada
     const validatedData = loginSchema.parse(body);
     
-    // Buscar usuario por email
-    const user = await prisma.user.findUnique({
-      where: { email: validatedData.email }
+    // Buscar usuario por email o username
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: validatedData.emailOrUsername },
+          { username: validatedData.emailOrUsername }
+        ]
+      }
     });
     
     if (!user) {
