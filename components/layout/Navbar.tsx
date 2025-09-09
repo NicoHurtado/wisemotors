@@ -100,7 +100,7 @@ export function Navbar() {
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2 text-gray-700">
                   <User className="w-4 h-4" />
-                  <span className="text-sm font-medium">{user?.name}</span>
+                  <span className="text-sm font-medium">{user?.username}</span>
                 </div>
                 <Button 
                   variant="ghost" 

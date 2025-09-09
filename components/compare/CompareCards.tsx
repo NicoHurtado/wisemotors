@@ -328,11 +328,11 @@ export function CompareCards({ vehicles }: CompareCardsProps) {
               <div className="text-sm text-green-800">Precio más bajo</div>
             </div>
             
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">
+            <div className="text-center p-4 bg-wise/5 rounded-lg">
+              <div className="text-2xl font-bold text-wise">
                 {vehiclesWithSpecs.filter(v => v.fuelType === 'Eléctrico').length}
               </div>
-              <div className="text-sm text-purple-800">Vehículos eléctricos</div>
+              <div className="text-sm text-wise/80">Vehículos eléctricos</div>
             </div>
           </div>
         </CardContent>

@@ -256,7 +256,7 @@ export function VehicleEngineForm({
     return (
       <div className="space-y-8">
         {/* ESPECIFICACIONES HÍBRIDAS */}
-        <div className="border border-gray-200 rounded-lg p-6 bg-gradient-to-r from-purple-50 to-purple-100">
+        <div className="border border-gray-200 rounded-lg p-6 bg-gradient-to-r from-wise/5 to-wise/10">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <span className="text-2xl text-green-600">♻️</span>
             <span>Sistema Híbrido</span>
@@ -423,7 +423,7 @@ export function VehicleEngineForm({
     return (
       <div className="space-y-8">
         {/* ESPECIFICACIONES PHEV */}
-        <div className="border border-gray-200 rounded-lg p-6 bg-gradient-to-r from-purple-50 to-purple-100">
+        <div className="border border-gray-200 rounded-lg p-6 bg-gradient-to-r from-wise/5 to-wise/10">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <span className="text-2xl">🔌</span>
             <span>Sistema Híbrido Enchufable</span>

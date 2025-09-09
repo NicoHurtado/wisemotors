@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { registerSchema } from '@/lib/schemas/auth';
-import { hashPassword } from '@/lib/auth';
+import { hashPassword, generateToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,19 +28,23 @@ export async function POST(request: NextRequest) {
     // Crear usuario
     const user = await prisma.user.create({
       data: {
-        name: validatedData.name,
+        username: validatedData.username,
         email: validatedData.email,
         password: hashedPassword,
         role: 'user'
       }
     });
     
-    // Retornar usuario sin contraseña
+    // Generar token JWT
+    const token = generateToken(user.id, user.email, user.role);
+    
+    // Retornar usuario sin contraseña y token
     const { password, ...userWithoutPassword } = user;
     
     return NextResponse.json({
       message: 'Usuario registrado exitosamente',
-      user: userWithoutPassword
+      user: userWithoutPassword,
+      token
     }, { status: 201 });
     
   } catch (error: any) {

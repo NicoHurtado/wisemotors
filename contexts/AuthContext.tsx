@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 
 interface User {
   id: string;
-  name: string;
+  username: string;
   email: string;
   role: 'user' | 'admin';
 }
