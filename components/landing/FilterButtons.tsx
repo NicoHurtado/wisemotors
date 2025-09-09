@@ -28,7 +28,7 @@ export function FilterButtons({ currentQuery, onFilterClick }: FilterButtonsProp
   return (
     <div className="w-full max-w-4xl mx-auto">
       <div className="text-center mb-4">
-        <p className="text-sm text-gray-600 mb-4">Refina tu búsqueda:</p>
+        <p className="text-sm text-muted-foreground mb-4">Refina tu búsqueda:</p>
       </div>
       
       <div className="flex flex-wrap justify-center gap-2">
@@ -36,9 +36,9 @@ export function FilterButtons({ currentQuery, onFilterClick }: FilterButtonsProp
           <Button
             key={option.label}
             onClick={() => handleFilterClick(option.modifier)}
-            variant="outline"
+            variant="wise"
             size="sm"
-            className="text-sm px-4 py-2 border-gray-300 text-gray-700 hover:border-wise hover:text-wise hover:bg-wise/5 transition-all duration-200"
+            className="text-sm px-4 py-2 shadow-soft hover:shadow-xl transition-all duration-200"
           >
             {option.label}
           </Button>

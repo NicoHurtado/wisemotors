@@ -53,7 +53,7 @@ module.exports = {
         wise: {
           DEFAULT: "#881cb7", // Purple for Wise branding
           light: "#a855f7",
-          dark: "#7c2d12",
+          dark: "#6b21a8",
         },
       },
       borderRadius: {

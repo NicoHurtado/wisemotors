@@ -98,7 +98,8 @@ export const extractIntentFunction = {
 export async function extractIntent(prompt: string): Promise<VehicleIntent> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error('OPENAI_API_KEY no configurada');
+    // Fallback: construir intención a partir de heurísticas locales por palabras clave
+    return buildHeuristicIntent(prompt);
   }
 
   const systemPrompt = `Eres un experto en vehículos en Colombia, especialmente en Medellín y Antioquia. 
@@ -153,28 +154,93 @@ Analiza el prompt y extrae:
 
   try {
     const rawIntent = JSON.parse(functionCall.arguments);
-    return IntentSchema.parse(rawIntent);
+    const parsed = IntentSchema.parse(rawIntent);
+    // Ajustar con heurísticas locales para reforzar señales clave
+    return applyKeywordHeuristics(prompt, parsed);
   } catch (error) {
     console.error('Error parsing intent:', error);
     // Fallback con intención básica
-    return {
-      soft_weights: {
-        hill_climb: 0.1,
-        comfort: 0.1,
-        efficiency: 0.2,
-        safety: 0.1,
-        tech: 0.1,
-        prestige: 0.1,
-        cargo: 0.1,
-        potholes: 0.1,
-        urban: 0.1,
-        performance: 0.1
-      },
-      locale: {
-        region: 'Medellín' as const,
-        keywords: []
-      }
-    };
+    return buildHeuristicIntent(prompt);
   }
+}
+
+// Heurísticas locales por palabras clave para ajustar intención
+function buildHeuristicIntent(prompt: string): VehicleIntent {
+  const base: VehicleIntent = {
+    soft_weights: {
+      hill_climb: 0.1,
+      comfort: 0.1,
+      efficiency: 0.2,
+      safety: 0.1,
+      tech: 0.1,
+      prestige: 0.1,
+      cargo: 0.1,
+      potholes: 0.1,
+      urban: 0.1,
+      performance: 0.1,
+    },
+    locale: {
+      region: 'Medellín',
+      keywords: [],
+    },
+  };
+
+  return applyKeywordHeuristics(prompt, base);
+}
+
+function applyKeywordHeuristics(prompt: string, intent: VehicleIntent): VehicleIntent {
+  const text = prompt.toLowerCase();
+  const w = { ...intent.soft_weights };
+  const keywords: string[] = [];
+
+  // Velocidad / deportivo
+  if (/(rápido|rapido|veloz|deportiv|performance|potente|correr)/.test(text)) {
+    w.performance = Math.max(w.performance, 0.85);
+    keywords.push('rápido');
+  }
+
+  // Elegancia / lujo
+  if (/(elegant|lujo|premium|executivo|ejecutivo|estilo)/.test(text)) {
+    w.prestige = Math.max(w.prestige, 0.75);
+    keywords.push('elegante');
+  }
+
+  // Barato / económico / más barato
+  if (/(barat|econó|economo|ahorro|más barato|mas barato|low cost)/.test(text)) {
+    w.efficiency = Math.max(w.efficiency, 0.7);
+    // Favorecer valor por precio en scoring (usamos efficiency como proxy)
+    keywords.push('barato');
+    // Opcional: marcar budget simbólico (no rígido)
+    intent.hard_filters = intent.hard_filters ?? {};
+    // No fijamos una cifra, dejamos el relax en scoring; pero podemos insinuar techo si ya existe
+  }
+
+  // Subir Palmas / pendientes
+  if (/(palmas|pendiente|subir)/.test(text)) {
+    w.hill_climb = Math.max(w.hill_climb, 0.7);
+    keywords.push('palmas');
+  }
+
+  // Ciudad
+  if (/(ciudad|parquear|urbano)/.test(text)) {
+    w.urban = Math.max(w.urban, 0.6);
+    keywords.push('urbano');
+  }
+
+  // Confort / familia
+  if (/(cómod|comodo|familia|espacioso|seguro)/.test(text)) {
+    w.comfort = Math.max(w.comfort, 0.6);
+    w.safety = Math.max(w.safety, 0.6);
+    keywords.push('familia');
+  }
+
+  return {
+    ...intent,
+    soft_weights: w,
+    locale: {
+      region: intent.locale?.region ?? 'Medellín',
+      keywords: [...(intent.locale?.keywords ?? []), ...keywords],
+    },
+  };
 }
 

@@ -40,7 +40,8 @@ export async function applyHardFilters(intent: VehicleIntent) {
     // TODO: Implementar filtro por altura libre mínima
   }
   
-  const candidates = await prisma.vehicle.findMany({
+  // Primera pasada con filtros duros tal cual
+  let candidates = await prisma.vehicle.findMany({
     where,
     include: {
       images: {
@@ -48,9 +49,45 @@ export async function applyHardFilters(intent: VehicleIntent) {
         take: 1
       }
     },
-    take: 40 // Máximo 40 candidatos para mantener velocidad
+    take: 40
   });
-  
+
+  // Si no hay resultados, relajar progresivamente algunas restricciones demasiado estrictas
+  if (candidates.length === 0 && intent.hard_filters) {
+    const relaxedWhere: any = { ...where };
+
+    // Relajar budget máximo a +20%
+    if (intent.hard_filters.budget_max) {
+      relaxedWhere.price = relaxedWhere.price || {};
+      relaxedWhere.price.lte = Math.floor(intent.hard_filters.budget_max * 1.2);
+    }
+
+    // Relajar body_type -> permitir tipos cercanos (SUV ~ Crossover ~ Pickup parcial)
+    if (intent.hard_filters.body_type && relaxedWhere.type) {
+      const body = intent.hard_filters.body_type;
+      const nearTypes: Record<string, string[]> = {
+        'SUV': ['SUV', 'Pickup', 'Hatchback'],
+        'Sedán': ['Sedán', 'Hatchback'],
+        'Hatchback': ['Hatchback', 'Sedán'],
+        'Pickup': ['Pickup', 'SUV'],
+        'Deportivo': ['Deportivo', 'Convertible', 'Sedán'],
+        'Convertible': ['Convertible', 'Deportivo']
+      };
+      relaxedWhere.type = { in: nearTypes[body] ?? [body] };
+    }
+
+    candidates = await prisma.vehicle.findMany({
+      where: relaxedWhere,
+      include: {
+        images: {
+          orderBy: { order: 'asc' },
+          take: 1
+        }
+      },
+      take: 40
+    });
+  }
+
   return candidates;
 }
 
@@ -87,6 +124,20 @@ export function calculateDeterministicScore(
   
   // Penalizaciones por filtros duros no cumplidos perfectamente
   score = applyPenalties(candidate, intent, score);
+
+  // Sesgo de deportividad: favorecer deportivos cuando el usuario expresa rapidez
+  const textKeywords = (intent.locale?.keywords || []).join(' ').toLowerCase();
+  const wantsSpeed = weights.performance > 0.7 || /rápido|rapido|deportiv|veloz|performance|potente/.test(textKeywords);
+  if (wantsSpeed) {
+    // Boost a deportivos y sedanes deportivos; penalizar SUV/pickup salvo que tengan alta performance
+    if (candidate.type === 'Deportivo') {
+      score += 0.15;
+    } else if (candidate.type === 'Sedán') {
+      score += 0.07;
+    } else if (candidate.type === 'SUV' || candidate.type === 'Pickup') {
+      score -= 0.1 * (1 - features.acceleration_norm); // menos penal si acelera bien
+    }
+  }
   
   return { score: Math.max(0, Math.min(1, score)), breakdown };
 }

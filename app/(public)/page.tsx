@@ -8,9 +8,11 @@ import { routes } from '@/lib/urls';
 import { useEffect, useState } from 'react';
 import { AIResultsLoader } from '@/components/vehicles/AIResultsLoader';
 import { AIPodium } from '@/components/vehicles/AIPodium';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { FilterButtons } from '@/components/landing/FilterButtons';
 
 export default function HomePage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const [loadingAI, setLoadingAI] = useState(false);
@@ -52,7 +54,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <HeroSearch 
             initialQuery={query} 
-            showFilters={!loadingAI && aiResults && aiResults.length > 0} 
+            showFilters={false}
           />
         </div>
       </section>
@@ -62,7 +64,29 @@ export default function HomePage() {
           <div className="container mx-auto px-4">
             {loadingAI && <AIResultsLoader />}
             {!loadingAI && aiResults && aiResults.length > 0 && (
-              <AIPodium results={aiResults as any} />
+              <>
+                <AIPodium results={aiResults as any} />
+                <div className="mt-8">
+                  <FilterButtons
+                    currentQuery={query}
+                    onFilterClick={(newQuery: string) => {
+                      router.push(`/?q=${encodeURIComponent(newQuery)}`);
+                    }}
+                  />
+                </div>
+              </>
+            )}
+            {!loadingAI && aiResults && aiResults.length === 0 && (
+              <div className="text-center py-12 max-w-3xl mx-auto">
+                <h3 className="text-2xl font-semibold text-foreground mb-2">No encontramos resultados con esa combinación</h3>
+                <p className="text-muted-foreground mb-6">Prueba ajustando tu búsqueda o utiliza estas opciones para refinarla.</p>
+                <FilterButtons
+                  currentQuery={query}
+                  onFilterClick={(newQuery: string) => {
+                    router.push(`/?q=${encodeURIComponent(newQuery)}`);
+                  }}
+                />
+              </div>
             )}
           </div>
         </section>

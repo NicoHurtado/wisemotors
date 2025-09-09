@@ -5,7 +5,15 @@ import { verifyPassword, generateToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (e) {
+      return NextResponse.json(
+        { error: 'JSON inválido' },
+        { status: 400 }
+      );
+    }
     
     // Validar datos de entrada
     const validatedData = loginSchema.parse(body);
@@ -17,6 +25,13 @@ export async function POST(request: NextRequest) {
           { email: validatedData.emailOrUsername },
           { username: validatedData.emailOrUsername }
         ]
+      },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        role: true,
+        username: true,
       }
     });
     
@@ -56,7 +71,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+    // Prisma error por columna no encontrada u otros
+    if (error.code === 'P2022') {
+      return NextResponse.json(
+        { error: 'Error de base de datos', details: error.meta },
+        { status: 500 }
+      );
+    }
+
     console.error('Error logging in:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },

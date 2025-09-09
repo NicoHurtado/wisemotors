@@ -56,7 +56,8 @@ export async function rerankWithLLM(
 ): Promise<FinalRecommendation[]> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error('OPENAI_API_KEY no configurada');
+    // Si no hay API key, usar fallback determinístico para no romper UX
+    return createFallbackRecommendations(candidates);
   }
   
   // Crear payload ultracompacto
@@ -127,12 +128,13 @@ Reordena estos vehículos priorizando los que mejor se ajusten a la intención. 
     }
 
     const result = JSON.parse(functionCall.arguments);
-    return processLLMRerank(result.recommendations, candidates);
+    const recs = processLLMRerank(result.recommendations, candidates);
+    return ensureThree(recs, candidates);
     
   } catch (error) {
     console.error('Error en LLM rerank:', error);
     // Fallback al scoring determinístico
-    return createFallbackRecommendations(candidates);
+    return ensureThree(createFallbackRecommendations(candidates), candidates);
   }
 }
 
@@ -212,6 +214,36 @@ function processLLMRerank(
   }
   
   return recommendations;
+}
+
+// Asegurar que siempre haya 3 recomendaciones, completando desde mejores candidatos restantes
+function ensureThree(recs: FinalRecommendation[], candidates: ScoredCandidate[]): FinalRecommendation[] {
+  const have = new Set(recs.map(r => r.vehicle.id));
+  const missing = Math.max(0, 3 - recs.length);
+  if (missing === 0) return recs.slice(0, 3);
+
+  const extras: FinalRecommendation[] = [];
+  for (const c of candidates) {
+    if (extras.length >= missing) break;
+    if (have.has(c.id)) continue;
+    extras.push({
+      rank: recs.length + extras.length + 1,
+      match: Math.round(c.score * 100),
+      reasons: generateFallbackReasons(c),
+      vehicle: {
+        id: c.id,
+        brand: c.brand,
+        model: c.model,
+        year: c.year,
+        price: c.price,
+        fuelType: c.fuelType,
+        type: c.type,
+        imageUrl: c.imageUrl,
+      }
+    });
+  }
+
+  return [...recs, ...extras].slice(0, 3).map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
 // Fallback usando solo scoring determinístico
