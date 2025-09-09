@@ -17,8 +17,6 @@ build/
 .env.production.local
 
 # Database
-prisma/dev.db
-*.db
 
 # IDE
 .vscode/

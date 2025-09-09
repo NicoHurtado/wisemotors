@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ export function TrendingVehicles({ loading, error }: TrendingVehiclesProps) {
   const [vehicles, setVehicles] = useState<TrendingVehicle[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const { isFavorite, toggleFavorite } = useFavorites();
+  const router = useRouter();
 
   useEffect(() => {
     fetchTrendingVehicles();
@@ -146,7 +148,11 @@ export function TrendingVehicles({ loading, error }: TrendingVehiclesProps) {
 
         <div className={`grid ${getGridLayout(vehicles.length)} gap-6`}>
           {vehicles.map((vehicle) => (
-            <Card key={vehicle.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300">
+            <Card 
+              key={vehicle.id} 
+              className="group overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer hover:-translate-y-0.5"
+              onClick={() => router.push(`${routes.vehicles}/${vehicle.id}`)}
+            >
               {/* Imagen del vehículo */}
               <div className="relative h-64 bg-gradient-to-br from-purple-100 to-purple-200 overflow-hidden">
                 <PhotoCarousel
@@ -166,7 +172,7 @@ export function TrendingVehicles({ loading, error }: TrendingVehiclesProps) {
 
                 {/* Botón de favorito */}
                 <button
-                  onClick={() => toggleFavorite(vehicle.id)}
+                  onClick={(e) => { e.stopPropagation(); toggleFavorite(vehicle.id); }}
                   className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
                 >
                   <Heart 
@@ -197,12 +203,10 @@ export function TrendingVehicles({ loading, error }: TrendingVehiclesProps) {
                 </div>
 
                 <Button 
-                  asChild 
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                  onClick={(e) => { e.stopPropagation(); router.push(`${routes.vehicles}/${vehicle.id}`); }}
                 >
-                  <a href={`${routes.vehicles}/${vehicle.id}`}>
-                    Explorar Vehículo
-                  </a>
+                  Explorar Vehículo
                 </Button>
               </div>
             </Card>
