@@ -40,7 +40,6 @@ export function AIPodium({ results }: AIPodiumProps) {
       <div className="text-center mb-8">
         <h3 className="text-2xl font-bold">Top 3 recomendados</h3>
         <p className="text-gray-500">Basado en tu solicitud y datos reales de los vehículos</p>
-        <p className="text-sm text-wise mt-2">💡 Haz click en cualquier parte de la tarjeta para ver los detalles completos</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
@@ -83,16 +82,6 @@ export function AIPodium({ results }: AIPodiumProps) {
                     ))}
                   </ul>
                 )}
-                
-                {/* Indicador de click */}
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <div className="flex items-center justify-center gap-2 text-wise text-sm font-medium group-hover:text-wise-dark transition-colors">
-                    <span className="font-semibold">Click para ver detalles</span>
-                    <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
               </div>
             </div>
           </a>

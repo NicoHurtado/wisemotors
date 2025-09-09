@@ -1,188 +1,190 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface VehicleGalleryProps {
-  vehicle: any;
+  images?: string[];
+  coverImage?: string;
+  vehicle?: any;
+  className?: string;
 }
 
-export function VehicleGallery({ vehicle }: VehicleGalleryProps) {
-  const [currentPosition, setCurrentPosition] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, position: 0 });
-  const [isAutoMoving, setIsAutoMoving] = useState(true);
+export function VehicleGallery({ images, coverImage, vehicle, className = '' }: VehicleGalleryProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Crear datos para el carrusel (duplicar para el loop infinito)
-  const getGalleryItems = () => {
-    if (vehicle.images && vehicle.images.length > 0) {
-      return vehicle.images.map((image: any, index: number) => ({
-        id: `image-${index}`,
-        type: 'image',
-        data: image,
-        alt: `${vehicle.brand} ${vehicle.model} - Imagen ${index + 1}`
-      }));
-    } else {
-      return [1, 2, 3, 4].map((index) => ({
-        id: `placeholder-${index}`,
-        type: 'placeholder',
-        data: { index },
-        alt: `Imagen ${index}`
-      }));
-    }
+  // Extraer imágenes del vehículo si se proporciona
+  let finalImages = images || [];
+  let finalCoverImage = coverImage;
+
+  if (vehicle?.images) {
+    // Para la galería, mostrar solo las imágenes de galería, NO la portada
+    finalImages = vehicle.images
+      .filter((img: any) => img.type === 'gallery')
+      .sort((a: any, b: any) => a.order - b.order)
+      .map((img: any) => img.url);
+  }
+
+  // Usar solo las imágenes de galería
+  const allImages = finalImages;
+
+  const openModal = () => {
+    setIsModalOpen(true);
   };
 
-  const items = getGalleryItems();
-  // Duplicar los items para el loop infinito
-  const duplicatedItems = [...items, ...items];
-
-  // Animación continua solo cuando no se está interactuando
-  useEffect(() => {
-    if (!isHovered && !isDragging && isAutoMoving) {
-      const interval = setInterval(() => {
-        setCurrentPosition(prev => {
-          const itemWidth = 300; // Ancho de cada item + gap
-          const maxPosition = items.length * itemWidth;
-          const newPosition = prev + 0.5; // Velocidad lenta
-          
-          if (newPosition >= maxPosition) {
-            return 0; // Reset para el loop infinito
-          }
-          return newPosition;
-        });
-      }, 16); // ~60fps
-
-      return () => clearInterval(interval);
-    }
-  }, [isHovered, isDragging, isAutoMoving, items.length]);
-
-  // Event listeners globales para el arrastre
-  useEffect(() => {
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-      if (isDragging) {
-        const deltaX = e.clientX - dragStart.x;
-        const newPosition = dragStart.position - deltaX;
-        
-        // Aplicar límites para evitar que se vaya demasiado lejos
-        const maxPosition = items.length * 300;
-        const boundedPosition = Math.max(0, Math.min(newPosition, maxPosition));
-        
-        setCurrentPosition(boundedPosition);
-      }
-    };
-
-    const handleGlobalMouseUp = () => {
-      if (isDragging) {
-        setIsDragging(false);
-        // Reanudar movimiento automático después de un breve delay
-        setTimeout(() => {
-          if (!isHovered) {
-            setIsAutoMoving(true);
-          }
-        }, 1000);
-      }
-    };
-
-    if (isDragging) {
-      document.addEventListener('mousemove', handleGlobalMouseMove);
-      document.addEventListener('mouseup', handleGlobalMouseUp);
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleGlobalMouseMove);
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
-    };
-  }, [isDragging, dragStart, isHovered, items.length]);
-
-  // Funciones para el arrastre
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-    setIsAutoMoving(false);
-    setDragStart({
-      x: e.clientX,
-      position: currentPosition
-    });
+  const closeModal = () => {
+    setIsModalOpen(false);
   };
 
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-    setIsAutoMoving(false);
+  const nextImage = () => {
+    setCurrentIndex((prev) => (prev + 1) % allImages.length);
   };
 
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    if (!isDragging) {
-      setTimeout(() => {
-        setIsAutoMoving(true);
-      }, 1000);
-    }
-  };
-
-  const renderItem = (item: any, index: number) => {
-    if (item.type === 'image') {
-      return (
-        <div
-          key={`${item.id}-${index}`}
-          className="flex-shrink-0 w-[280px] aspect-[4/3] bg-gradient-to-br from-wise/5 to-wise/10 rounded-2xl shadow-soft overflow-hidden"
-        >
-          <img
-            src={item.data.url}
-            alt={item.alt}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      );
-    } else {
-      return (
-        <div
-          key={`${item.id}-${index}`}
-          className="flex-shrink-0 w-[280px] aspect-[4/3] bg-gradient-to-br from-wise/5 to-wise/10 rounded-2xl shadow-soft flex items-center justify-center"
-        >
-          <div className="text-center">
-            <div className="w-16 h-16 bg-wise/20 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Check className="w-8 h-8 text-wise" />
-            </div>
-            <p className="text-gray-500 text-sm">Imagen {item.data.index}</p>
-          </div>
-        </div>
-      );
-    }
+  const prevImage = () => {
+    setCurrentIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Gallery Title - Centered */}
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Galería</h2>
-      </div>
-      
-      {/* Carrusel Container */}
-      <div 
-        className="relative overflow-hidden cursor-grab active:cursor-grabbing"
-        onMouseDown={handleMouseDown}
-        onMouseLeave={handleMouseLeave}
-        onMouseEnter={handleMouseEnter}
-      >
-        <div 
-          className="flex gap-6 transition-transform duration-0 ease-linear select-none"
-          style={{
-            transform: `translateX(-${currentPosition}px)`,
-            width: `${duplicatedItems.length * 280 + (duplicatedItems.length - 1) * 24}px`, // 280px item + 24px gap
-            userSelect: 'none' // Prevenir selección de texto durante el arrastre
-          }}
-        >
-          {duplicatedItems.map((item, index) => renderItem(item, index))}
-        </div>
+    <>
+      {/* Galería Carrusel Infinito */}
+      <div className={`relative ${className}`}>
+        <h3 className="text-xl font-semibold text-center mb-4">Galería</h3>
         
-        {/* Indicador de interacción */}
-        {isHovered && (
-          <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-            Arrastra para mover
+        {allImages.length > 0 ? (
+          <div className="relative h-64 bg-gray-100 rounded-lg overflow-hidden">
+            {/* Carrusel infinito */}
+            <div 
+              className="flex absolute top-0 left-0 h-full animate-scroll-infinite"
+              style={{
+                width: `${allImages.length * 2 * 320}px`
+              }}
+            >
+              {/* Duplicar imágenes para efecto infinito */}
+              {[...allImages, ...allImages].map((image, index) => (
+                <div
+                  key={`carousel-${index}`}
+                  className="flex-shrink-0 w-80 h-full relative group cursor-pointer mx-2"
+                  onClick={() => {
+                    setCurrentIndex(index % allImages.length);
+                    openModal();
+                  }}
+                >
+                  <img
+                    src={image}
+                    alt={`Imagen ${(index % allImages.length) + 1}`}
+                    className="w-full h-full object-cover rounded-lg transition-transform group-hover:scale-105"
+                    onError={(e) => {
+                      console.error('Error loading carousel image:', image);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                  
+                  {/* Overlay */}
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center rounded-lg">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="bg-white bg-opacity-90 rounded-full px-3 py-1">
+                        <span className="text-sm font-medium">Ver imagen</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Indicador de miniatura */}
+                  {(() => {
+                    const currentImage = allImages[index % allImages.length];
+                    const isThumbnail = vehicle?.images?.find((img: any) => img.url === currentImage)?.isThumbnail;
+                    return isThumbnail && (
+                      <div className="absolute top-2 left-2 px-2 py-1 bg-yellow-500 text-white text-xs rounded">
+                        Miniatura
+                      </div>
+                    );
+                  })()}
+                </div>
+              ))}
+            </div>
+
+          </div>
+        ) : (
+          <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+            <div className="text-center text-gray-500">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-full flex items-center justify-center">
+                <span className="text-2xl">📷</span>
+              </div>
+              <p>No hay imágenes disponibles</p>
+            </div>
           </div>
         )}
       </div>
-    </div>
+
+      {/* Modal de galería completa */}
+      {isModalOpen && (
+        <div 
+          className="modal-fullscreen bg-black bg-opacity-70 flex items-center justify-center"
+          style={{ padding: '1rem' }}
+          onClick={closeModal}
+        >
+          <div className="relative max-w-4xl max-h-full" onClick={(e) => e.stopPropagation()}>
+            {/* Botón de cerrar */}
+            <button
+              onClick={closeModal}
+              className="absolute top-6 right-6 z-10 bg-white bg-opacity-20 text-white p-3 rounded-full hover:bg-opacity-30 transition-all backdrop-blur-sm"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {/* Imagen en modal */}
+            <div className="relative">
+              <img
+                src={allImages[currentIndex]}
+                alt={`Vehículo ${currentIndex + 1}`}
+                className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                onError={(e) => {
+                  console.error('Error loading modal image:', allImages[currentIndex]);
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+
+              {/* Controles en modal */}
+              {allImages.length > 1 && (
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      prevImage();
+                    }}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-70 transition-all"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      nextImage();
+                    }}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-70 transition-all"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Información de la imagen */}
+            <div className="mt-4 text-center text-white">
+              <p className="text-lg font-medium">
+                {(() => {
+                  const currentImage = allImages[currentIndex];
+                  const isThumbnail = vehicle?.images?.find((img: any) => img.url === currentImage)?.isThumbnail;
+                  return isThumbnail ? 'Imagen miniatura' : `Imagen ${currentIndex + 1}`;
+                })()}
+              </p>
+              <p className="text-sm text-gray-300">
+                {currentIndex + 1} de {allImages.length}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

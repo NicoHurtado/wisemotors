@@ -64,3 +64,34 @@
   background: radial-gradient(ellipse at center, rgba(139, 92, 246, 0.03) 0%, rgba(255, 255, 255, 1) 70%);
 }
 
+/* Animación para carrusel infinito */
+@keyframes scroll-infinite {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll-infinite {
+  animation: scroll-infinite 30s linear infinite;
+}
+
+/* Pausar animación al hover */
+.animate-scroll-infinite:hover {
+  animation-play-state: paused;
+}
+
+/* Modal fullscreen fix */
+.modal-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 9999 !important;
+}
+

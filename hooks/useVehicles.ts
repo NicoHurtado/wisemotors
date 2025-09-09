@@ -12,6 +12,13 @@ export interface VehicleCard {
   imageUrl: string | null;
   category?: string;
   status?: 'NUEVO' | 'USADO';
+  images?: Array<{
+    id?: string;
+    url: string;
+    type: string;
+    order: number;
+    isThumbnail?: boolean;
+  }>;
 }
 
 export interface VehicleDetail extends VehicleCard {
@@ -34,6 +41,12 @@ export interface VehicleDetail extends VehicleCard {
     description: string;
   }>;
   similarVehicles?: VehicleCard[];
+  images?: Array<{
+    id: string;
+    url: string;
+    type: string;
+    order: number;
+  }>;
 }
 
 interface UseVehiclesOptions {
@@ -97,17 +110,25 @@ export function useVehicles(options: UseVehiclesOptions = {}) {
         const data = await response.json();
         
         // Transformar datos de la API al formato esperado por la UI
-        const transformedVehicles: VehicleCard[] = data.vehicles.map((vehicle: any) => ({
-          id: vehicle.id,
-          brand: vehicle.brand,
-          model: vehicle.model,
-          year: vehicle.year,
-          price: vehicle.price,
-          fuel: vehicle.fuelType.toUpperCase() as any,
-          imageUrl: vehicle.images?.[0]?.url || null,
-          category: vehicle.type,
-          status: vehicle.status || 'NUEVO'
-        }));
+        const transformedVehicles: VehicleCard[] = data.vehicles.map((vehicle: any) => {
+          // Buscar imagen miniatura, si no existe usar la primera de galería
+          const thumbnailImage = vehicle.images?.find((img: any) => img.isThumbnail)?.url ||
+                                vehicle.images?.find((img: any) => img.type === 'gallery')?.url ||
+                                vehicle.images?.[0]?.url || null;
+          
+          return {
+            id: vehicle.id,
+            brand: vehicle.brand,
+            model: vehicle.model,
+            year: vehicle.year,
+            price: vehicle.price,
+            fuel: vehicle.fuelType.toUpperCase() as any,
+            imageUrl: thumbnailImage,
+            category: vehicle.type,
+            status: vehicle.status || 'NUEVO',
+            images: vehicle.images || [] // Pasar todas las imágenes
+          };
+        });
 
         setVehicles(transformedVehicles);
       } catch (err) {
@@ -163,6 +184,7 @@ export function useVehicle(id: string) {
           price: data.price,
           fuel: data.fuelType.toUpperCase() as any,
           imageUrl: data.images?.[0]?.url || null,
+          images: data.images || [], // Agregar las imágenes completas
           category: data.type,
           status: data.status || 'NUEVO',
           power: data.specifications?.combustion?.maxPower || data.specifications?.electric?.maxPower,

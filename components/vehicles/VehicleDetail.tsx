@@ -14,7 +14,6 @@ interface VehicleDetailProps {
 }
 
 export function VehicleDetail({ vehicle }: VehicleDetailProps) {
-
   // Función para renderizar la sección de motor según el tipo de combustible
   const renderEngineSection = () => {
     const fuelType = (vehicle.specifications?.general?.fuelType || vehicle.fuelType)?.toLowerCase();

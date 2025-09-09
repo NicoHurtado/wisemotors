@@ -37,20 +37,26 @@ export function VehicleHero({ vehicle }: VehicleHeroProps) {
     <div className="relative bg-gray-900">
       {/* Hero Image */}
       <div className="relative h-screen overflow-hidden">
-        {vehicle.imageUrl ? (
-          <Image
-            src={vehicle.imageUrl}
-            alt={`${vehicle.brand} ${vehicle.model}`}
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gray-800">
-            <span className="text-gray-400 text-lg">Sin imagen</span>
-          </div>
-        )}
+        {(() => {
+          // Para el detalle del vehículo, usar la imagen de portada (cover)
+          const coverImage = vehicle.images?.find((img: any) => img.type === 'cover')?.url ||
+                            vehicle.imageUrl;
+          
+          return coverImage ? (
+            <Image
+              src={coverImage}
+              alt={`${vehicle.brand} ${vehicle.model}`}
+              fill
+              className="object-cover"
+              priority
+              sizes="100vw"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gray-800">
+              <span className="text-gray-400 text-lg">Sin imagen</span>
+            </div>
+          );
+        })()}
         
         {/* Overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/30 to-transparent" />

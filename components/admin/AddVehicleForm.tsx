@@ -6,6 +6,7 @@ import { Car, Save, X, Plus } from 'lucide-react';
 import { VehicleSpecificationsForm } from './VehicleSpecificationsForm';
 import { VehicleFeaturesForm } from './VehicleFeaturesForm';
 import { VehicleEngineForm } from './VehicleEngineForm';
+import { ImageUpload } from './ImageUpload';
 
 interface Dealer {
   id: string;
@@ -18,6 +19,9 @@ export function AddVehicleForm() {
   const [loading, setLoading] = useState(false);
   const [dealers, setDealerships] = useState<Dealer[]>([]);
   const [selectedDealers, setSelectedDealers] = useState<string[]>([]);
+  const [coverImage, setCoverImage] = useState<string>('');
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [thumbnailIndex, setThumbnailIndex] = useState<number>(0);
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -237,7 +241,10 @@ export function AddVehicleForm() {
         history: formData.history || '',
         wiseCategories: formData.wiseCategories || '',
         specifications: cleanSpecifications,
-        dealerIds: selectedDealers
+        dealerIds: selectedDealers,
+        coverImage,
+        galleryImages,
+        thumbnailIndex
       };
 
 
@@ -297,6 +304,38 @@ export function AddVehicleForm() {
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8">
+      {/* Foto de Portada */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+          <Car className="w-5 h-5 mr-2 text-wise" />
+          Foto de Portada
+        </h2>
+        <ImageUpload
+          images={coverImage ? [coverImage] : []}
+          onImagesChange={(images) => setCoverImage(images[0] || '')}
+          maxImages={1}
+          type="cover"
+          label="Selecciona la foto principal del vehículo"
+        />
+      </div>
+
+      {/* Galería de Fotos */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+          <Car className="w-5 h-5 mr-2 text-wise" />
+          Galería de Fotos
+        </h2>
+        <ImageUpload
+          images={galleryImages}
+          onImagesChange={setGalleryImages}
+          maxImages={10}
+          type="gallery"
+          label="Sube fotos adicionales para la galería del vehículo"
+          thumbnailIndex={thumbnailIndex}
+          onThumbnailChange={setThumbnailIndex}
+        />
+      </div>
+
       {/* Información Básica */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">

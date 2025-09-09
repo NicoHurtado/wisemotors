@@ -234,6 +234,9 @@ export const vehicleSchema = z.object({
   wiseCategories: z.string().optional(),
   specifications: specificationsSchema,
   dealerIds: z.array(z.string()).min(1, 'Debe seleccionar al menos un concesionario'),
+  coverImage: z.string().optional(),
+  galleryImages: z.array(z.string()).optional(),
+  thumbnailIndex: z.number().min(0).optional(),
 });
 
 // Esquema para actualizaciones parciales - más permisivo
@@ -249,6 +252,9 @@ export const vehicleUpdateSchema = z.object({
   wiseCategories: z.string().optional(),
   specifications: z.any().optional(), // Permitir cualquier estructura para actualizaciones
   dealerIds: z.array(z.string()).min(1, 'Debe seleccionar al menos un concesionario').optional(),
+  coverImage: z.string().optional(),
+  galleryImages: z.array(z.string()).optional(),
+  thumbnailIndex: z.number().min(0).optional(),
 });
 
 export type VehicleInput = z.infer<typeof vehicleSchema>;

@@ -1,11 +1,10 @@
 'use client';
 
 import { HeroSearch } from '@/components/landing/HeroSearch';
-import { Recommendations } from '@/components/landing/Recommendations';
+import { TrendingVehicles } from '@/components/landing/TrendingVehicles';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 import { Button } from '@/components/ui/button';
 import { routes } from '@/lib/urls';
-import { useVehicles } from '@/hooks/useVehicles';
 import { useEffect, useState } from 'react';
 import { AIResultsLoader } from '@/components/vehicles/AIResultsLoader';
 import { AIPodium } from '@/components/vehicles/AIPodium';
@@ -14,19 +13,17 @@ import { useSearchParams } from 'next/navigation';
 export default function HomePage() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
-  const { vehicles: recommendedVehicles, loading, error } = useVehicles({ 
-    recommended: true, 
-    limit: 3 
-  });
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiResults, setAiResults] = useState<any[] | null>(null);
 
   useEffect(() => {
     const run = async () => {
+      console.log('Query changed:', query);
       if (!query) {
         setAiResults(null);
         return;
       }
+      console.log('Starting AI search for:', query);
       setLoadingAI(true);
       setAiResults(null);
       try {
@@ -36,9 +33,10 @@ export default function HomePage() {
           body: JSON.stringify({ prompt: query })
         });
         const data = await resp.json();
+        console.log('AI response:', data);
         setAiResults(data.results || []);
       } catch (e) {
-        console.error(e);
+        console.error('AI search error:', e);
         setAiResults([]);
       } finally {
         setLoadingAI(false);
@@ -70,8 +68,8 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Recommendations Section */}
-      <Recommendations vehicles={recommendedVehicles} loading={loading} error={error} />
+      {/* Trending Vehicles Section */}
+      <TrendingVehicles />
 
       {/* How It Works Section */}
       <HowItWorks />

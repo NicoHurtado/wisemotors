@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Brain, X, TrendingUp, AlertTriangle, CheckCircle, Star } from 'lucide-react';
+import { Brain, TrendingUp, AlertTriangle, CheckCircle, Star } from 'lucide-react';
 import { getIntelligentAnalysis } from '@/app/actions/compare/intelSummary';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface VehicleComparisonModalProps {
   isOpen: boolean;
@@ -53,6 +56,9 @@ export function VehicleComparisonModal({
   currentVehicle, 
   compareVehicle 
 }: VehicleComparisonModalProps) {
+  const router = useRouter();
+  const { user } = useAuth();
+  const { toggleFavorite, isFavorite } = useFavorites();
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis[]>([]);
   const [profileRecommendations, setProfileRecommendations] = useState<ProfileRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
@@ -114,6 +120,41 @@ export function VehicleComparisonModal({
     return `${vehicle.brand} ${vehicle.model}`;
   };
 
+  const handleFullComparison = async () => {
+    if (!user) {
+      // Si no está autenticado, redirigir al login
+      router.push('/login');
+      return;
+    }
+
+    try {
+      // Agregar ambos vehículos a favoritos si no están ya
+      const isCurrentFavorite = isFavorite(currentVehicle.id);
+      const isCompareFavorite = isFavorite(compareVehicle.id);
+
+      if (!isCurrentFavorite) {
+        await toggleFavorite(currentVehicle.id);
+      }
+      
+      if (!isCompareFavorite) {
+        await toggleFavorite(compareVehicle.id);
+      }
+
+      // Cerrar el modal
+      onClose();
+
+      // Redirigir a la página de comparación con un pequeño delay para que se actualicen los favoritos
+      setTimeout(() => {
+        router.push('/compare');
+      }, 500);
+
+    } catch (error) {
+      console.error('Error adding vehicles to favorites:', error);
+      // Si hay error, al menos redirigir a comparación
+      router.push('/compare');
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -124,14 +165,6 @@ export function VehicleComparisonModal({
             <Brain className="w-6 h-6 text-wise" />
             Comparación Inteligente: {getVehicleDisplayName(currentVehicle)} vs {getVehicleDisplayName(compareVehicle)}
           </DialogTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="absolute right-4 top-4"
-          >
-            <X className="w-4 h-4" />
-          </Button>
         </DialogHeader>
 
         {loading && (
@@ -357,25 +390,36 @@ export function VehicleComparisonModal({
                 </div>
               </CardContent>
             </Card>
+
+            {/* Botones de Acción - Solo se muestran cuando la comparación está lista */}
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button variant="outline" onClick={onClose}>
+                Cerrar
+              </Button>
+              <Button 
+                variant="wise" 
+                onClick={handleFullComparison}
+              >
+                Comparación Completa
+              </Button>
+            </div>
           </div>
         )}
 
-        {/* Botones de Acción */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button variant="outline" onClick={onClose}>
-            Cerrar
-          </Button>
-          <Button 
-            variant="wise" 
-            onClick={() => window.open(`/compare`, '_blank')}
-          >
-            Comparación Completa
-          </Button>
-        </div>
+        {/* Botón de Cerrar - Solo se muestra durante loading o error */}
+        {(loading || error) && (
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button variant="outline" onClick={onClose}>
+              Cerrar
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
 }
+
+
 
 
 

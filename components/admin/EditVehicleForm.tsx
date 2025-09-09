@@ -7,6 +7,7 @@ import { VehicleSpecificationsForm } from './VehicleSpecificationsForm';
 import { VehicleFeaturesForm } from './VehicleFeaturesForm';
 import { VehicleEngineForm } from './VehicleEngineForm';
 import { WiseMetricsForm } from './WiseMetricsForm';
+import { ImageUpload } from './ImageUpload';
 
 interface Dealer {
   id: string;
@@ -33,6 +34,12 @@ interface Vehicle {
       name: string;
     };
   }>;
+  images?: Array<{
+    id: string;
+    url: string;
+    type: string;
+    order: number;
+  }>;
 }
 
 interface EditVehicleFormProps {
@@ -46,6 +53,9 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
   const [dealers, setDealerships] = useState<Dealer[]>([]);
   const [selectedDealers, setSelectedDealers] = useState<string[]>([]);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [coverImage, setCoverImage] = useState<string>('');
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [thumbnailIndex, setThumbnailIndex] = useState<number>(0);
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -268,6 +278,27 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           if (vehicleData.vehicleDealers) {
             setSelectedDealers(vehicleData.vehicleDealers.map((vd: any) => vd.dealerId));
           }
+
+          // Llenar imágenes
+          if (vehicleData.images) {
+            const coverImg = vehicleData.images.find((img: any) => img.type === 'cover');
+            const galleryImgs = vehicleData.images
+              .filter((img: any) => img.type === 'gallery')
+              .sort((a: any, b: any) => a.order - b.order)
+              .map((img: any) => img.url);
+            
+            // Encontrar el índice de la imagen miniatura
+            const thumbnailImg = vehicleData.images.find((img: any) => img.isThumbnail);
+            const thumbnailIdx = thumbnailImg ? 
+              vehicleData.images
+                .filter((img: any) => img.type === 'gallery')
+                .sort((a: any, b: any) => a.order - b.order)
+                .findIndex((img: any) => img.id === thumbnailImg.id) : 0;
+            
+            setCoverImage(coverImg?.url || '');
+            setGalleryImages(galleryImgs);
+            setThumbnailIndex(thumbnailIdx >= 0 ? thumbnailIdx : 0);
+          }
         }
 
         // Cargar concesionarios
@@ -328,6 +359,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
       // Añadir wisemetrics a las especificaciones (por si acaso)
       if (formData.specifications.wisemetrics) {
         cleanSpecifications.wisemetrics = formData.specifications.wisemetrics;
+      }
 
       const vehicleData = {
         brand: formData.brand,
@@ -341,7 +373,10 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
         wiseCategories: formData.wiseCategories || '',
         status: formData.status,
         specifications: cleanSpecifications,
-        dealerIds: selectedDealers
+        dealerIds: selectedDealers,
+        coverImage,
+        galleryImages,
+        thumbnailIndex
       };
 
 
@@ -422,6 +457,38 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8">
+      {/* Foto de Portada */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+          <Car className="w-5 h-5 mr-2 text-wise" />
+          Foto de Portada
+        </h2>
+        <ImageUpload
+          images={coverImage ? [coverImage] : []}
+          onImagesChange={(images) => setCoverImage(images[0] || '')}
+          maxImages={1}
+          type="cover"
+          label="Selecciona la foto principal del vehículo"
+        />
+      </div>
+
+      {/* Galería de Fotos */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+          <Car className="w-5 h-5 mr-2 text-wise" />
+          Galería de Fotos
+        </h2>
+        <ImageUpload
+          images={galleryImages}
+          onImagesChange={setGalleryImages}
+          maxImages={10}
+          type="gallery"
+          label="Sube fotos adicionales para la galería del vehículo"
+          thumbnailIndex={thumbnailIndex}
+          onThumbnailChange={setThumbnailIndex}
+        />
+      </div>
+
       {/* Información Básica */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">

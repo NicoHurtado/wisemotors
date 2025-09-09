@@ -109,8 +109,8 @@ export async function PUT(
       );
     }
     
-    // Extraer dealerIds si están presentes
-    const { dealerIds, ...vehicleData } = validatedData;
+    // Extraer dealerIds e imágenes si están presentes
+    const { dealerIds, coverImage, galleryImages, thumbnailIndex, ...vehicleData } = validatedData;
     
     // Asegurar que specifications se guarde como string
     if (vehicleData.specifications && typeof vehicleData.specifications === 'object') {
@@ -129,21 +129,22 @@ export async function PUT(
     }
     
     
-    // Actualizar vehículo con transacción si hay cambios en dealers
-    if (dealerIds) {
-      await prisma.$transaction(async (tx) => {
-        // 1. Eliminar relaciones existentes
+    // Actualizar vehículo con transacción
+    await prisma.$transaction(async (tx) => {
+      // 1. Actualizar vehículo
+      await tx.vehicle.update({
+        where: { id: params.id },
+        data: vehicleData
+      });
+      
+      // 2. Manejar relaciones con dealers si están presentes
+      if (dealerIds !== undefined) {
+        // Eliminar relaciones existentes
         await tx.vehicleDealer.deleteMany({
           where: { vehicleId: params.id }
         });
         
-        // 2. Actualizar vehículo
-        await tx.vehicle.update({
-          where: { id: params.id },
-          data: vehicleData
-        });
-        
-        // 3. Crear nuevas relaciones
+        // Crear nuevas relaciones
         if (dealerIds.length > 0) {
           const vehicleDealers = dealerIds.map(dealerId => ({
             vehicleId: params.id,
@@ -154,14 +155,48 @@ export async function PUT(
             data: vehicleDealers
           });
         }
-      });
-    } else {
-      // Solo actualizar vehículo
-      await prisma.vehicle.update({
-        where: { id: params.id },
-        data: vehicleData
-      });
-    }
+      }
+      
+      // 3. Manejar imágenes si están presentes
+      if (coverImage !== undefined || galleryImages !== undefined) {
+        // Eliminar imágenes existentes
+        await tx.vehicleImage.deleteMany({
+          where: { vehicleId: params.id }
+        });
+        
+        // Crear nuevas imágenes
+        const imagesToCreate = [];
+        
+        // Imagen de portada
+        if (coverImage) {
+          imagesToCreate.push({
+            vehicleId: params.id,
+            url: coverImage,
+            type: 'cover',
+            order: 0
+          });
+        }
+        
+        // Imágenes de galería
+        if (galleryImages && galleryImages.length > 0) {
+          galleryImages.forEach((imageUrl, index) => {
+            imagesToCreate.push({
+              vehicleId: params.id,
+              url: imageUrl,
+              type: 'gallery',
+              order: index + 1,
+              isThumbnail: thumbnailIndex === index
+            });
+          });
+        }
+        
+        if (imagesToCreate.length > 0) {
+          await tx.vehicleImage.createMany({
+            data: imagesToCreate
+          });
+        }
+      }
+    });
     
     // Retornar vehículo actualizado
     const updatedVehicle = await prisma.vehicle.findUnique({

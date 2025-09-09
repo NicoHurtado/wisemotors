@@ -38,12 +38,10 @@ export function HeroSearch({ initialQuery, showFilters = false }: HeroSearchProp
   const [placeholder, setPlaceholder] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
-  // Pre-fill input if query param exists in URL
+  // Sync query with URL params and initialQuery
   useEffect(() => {
-    const urlQuery = searchParams.get('q');
-    if (urlQuery && !initialQuery) {
-      setQuery(urlQuery);
-    }
+    const urlQuery = searchParams.get('q') || initialQuery || '';
+    setQuery(urlQuery);
   }, [searchParams, initialQuery]);
 
   // Typing effect for example prompts
@@ -135,10 +133,12 @@ export function HeroSearch({ initialQuery, showFilters = false }: HeroSearchProp
   };
 
   const handleFilterClick = (newQuery: string) => {
+    console.log('Filter clicked:', newQuery);
     setQuery(newQuery);
     // Trigger search immediately with the new query
     const params = new URLSearchParams(searchParams.toString());
     params.set('q', newQuery.trim());
+    console.log('Navigating to:', `/?${params.toString()}`);
     router.push(`/?${params.toString()}`);
   };
 

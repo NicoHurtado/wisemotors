@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Heart } from 'lucide-react';
 import { VehicleCard as VehicleCardType } from '@/lib/types';
 import { formatPrice, getFuelLabel, getCategoryLabel } from '@/lib/utils';
+import { useVehicleImage } from '@/lib/utils/imageUtils';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PhotoCarousel } from '@/components/ui/PhotoCarousel';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -31,65 +33,81 @@ export function VehicleCard({
   // Usar el estado interno de favoritos si no se proporciona externamente
   const isFav = externalIsFavorite !== undefined ? externalIsFavorite : isFavorite(vehicle.id);
   
-  const handleFavoriteClick = async () => {
-    console.log('VehicleCard: handleFavoriteClick called for vehicle:', vehicle.id);
-    console.log('VehicleCard: Current user:', user);
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    // Prevenir que el click en favoritos abra el detalle del vehículo
+    e.stopPropagation();
     
     if (!user) {
-      console.log('VehicleCard: No user, redirecting to login');
       // Redirigir al login si no está autenticado
       router.push('/login');
       return;
     }
 
     try {
-      console.log('VehicleCard: User authenticated, toggling favorite');
       if (externalOnToggleFavorite) {
         // Si se proporciona un handler externo, usarlo
-        console.log('VehicleCard: Using external handler');
         externalOnToggleFavorite(vehicle.id);
       } else {
         // Usar el hook interno
-        console.log('VehicleCard: Using internal hook');
         await toggleFavorite(vehicle.id);
-        console.log('VehicleCard: Favorite toggled successfully');
       }
     } catch (error) {
       console.error('VehicleCard: Error toggling favorite:', error);
-      // Aquí podrías mostrar un toast de error
     }
   };
 
-  const handleExploreClick = () => {
-    console.log('VehicleCard: handleExploreClick called with vehicle ID:', vehicle.id);
+  const handleCardClick = () => {
     if (onExplore) {
-      console.log('VehicleCard: Using onExplore prop');
       onExplore(vehicle.id);
     } else {
-      console.log('VehicleCard: Using default navigation to:', `/vehicles/${vehicle.id}`);
       // Navegación por defecto si no se proporciona onExplore
       router.push(`/vehicles/${vehicle.id}`);
     }
   };
 
+  const handleButtonClick = (e: React.MouseEvent) => {
+    // Prevenir que el click en el botón active también el click de la tarjeta
+    e.stopPropagation();
+    handleCardClick();
+  };
+
+  // Obtener solo las imágenes de galería (NO la portada)
+  const galleryImages = vehicle.images?.filter((img: any) => img.type === 'gallery') || [];
+  
+  // Buscar imagen miniatura entre las de galería
+  const thumbnailImage = galleryImages.find((img: any) => img.isThumbnail);
+  const otherGalleryImages = galleryImages.filter((img: any) => !img.isThumbnail);
+  
+  // Ordenar: miniatura primero, luego el resto por orden
+  const orderedGalleryImages = [
+    ...(thumbnailImage ? [thumbnailImage] : []),
+    ...otherGalleryImages.sort((a: any, b: any) => a.order - b.order)
+  ];
+  
+  // Obtener URLs de las imágenes ordenadas
+  const vehicleImages = orderedGalleryImages.map((img: any) => img.url);
+  
+  // Para el thumbnail estático, usar la miniatura o la primera de galería
+  const displayThumbnailUrl = thumbnailImage?.url || galleryImages[0]?.url || vehicle.imageUrl;
+  const displayThumbnail = useVehicleImage(displayThumbnailUrl, vehicle.brand, vehicle.model);
+  
+  // Si hay múltiples imágenes de galería, usar el carrusel, sino usar la imagen estática
+  const hasMultipleImages = vehicleImages.length > 1;
+  const displayImages = hasMultipleImages ? vehicleImages : [displayThumbnail];
+
   return (
-    <Card className="group overflow-hidden transition-all duration-300 hover:shadow-soft hover:-translate-y-1">
+    <Card 
+      className="group overflow-hidden transition-all duration-300 hover:shadow-soft hover:-translate-y-1 cursor-pointer"
+      onClick={handleCardClick}
+    >
       <div className="relative aspect-[4/3] overflow-hidden">
-        {vehicle.imageUrl ? (
-          <Image
-            src={vehicle.imageUrl}
-            alt={`${vehicle.brand} ${vehicle.model}`}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-muted">
-            <span className="text-muted-foreground text-sm">
-              Sin imagen
-            </span>
-          </div>
-        )}
+        <PhotoCarousel
+          images={displayImages}
+          alt={`${vehicle.brand} ${vehicle.model}`}
+          className="w-full h-full"
+          showNavigation={hasMultipleImages}
+          autoPlay={false}
+        />
         
         {/* Favorite button */}
         <button
@@ -133,7 +151,7 @@ export function VehicleCard({
 
       <CardFooter className="p-4 pt-0">
         <Button 
-          onClick={handleExploreClick}
+          onClick={handleButtonClick}
           className="w-full bg-wise hover:bg-wise-dark transition-colors"
         >
           Explorar Vehículo

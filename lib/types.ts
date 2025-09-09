@@ -8,6 +8,13 @@ export type VehicleCard = {
   imageUrl: string | null;
   category?: string; // "Deportivo", "SUV", etc.
   status?: 'NUEVO' | 'USADO';
+  images?: Array<{
+    id?: string;
+    url: string;
+    type: string;
+    order: number;
+    isThumbnail?: boolean;
+  }>;
 };
 
 export type VehicleDetail = VehicleCard & {

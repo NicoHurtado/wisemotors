@@ -64,24 +64,31 @@ export function SimilarVehicles({ vehicles, currentVehicle }: SimilarVehiclesPro
               className="bg-white rounded-2xl shadow-soft overflow-hidden hover:shadow-soft transition-shadow duration-300"
             >
               {/* Image */}
-              {vehicle.imageUrl ? (
-                <div className="aspect-[4/3] overflow-hidden">
-                  <img
-                    src={vehicle.imageUrl}
-                    alt={`${vehicle.brand} ${vehicle.model}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="aspect-[4/3] bg-gradient-to-br from-wise/5 to-wise/10 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-wise/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Car className="w-8 h-8 text-wise" />
-                    </div>
-                    <p className="text-gray-500 text-sm">Sin imagen</p>
+              {(() => {
+                // Buscar imagen miniatura, si no existe usar la primera de galería, NO la portada
+                const thumbnailImage = vehicle.images?.find((img: any) => img.isThumbnail)?.url ||
+                                      vehicle.images?.find((img: any) => img.type === 'gallery')?.url ||
+                                      vehicle.imageUrl;
+                
+                return thumbnailImage ? (
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <img
+                      src={thumbnailImage}
+                      alt={`${vehicle.brand} ${vehicle.model}`}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="aspect-[4/3] bg-gradient-to-br from-wise/5 to-wise/10 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-wise/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Car className="w-8 h-8 text-wise" />
+                      </div>
+                      <p className="text-gray-500 text-sm">Sin imagen</p>
+                    </div>
+                  </div>
+                );
+              })()}
               
               {/* Vehicle Details */}
               <div className="p-6 space-y-3">

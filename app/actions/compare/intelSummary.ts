@@ -1,10 +1,6 @@
 'use server';
 
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { getOptimizedComparison } from '@/lib/ai/comparison';
 
 interface VehicleSpecs {
   id: string;
@@ -36,167 +32,36 @@ export async function getIntelligentAnalysis(vehicles: VehicleSpecs[]): Promise<
   profileRecommendations: ProfileRecommendation[];
 }> {
   try {
-    // Crear un resumen detallado de cada vehículo para la IA
-    const vehicleSummaries = vehicles.map(vehicle => {
-      const specs = vehicle.specifications;
-      
-      // Extraer métricas clave
-      const performance = {
-        power: specs?.performance?.maxPower || specs?.combustion?.maxPower || specs?.hybrid?.maxPower || specs?.phev?.maxPower || 0,
-        torque: specs?.combustion?.maxTorque || specs?.hybrid?.maxTorque || specs?.phev?.maxTorque || 0,
-        acceleration: specs?.performance?.acceleration0to100 || 15,
-        maxSpeed: specs?.performance?.maxSpeed || 150,
-      };
-
-      const efficiency = {
-        cityConsumption: specs?.combustion?.cityConsumption || specs?.hybrid?.cityConsumption || specs?.phev?.cityConsumption || 0,
-        highwayConsumption: specs?.combustion?.highwayConsumption || specs?.hybrid?.highwayConsumption || specs?.phev?.highwayConsumption || 0,
-        electricRange: specs?.electric?.electricRange || specs?.phev?.electricRange || 0,
-      };
-
-      const features = {
-        safety: {
-          airbags: specs?.safety?.airbags || 0,
-          stabilityControl: specs?.safety?.stabilityControl || false,
-          laneAssist: specs?.safety?.laneAssist || false,
-        },
-        comfort: {
-          airConditioning: specs?.comfort?.airConditioning || false,
-          heatedSeats: specs?.comfort?.heatedSeats || false,
-          ventilatedSeats: specs?.comfort?.ventilatedSeats || false,
-        },
-        technology: {
-          bluetooth: specs?.technology?.bluetooth || false,
-          touchscreen: specs?.technology?.touchscreen || false,
-          navigation: specs?.technology?.navigation || false,
-        }
-      };
-
-      return {
-        id: vehicle.id,
-        brand: vehicle.brand,
-        model: vehicle.model,
-        year: vehicle.year,
-        price: vehicle.price,
-        fuelType: vehicle.fuelType,
-        type: vehicle.type,
-        performance,
-        efficiency,
-        features,
-        wisemetrics: specs?.wisemetrics || {}
-      };
-    });
-
-    // Prompt para análisis individual de cada vehículo
-    const individualAnalysisPrompt = `
-    Analiza este vehículo y proporciona:
-    1. 3-4 ventajas principales basadas en sus especificaciones reales
-    2. 2-3 desventajas o limitaciones reales
-    3. Una recomendación personalizada en una frase
-    4. Un score del 0-100 basado en relación calidad-precio y características
-
-    Vehículo: ${JSON.stringify(vehicleSummaries, null, 2)}
-
-    Responde en formato JSON:
-    {
-      "analysis": [
-        {
-          "vehicleId": "id",
-          "pros": ["ventaja1", "ventaja2", "ventaja3"],
-          "cons": ["desventaja1", "desventaja2"],
-          "recommendation": "recomendación personalizada",
-          "score": 85
-        }
-      ]
-    }
-    `;
-
-    // Prompt para recomendaciones por perfil
-    const profileRecommendationsPrompt = `
-    Basándote en estos vehículos, recomienda cuál es mejor para cada perfil de conductor:
-
-    Perfiles:
-    - Familiar: Prioriza espacio, seguridad, confort y practicidad
-    - Performance: Prioriza potencia, aceleración, manejo y deportividad
-    - Economía: Prioriza eficiencia, bajo consumo, mantenimiento y precio
-    - Tecnología: Prioriza features tecnológicos, seguridad avanzada e innovación
-
-    Vehículos: ${JSON.stringify(vehicleSummaries, null, 2)}
-
-    Responde en formato JSON:
-    {
-      "profileRecommendations": [
-        {
-          "profile": "Familiar",
-          "vehicle": "Marca Modelo",
-          "reason": "Razón específica basada en características reales"
-        }
-      ]
-    }
-    `;
-
-    // Llamar a OpenAI para análisis individual
-    const individualResponse = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: "Eres un experto en automóviles que analiza vehículos basándose en sus especificaciones técnicas reales. Sé objetivo, preciso y basado en datos."
-        },
-        {
-          role: "user",
-          content: individualAnalysisPrompt
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 2000
-    });
-
-    // Llamar a OpenAI para recomendaciones por perfil
-    const profileResponse = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: "Eres un asesor automotriz experto que recomienda vehículos según el perfil del conductor. Basa tus recomendaciones en las especificaciones reales de los vehículos."
-        },
-        {
-          role: "user",
-          content: profileRecommendationsPrompt
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 1500
-    });
-
-    // Parsear respuestas
-    let analysis: AIAnalysis[] = [];
-    let profileRecommendations: ProfileRecommendation[] = [];
-
-    try {
-      const individualData = JSON.parse(individualResponse.choices[0].message.content || '{}');
-      analysis = individualData.analysis || [];
-    } catch (error) {
-      console.error('Error parsing individual analysis:', error);
-      // Fallback a análisis básico
-      analysis = generateFallbackAnalysis(vehicles);
-    }
-
-    try {
-      const profileData = JSON.parse(profileResponse.choices[0].message.content || '{}');
-      profileRecommendations = profileData.profileRecommendations || [];
-    } catch (error) {
-      console.error('Error parsing profile recommendations:', error);
-      // Fallback a recomendaciones básicas
-      profileRecommendations = generateFallbackProfileRecommendations(vehicles);
-    }
-
-    return { analysis, profileRecommendations };
-
-  } catch (error) {
-    console.error('Error calling OpenAI:', error);
+    // Usar el nuevo sistema optimizado
+    const vehicleIds = vehicles.map(v => v.id);
+    const result = await getOptimizedComparison(vehicleIds);
     
-    // Fallback completo en caso de error
+    // Transformar el resultado al formato esperado
+    const analysis: AIAnalysis[] = result.analysis.summary.map(summary => ({
+      vehicleId: summary.vehicleId,
+      pros: summary.pros,
+      cons: summary.cons,
+      recommendation: summary.recommendation,
+      score: Math.max(0, Math.min(100, Math.round(summary.score * 100))) // Asegurar rango 0-100
+    }));
+    
+    console.log(`🚀 Comparación optimizada completada:`, {
+      vehicles: vehicleIds.length,
+      processingTime: `${result.meta.processingTime}ms`,
+      cacheHit: result.meta.cacheHit,
+      tokensUsed: result.meta.tokensUsed,
+      efficiency: result.meta.cacheHit ? 'CACHE' : `${result.meta.tokensUsed} tokens`
+    });
+    
+    return {
+      analysis,
+      profileRecommendations: result.profileRecommendations
+    };
+    
+  } catch (error) {
+    console.error('Error in optimized comparison:', error);
+    
+    // Fallback al análisis básico
     return {
       analysis: generateFallbackAnalysis(vehicles),
       profileRecommendations: generateFallbackProfileRecommendations(vehicles)
@@ -207,36 +72,88 @@ export async function getIntelligentAnalysis(vehicles: VehicleSpecs[]): Promise<
 // Función de fallback para análisis individual
 function generateFallbackAnalysis(vehicles: VehicleSpecs[]): AIAnalysis[] {
   return vehicles.map(vehicle => {
-    const specs = vehicle.specifications;
+    const pros: string[] = [];
+    const cons: string[] = [];
+    const specs = typeof vehicle.specifications === 'string' 
+      ? JSON.parse(vehicle.specifications || '{}') 
+      : (vehicle.specifications || {});
     
-    let pros: string[] = [];
-    let cons: string[] = [];
     let recommendation = '';
     let score = 70;
+    const priceMillions = Math.round(vehicle.price / 1000000);
 
+    // Análisis detallado por tipo de combustible
     if (vehicle.fuelType === 'Eléctrico') {
-      pros.push('Cero emisiones y bajo costo de operación');
-      pros.push('Aceleración instantánea y silencioso');
-      cons.push('Tiempo de carga más largo');
-      recommendation = 'Excelente opción para uso urbano y compromiso ambiental';
+      const range = specs.electric?.electricRange;
+      if (range && range > 400) {
+        pros.push(`Autonomía excepcional de ${range}km sin emisiones`);
+      } else {
+        pros.push('Operación 100% eléctrica con cero emisiones locales');
+      }
+      pros.push('Costos de operación mínimos y mantenimiento reducido');
+      pros.push('Aceleración instantánea y funcionamiento silencioso');
+      
+      if (range && range < 300) {
+        cons.push(`Autonomía limitada de ${range}km requiere planificación de viajes`);
+      } else {
+        cons.push('Red de carga rápida aún en desarrollo en Colombia');
+      }
+      cons.push(`Inversión inicial elevada de $${priceMillions}M`);
+      
+      recommendation = `Ideal para conductores urbanos comprometidos con el medio ambiente y dispuestos a invertir $${priceMillions}M en tecnología de vanguardia`;
       score = 85;
+      
     } else if (vehicle.fuelType === 'Híbrido') {
-      pros.push('Eficiencia combinada gasolina-eléctrico');
-      pros.push('Menor consumo en ciudad');
-      cons.push('Precio inicial más alto');
-      recommendation = 'Ideal para conductores que buscan eficiencia sin compromisos';
+      const consumption = specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption;
+      if (consumption && consumption < 6) {
+        pros.push(`Consumo excepcional de ${consumption}L/100km en ciudad`);
+      } else {
+        pros.push('Eficiencia superior combinando motor eléctrico y gasolina');
+      }
+      pros.push('Transición automática entre modos de propulsión');
+      pros.push('Recarga regenerativa en frenadas y desaceleraciones');
+      
+      cons.push('Complejidad mecánica dual requiere mantenimiento especializado');
+      cons.push(`Sobreprecio híbrido incrementa inversión inicial`);
+      
+      if (consumption) {
+        recommendation = `Perfecto equilibrio para uso mixto: ${consumption}L/100km en ciudad con la confiabilidad de motor convencional de respaldo`;
+      } else {
+        recommendation = 'Excelente opción para conductores que buscan eficiencia sin limitaciones de autonomía';
+      }
       score = 78;
+      
     } else {
-      pros.push('Rendimiento probado y confiable');
-      pros.push('Fácil mantenimiento y repuestos');
-      cons.push('Mayor consumo de combustible');
-      recommendation = 'Opción tradicional confiable para uso diario';
+      // Gasolina
+      const power = specs.performance?.maxPower || specs.combustion?.maxPower;
+      const consumption = specs.combustion?.cityConsumption;
+      
+      if (power && power > 300) {
+        pros.push(`Potencia robusta de ${power}hp para rendimiento deportivo`);
+      } else {
+        pros.push('Motor de combustión probado y confiable');
+      }
+      pros.push('Red de servicio amplia y repuestos accesibles');
+      pros.push(`Precio competitivo de $${priceMillions}M en su segmento`);
+      
+      if (consumption && consumption > 10) {
+        cons.push(`Consumo elevado de ${consumption}L/100km aumenta costos operativos`);
+      } else {
+        cons.push('Dependencia de combustibles fósiles con precios variables');
+      }
+      cons.push('Emisiones contaminantes impactan huella de carbono');
+      
+      if (consumption) {
+        recommendation = `Opción tradicional sólida: $${priceMillions}M con ${consumption}L/100km y mantenimiento predecible`;
+      } else {
+        recommendation = `Alternativa confiable y accesible para conductores que priorizan simplicidad mecánica`;
+      }
       score = 72;
     }
 
     return {
       vehicleId: vehicle.id,
-      pros: pros.slice(0, 4),
+      pros: pros.slice(0, 3),
       cons: cons.slice(0, 3),
       recommendation,
       score: Math.max(0, Math.min(100, score))
@@ -246,39 +163,155 @@ function generateFallbackAnalysis(vehicles: VehicleSpecs[]): AIAnalysis[] {
 
 // Función de fallback para recomendaciones por perfil
 function generateFallbackProfileRecommendations(vehicles: VehicleSpecs[]): ProfileRecommendation[] {
-  const profiles = [
-    { profile: 'Familiar', icon: '👥' },
-    { profile: 'Performance', icon: '🚀' },
-    { profile: 'Economía', icon: '💰' },
-    { profile: 'Tecnología', icon: '📱' }
-  ];
-
-  return profiles.map(profile => {
-    // Lógica básica de selección
-    let bestVehicle = vehicles[0];
-    
-    if (profile.profile === 'Performance') {
-      bestVehicle = vehicles.find(v => v.type === 'Deportivo') || vehicles[0];
-    } else if (profile.profile === 'Economía') {
-      bestVehicle = vehicles.reduce((best, current) => 
-        current.price < best.price ? current : best
-      );
-    } else if (profile.profile === 'Tecnología') {
-      bestVehicle = vehicles.find(v => v.specifications?.technology) || vehicles[0];
-    }
-
-    return {
-      profile: profile.profile,
-      vehicle: `${bestVehicle.brand} ${bestVehicle.model}`,
-      reason: `Seleccionado por características que se adaptan al perfil ${profile.profile}`
-    };
+  const recommendations: ProfileRecommendation[] = [];
+  
+  // Familiar: Priorizar SUV/Sedán, evitar deportivos
+  const familyBest = vehicles.reduce((best, current) => {
+    const currentScore = calculateFamilyScore(current);
+    const bestScore = calculateFamilyScore(best);
+    return currentScore > bestScore ? current : best;
   });
+  
+  recommendations.push({
+    profile: 'Familiar',
+    vehicle: `${familyBest.brand} ${familyBest.model}`,
+    reason: getFamilyReason(familyBest)
+  });
+  
+  // Económico: Priorizar eficiencia y precio bajo, penalizar deportivos caros
+  const economicBest = vehicles.reduce((best, current) => {
+    const currentScore = calculateEconomicScore(current);
+    const bestScore = calculateEconomicScore(best);
+    return currentScore > bestScore ? current : best;
+  });
+  
+  recommendations.push({
+    profile: 'Económico',
+    vehicle: `${economicBest.brand} ${economicBest.model}`,
+    reason: getEconomicReason(economicBest)
+  });
+  
+  return recommendations;
 }
 
+function calculateFamilyScore(vehicle: VehicleSpecs): number {
+  let score = 0;
+  
+  // Bonus por tipo familiar
+  if (vehicle.type === 'SUV') score += 0.4;
+  else if (vehicle.type === 'Sedán') score += 0.3;
+  else if (vehicle.type === 'Hatchback') score += 0.2;
+  else if (vehicle.type === 'Deportivo') score -= 0.3; // Penalización
+  
+  // Bonus por características familiares
+  if (vehicle.fuelType === 'Híbrido') score += 0.1; // Eficiente para familias
+  if (vehicle.price < 200000000) score += 0.1; // Precio razonable
+  
+  return Math.max(0, score);
+}
 
+function calculateEconomicScore(vehicle: VehicleSpecs): number {
+  let score = 0;
+  
+  // Bonus por tipo económico
+  if (vehicle.type === 'Hatchback') score += 0.3;
+  else if (vehicle.type === 'Sedán') score += 0.2;
+  else if (vehicle.type === 'Deportivo') score -= 0.4; // Penalización fuerte
+  
+  // Bonus por combustible eficiente
+  if (vehicle.fuelType === 'Híbrido') score += 0.3;
+  else if (vehicle.fuelType === 'Eléctrico') score += 0.2;
+  
+  // Penalizar precios muy altos
+  if (vehicle.price > 200000000) score -= 0.3;
+  else if (vehicle.price < 150000000) score += 0.2;
+  
+  return Math.max(0, score);
+}
 
+function getFamilyReason(vehicle: VehicleSpecs): string {
+  const reasons = [];
+  const specs = typeof vehicle.specifications === 'string' 
+    ? JSON.parse(vehicle.specifications || '{}') 
+    : (vehicle.specifications || {});
+  
+  // Razones específicas por tipo
+  if (vehicle.type === 'SUV') {
+    reasons.push('espacio familiar amplio');
+    if (specs.chassis?.groundClearance > 0.15) reasons.push('capacidad todoterreno');
+  } else if (vehicle.type === 'Sedán') {
+    reasons.push('confort en viajes largos');
+    if (vehicle.year >= 2020) reasons.push('tecnología moderna');
+  }
+  
+  // Razones por características de seguridad
+  if (specs.safety?.airbags >= 6) reasons.push(specs.safety.airbags + ' airbags');
+  if (specs.safety?.stabilityControl) reasons.push('control de estabilidad avanzado');
+  
+  // Razones por precio y practicidad
+  if (vehicle.price < 200000000) reasons.push('precio familiar accesible');
+  if (vehicle.fuelType === 'Híbrido') reasons.push('eficiencia para uso diario');
+  
+  // Construir frase dinámica
+  if (reasons.length >= 3) {
+    return `Ideal por su ${reasons.slice(0, 2).join(', ')} y ${reasons[2]}`;
+  } else if (reasons.length === 2) {
+    return `Combina ${reasons[0]} con ${reasons[1]}`;
+  } else if (reasons.length === 1) {
+    return `Destacado por su ${reasons[0]}`;
+  } else {
+    return 'Mejor opción familiar disponible';
+  }
+}
 
-
-
-
-
+function getEconomicReason(vehicle: VehicleSpecs): string {
+  const reasons = [];
+  const specs = typeof vehicle.specifications === 'string' 
+    ? JSON.parse(vehicle.specifications || '{}') 
+    : (vehicle.specifications || {});
+  
+  // Razones específicas por combustible
+  if (vehicle.fuelType === 'Híbrido') {
+    const consumption = specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption;
+    if (consumption && consumption < 6) {
+      reasons.push(`consumo de solo ${consumption}L/100km`);
+    } else {
+      reasons.push('tecnología híbrida económica');
+    }
+  } else if (vehicle.fuelType === 'Eléctrico') {
+    reasons.push('cero gastos de combustible');
+    if (specs.electric?.electricRange > 300) {
+      reasons.push(`${specs.electric.electricRange}km de autonomía`);
+    }
+  } else {
+    const consumption = specs.combustion?.cityConsumption;
+    if (consumption && consumption < 8) {
+      reasons.push(`consumo eficiente de ${consumption}L/100km`);
+    }
+  }
+  
+  // Razones por precio
+  const priceMillions = Math.round(vehicle.price / 1000000);
+  if (vehicle.price < 100000000) {
+    reasons.push(`precio accesible de $${priceMillions}M`);
+  } else if (vehicle.price < 150000000) {
+    reasons.push('excelente relación precio-calidad');
+  }
+  
+  // Razones por marca y mantenimiento
+  const economicBrands = ['Honda', 'Toyota', 'Nissan', 'Hyundai', 'Kia'];
+  if (economicBrands.includes(vehicle.brand)) {
+    reasons.push('mantenimiento económico ' + vehicle.brand);
+  }
+  
+  // Construir frase dinámica
+  if (reasons.length >= 3) {
+    return `Económico por su ${reasons.slice(0, 2).join(', ')} y ${reasons[2]}`;
+  } else if (reasons.length === 2) {
+    return `Combina ${reasons[0]} con ${reasons[1]}`;
+  } else if (reasons.length === 1) {
+    return `Destacado por su ${reasons[0]}`;
+  } else {
+    return 'Mejor valor económico de la comparación';
+  }
+}

@@ -76,17 +76,24 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       console.log('FavoritesContext: Fetched data:', data);
       
       // Transformar datos al formato esperado
-      const transformedFavorites: FavoriteVehicle[] = data.favorites.map((fav: any) => ({
-        id: fav.vehicle.id,
-        brand: fav.vehicle.brand,
-        model: fav.vehicle.model,
-        year: fav.vehicle.year,
-        price: fav.vehicle.price,
-        fuelType: fav.vehicle.fuelType,
-        type: fav.vehicle.type,
-        imageUrl: fav.vehicle.images?.[0]?.url || null,
-        specifications: fav.vehicle.specifications
-      }));
+      const transformedFavorites: FavoriteVehicle[] = data.favorites.map((fav: any) => {
+        // Buscar imagen miniatura, si no existe usar la primera de galería, NO la portada
+        const thumbnailImage = fav.vehicle.images?.find((img: any) => img.isThumbnail)?.url ||
+                              fav.vehicle.images?.find((img: any) => img.type === 'gallery')?.url ||
+                              fav.vehicle.images?.[0]?.url || null;
+        
+        return {
+          id: fav.vehicle.id,
+          brand: fav.vehicle.brand,
+          model: fav.vehicle.model,
+          year: fav.vehicle.year,
+          price: fav.vehicle.price,
+          fuelType: fav.vehicle.fuelType,
+          type: fav.vehicle.type,
+          imageUrl: thumbnailImage,
+          specifications: fav.vehicle.specifications
+        };
+      });
 
       console.log('FavoritesContext: Transformed favorites:', transformedFavorites);
       setFavorites(transformedFavorites);
@@ -129,6 +136,12 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
 
       // Actualizar estado local inmediatamente
       const newFavorite = result.favorite;
+      
+      // Buscar imagen miniatura, si no existe usar la primera de galería, NO la portada
+      const thumbnailImage = newFavorite.vehicle.images?.find((img: any) => img.isThumbnail)?.url ||
+                            newFavorite.vehicle.images?.find((img: any) => img.type === 'gallery')?.url ||
+                            newFavorite.vehicle.images?.[0]?.url || null;
+      
       setFavorites(prev => [...prev, {
         id: newFavorite.vehicle.id,
         brand: newFavorite.vehicle.brand,
@@ -137,7 +150,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         price: newFavorite.vehicle.price,
         fuelType: newFavorite.vehicle.fuelType,
         type: newFavorite.vehicle.type,
-        imageUrl: newFavorite.vehicle.images?.[0]?.url || null,
+        imageUrl: thumbnailImage,
         specifications: newFavorite.vehicle.specifications
       }]);
 

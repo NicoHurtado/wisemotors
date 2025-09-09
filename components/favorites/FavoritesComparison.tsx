@@ -9,7 +9,7 @@ import Link from 'next/link';
 
 export function FavoritesComparison() {
   const { user } = useAuth();
-  const { favorites, loading, error } = useFavorites();
+  const { favorites, loading, error, removeFromFavorites } = useFavorites();
 
   if (!user) {
     return (
@@ -111,7 +111,7 @@ export function FavoritesComparison() {
               }}
               isFavorite={true}
               onExplore={(id) => window.location.href = `/vehicles/${id}`}
-              onToggleFavorite={() => {}} // No permitir quitar desde aquí
+              onToggleFavorite={removeFromFavorites}
             />
           ))}
         </div>

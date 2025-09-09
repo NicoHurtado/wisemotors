@@ -22,7 +22,8 @@ import {
   TrendingUp,
   Zap,
   Shield,
-  Smartphone
+  Smartphone,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -30,7 +31,7 @@ type ViewType = 'cards' | 'tables' | 'radar' | 'intelligence';
 
 export default function ComparePage() {
   const { user } = useAuth();
-  const { favorites, loading } = useFavorites();
+  const { favorites, loading, toggleFavorite } = useFavorites();
   const [selectedVehicles, setSelectedVehicles] = useState<string[]>([]);
   const [currentView, setCurrentView] = useState<ViewType>('cards');
 
@@ -54,6 +55,7 @@ export default function ComparePage() {
       return prev;
     });
   };
+
 
   const getSelectedVehiclesData = () => {
     return favorites.filter(v => selectedVehicles.includes(v.id));
@@ -165,20 +167,21 @@ export default function ComparePage() {
               {favorites.map((vehicle) => (
                 <div
                   key={vehicle.id}
-                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all ${
                     selectedVehicles.includes(vehicle.id)
                       ? 'border-wise bg-wise/5'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                   onClick={() => handleVehicleToggle(vehicle.id)}
                 >
+
                   <div className="flex items-start gap-3">
                     <Checkbox
                       checked={selectedVehicles.includes(vehicle.id)}
                       onChange={() => handleVehicleToggle(vehicle.id)}
                       className="mt-1"
                     />
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 pr-8">
                       <div className="font-semibold text-gray-900 truncate">
                         {vehicle.brand} {vehicle.model}
                       </div>

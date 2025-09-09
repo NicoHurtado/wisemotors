@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Car, Building2 } from 'lucide-react';
+import { Plus, Car, Building2, Star, Settings } from 'lucide-react';
 import { VehiclesTable } from './VehiclesTable';
 import { DealershipsTable } from './DealershipsTable';
+import { TrendingManagement } from './TrendingManagement';
 
-type TabType = 'vehicles' | 'dealerships';
+type TabType = 'vehicles' | 'dealerships' | 'trending';
 
 export function AdminDashboard() {
   const router = useRouter();
@@ -68,6 +69,17 @@ export function AdminDashboard() {
               <Building2 className="w-4 h-4 inline mr-2" />
               Concesionarios
             </button>
+            <button
+              onClick={() => setActiveTab('trending')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'trending'
+                  ? 'border-wise text-wise'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Star className="w-4 h-4 inline mr-2" />
+              Trending
+            </button>
           </nav>
         </div>
 
@@ -75,8 +87,12 @@ export function AdminDashboard() {
         <div className="bg-white rounded-lg shadow">
           {activeTab === 'vehicles' ? (
             <VehiclesTable />
-          ) : (
+          ) : activeTab === 'dealerships' ? (
             <DealershipsTable />
+          ) : (
+            <div className="p-6">
+              <TrendingManagement onClose={() => setActiveTab('vehicles')} />
+            </div>
           )}
         </div>
       </div>

@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
 interface FilterButtonsProps {
@@ -22,15 +20,9 @@ const filterOptions = [
 ];
 
 export function FilterButtons({ currentQuery, onFilterClick }: FilterButtonsProps) {
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleFilterClick = async (modifier: string) => {
-    if (isLoading) return;
-    
-    setIsLoading(true);
+  const handleFilterClick = (modifier: string) => {
     const newQuery = `${currentQuery} ${modifier}`;
     onFilterClick(newQuery);
-    setIsLoading(false);
   };
 
   return (
@@ -44,7 +36,6 @@ export function FilterButtons({ currentQuery, onFilterClick }: FilterButtonsProp
           <Button
             key={option.label}
             onClick={() => handleFilterClick(option.modifier)}
-            disabled={isLoading}
             variant="outline"
             size="sm"
             className="text-sm px-4 py-2 border-gray-300 text-gray-700 hover:border-wise hover:text-wise hover:bg-wise/5 transition-all duration-200"

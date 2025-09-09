@@ -159,8 +159,8 @@ export async function POST(request: NextRequest) {
     // Validar datos de entrada
     const validatedData = vehicleSchema.parse(body);
     
-    // Extraer dealerIds del payload
-    const { dealerIds, ...vehicleData } = validatedData;
+    // Extraer dealerIds e imágenes del payload
+    const { dealerIds, coverImage, galleryImages, thumbnailIndex, ...vehicleData } = validatedData;
     
     // Convertir specifications a string para la base de datos
     const vehicleDataForDB = {
@@ -184,6 +184,38 @@ export async function POST(request: NextRequest) {
         
         await tx.vehicleDealer.createMany({
           data: vehicleDealers
+        });
+      }
+
+      // 3. Crear las imágenes
+      const imagesToCreate = [];
+      
+      // Imagen de portada
+      if (coverImage) {
+        imagesToCreate.push({
+          vehicleId: vehicle.id,
+          url: coverImage,
+          type: 'cover',
+          order: 0
+        });
+      }
+      
+      // Imágenes de galería
+      if (galleryImages && galleryImages.length > 0) {
+        galleryImages.forEach((imageUrl, index) => {
+          imagesToCreate.push({
+            vehicleId: vehicle.id,
+            url: imageUrl,
+            type: 'gallery',
+            order: index + 1,
+            isThumbnail: thumbnailIndex === index
+          });
+        });
+      }
+      
+      if (imagesToCreate.length > 0) {
+        await tx.vehicleImage.createMany({
+          data: imagesToCreate
         });
       }
       
