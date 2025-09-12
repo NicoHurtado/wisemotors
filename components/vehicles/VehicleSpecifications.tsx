@@ -30,6 +30,37 @@ export function VehicleSpecifications({ vehicle }: VehicleSpecificationsProps) {
     }
   };
 
+  // WhatsApp helpers
+  const WHATSAPP_PHONE = '573103818615';
+
+  const buildWhatsAppUrl = (message: string) => {
+    const encoded = encodeURIComponent(message);
+    return `https://wa.me/${WHATSAPP_PHONE}?text=${encoded}`;
+  };
+
+  const getEffectiveUserName = (): string | null => {
+    if (user?.username) return user.username;
+    const name = window.prompt('Para continuar, por favor ingresa tu nombre');
+    if (name === null) return null; // cancel
+    const trimmed = name.trim();
+    return trimmed.length > 0 ? trimmed : 'Cliente';
+  };
+
+  const handleContactDealership = (dealership?: { name: string; location?: string }) => {
+    const name = getEffectiveUserName();
+    if (!name) return; // user cancelled
+    const vehicleLabel = `${vehicle.brand || ''} ${vehicle.model || ''}`.trim();
+    let message = '';
+    if (dealership) {
+      const locationSuffix = dealership.location ? ` (${dealership.location})` : '';
+      message = `Hola, me interesa el vehículo ${vehicleLabel}. Mi nombre es ${name} y quiero atención en el concesionario ${dealership.name}${locationSuffix}.`;
+    } else {
+      message = `Hola, me interesa el vehículo ${vehicleLabel}. Mi nombre es ${name} y no tengo preferencia de concesionario, ayúdame a escoger uno.`;
+    }
+    const url = buildWhatsAppUrl(message);
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="w-full">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -130,11 +161,20 @@ export function VehicleSpecifications({ vehicle }: VehicleSpecificationsProps) {
                       <p className="text-sm text-gray-600">{dealership.location}</p>
                     </div>
                   </div>
-                  <button className="px-4 py-2 bg-wise text-white rounded-lg hover:bg-wise-dark transition-colors text-sm">
+                  <button
+                    className="px-4 py-2 bg-wise text-white rounded-lg hover:bg-wise-dark transition-colors text-sm"
+                    onClick={() => handleContactDealership({ name: dealership.name, location: dealership.location })}
+                  >
                     Agendar aquí
                   </button>
                 </div>
               ))}
+              <button
+                className="w-full px-4 py-2 bg-wise/10 text-wise border border-wise/30 rounded-lg hover:bg-wise/20 transition-colors text-sm"
+                onClick={() => handleContactDealership(undefined)}
+              >
+                Cualquier concesionario
+              </button>
             </div>
           </div>
         </div>
