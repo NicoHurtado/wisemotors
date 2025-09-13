@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { routes } from '@/lib/urls';
 import { useEffect, useState } from 'react';
 import { AIResultsLoader } from '@/components/vehicles/AIResultsLoader';
-import { AIPodium } from '@/components/vehicles/AIPodium';
+import { AdaptiveResults } from '@/components/vehicles/AdaptiveResults';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FilterButtons } from '@/components/landing/FilterButtons';
 
@@ -36,7 +36,7 @@ export default function HomePage() {
         });
         const data = await resp.json();
         console.log('AI response:', data);
-        setAiResults(data.results || []);
+        setAiResults(data.results || data);
       } catch (e) {
         console.error('AI search error:', e);
         setAiResults([]);
@@ -63,20 +63,16 @@ export default function HomePage() {
         <section className="py-6">
           <div className="container mx-auto px-4">
             {loadingAI && <AIResultsLoader />}
-            {!loadingAI && aiResults && aiResults.length > 0 && (
-              <>
-                <AIPodium results={aiResults as any} />
-                <div className="mt-8">
-                  <FilterButtons
-                    currentQuery={query}
-                    onFilterClick={(newQuery: string) => {
-                      router.push(`/?q=${encodeURIComponent(newQuery)}`);
-                    }}
-                  />
-                </div>
-              </>
+            {!loadingAI && aiResults && (aiResults.total_matches > 0 || (Array.isArray(aiResults) && aiResults.length > 0)) && (
+              <AdaptiveResults 
+                results={aiResults} 
+                query={query}
+                onFilterClick={(newQuery: string) => {
+                  router.push(`/?q=${encodeURIComponent(newQuery)}`);
+                }}
+              />
             )}
-            {!loadingAI && aiResults && aiResults.length === 0 && (
+            {!loadingAI && aiResults && (aiResults.total_matches === 0 || (Array.isArray(aiResults) && aiResults.length === 0)) && (
               <div className="text-center py-12 max-w-3xl mx-auto">
                 <h3 className="text-2xl font-semibold text-foreground mb-2">No encontramos resultados con esa combinación</h3>
                 <p className="text-muted-foreground mb-6">Prueba ajustando tu búsqueda o utiliza estas opciones para refinarla.</p>
@@ -92,8 +88,10 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Trending Vehicles Section */}
-      <TrendingVehicles />
+      {/* Trending Vehicles Section - Solo mostrar si no hay query subjetivo */}
+      {!query || (aiResults && aiResults.query_type === 'OBJECTIVE_FEATURE') ? (
+        <TrendingVehicles />
+      ) : null}
 
       {/* How It Works Section */}
       <HowItWorks />

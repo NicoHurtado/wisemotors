@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { extractIntent } from '@/lib/ai/nlu';
-import { generateScoredCandidates } from '@/lib/ai/scoring';
-import { rerankWithLLM } from '@/lib/ai/rerank';
+import { categorizeQuery } from '@/lib/ai/categorization';
+import { processResults } from '@/lib/ai/results';
 
 export const runtime = 'nodejs';
 
@@ -13,34 +12,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Prompt inválido' }, { status: 400 });
     }
 
-    // PASO 1: Extraer intención estructurada (NLU)
-    const intent = await extractIntent(prompt);
+    // STEP 1: Categorize the query (subjective vs objective vs hybrid)
+    const categorizedIntent = await categorizeQuery(prompt);
     
-    // PASO 2 & 3: Candidate generation + Scoring determinístico
-    const scoredCandidates = await generateScoredCandidates(intent);
+    // STEP 2: Process results based on query type
+    const processedResults = await processResults(categorizedIntent);
     
-    if (scoredCandidates.length === 0) {
+    if (processedResults.total_matches === 0) {
       return NextResponse.json({ 
         prompt, 
         results: [],
+        query_type: categorizedIntent.query_type,
         message: 'No se encontraron vehículos que coincidan con los criterios'
       });
     }
-    
-    // PASO 4: Rerank + justificaciones con LLM (contexto ultracompacto)
-    const finalRecommendations = await rerankWithLLM(scoredCandidates, intent, prompt);
 
     return NextResponse.json({ 
       prompt, 
-      results: finalRecommendations,
-      // Metadata adicional para debugging (opcional)
+      query_type: categorizedIntent.query_type,
+      results: processedResults,
+      // Metadata for debugging
       meta: {
-        intent_detected: intent.use_case,
-        candidates_evaluated: scoredCandidates.length,
-        top_weights: Object.entries(intent.soft_weights)
-          .sort(([,a], [,b]) => b - a)
-          .slice(0, 3)
-          .map(([key, value]) => ({ [key]: Math.round(value * 100) / 100 }))
+        query_classification: categorizedIntent.query_type,
+        confidence: categorizedIntent.confidence,
+        processing_time_ms: processedResults.processing_time_ms,
+        total_matches: processedResults.total_matches,
+        reasoning: categorizedIntent.reasoning
       }
     });
     

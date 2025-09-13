@@ -18,13 +18,21 @@ interface VehicleCardProps {
   isFavorite?: boolean;
   onToggleFavorite?: (id: string) => void;
   onExplore?: (id: string) => void;
+  showAffinity?: boolean;
+  affinityScore?: number;
+  reasons?: string[];
+  compact?: boolean;
 }
 
 export function VehicleCard({ 
   vehicle, 
   isFavorite: externalIsFavorite, 
   onToggleFavorite: externalOnToggleFavorite, 
-  onExplore 
+  onExplore,
+  showAffinity = false,
+  affinityScore,
+  reasons,
+  compact = false
 }: VehicleCardProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -124,10 +132,28 @@ export function VehicleCard({
         </button>
         
         {/* Category badge */}
-        {vehicle.category && (
+        {vehicle.category && !showAffinity && (
           <div className="absolute bottom-3 left-3">
             <Badge variant="wise" className="text-xs">
               {getCategoryLabel(vehicle.category)}
+            </Badge>
+          </div>
+        )}
+        
+        {/* Affinity badge */}
+        {showAffinity && affinityScore !== undefined && (
+          <div className="absolute bottom-3 left-3">
+            <Badge 
+              variant="wise" 
+              className={`text-xs ${
+                affinityScore >= 80 
+                  ? 'bg-green-500 text-white' 
+                  : affinityScore >= 60 
+                    ? 'bg-yellow-500 text-white' 
+                    : 'bg-red-500 text-white'
+              }`}
+            >
+              {affinityScore}% match
             </Badge>
           </div>
         )}
@@ -146,6 +172,21 @@ export function VehicleCard({
           <p className="text-xl font-bold text-foreground">
             {formatPrice(vehicle.price)}
           </p>
+          
+          {/* AI Reasons */}
+          {reasons && reasons.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <p className="text-xs font-medium text-wise mb-2">¿Por qué te lo recomendamos?</p>
+              <ul className="text-xs text-gray-600 space-y-1">
+                {reasons.slice(0, 3).map((reason, index) => (
+                  <li key={index} className="flex items-start gap-1">
+                    <span className="text-wise mt-0.5">•</span>
+                    <span>{reason}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </CardContent>
 
