@@ -34,6 +34,7 @@ export function AddVehicleForm() {
     fuelType: '',
     history: '',
     wiseCategories: '',
+    reviewVideoUrl: '',
     specifications: {
       performance: {
         acceleration0to100: '',
@@ -240,6 +241,7 @@ export function AddVehicleForm() {
         fuelType: formData.fuelType,
         history: formData.history || '',
         wiseCategories: formData.wiseCategories || '',
+        reviewVideoUrl: formData.reviewVideoUrl || '',
         specifications: cleanSpecifications,
         dealerIds: selectedDealers,
         coverImage,
@@ -495,6 +497,23 @@ export function AddVehicleForm() {
             />
             <p className="text-xs text-gray-500 mt-1">
               Escribe las categorías separadas por comas. Estas aparecerán en la vista de detalle del vehículo.
+            </p>
+          </div>
+
+          <div className="md:col-span-2 lg:col-span-3">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              URL del Video Review
+            </label>
+            <input
+              type="url"
+              name="reviewVideoUrl"
+              value={formData.reviewVideoUrl}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              placeholder="https://www.youtube.com/watch?v=... o https://vimeo.com/..."
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              URL del video review del vehículo. Compatible con YouTube y Vimeo.
             </p>
           </div>
         </div>

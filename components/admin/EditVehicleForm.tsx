@@ -26,6 +26,7 @@ interface Vehicle {
   fuelType: string;
   history: string;
   wiseCategories?: string;
+  reviewVideoUrl?: string;
   specifications: any;
   vehicleDealers: Array<{
     dealerId: string;
@@ -68,6 +69,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
     fuelType: '',
     history: '',
     wiseCategories: '',
+    reviewVideoUrl: '',
     status: 'Entrega Inmediata',
     specifications: {
       performance: {
@@ -267,6 +269,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
             fuelType: vehicleData.fuelType || '',
             history: vehicleData.history || '',
             wiseCategories: vehicleData.wiseCategories || '',
+            reviewVideoUrl: vehicleData.reviewVideoUrl || '',
             status: vehicleData.status || 'Disponible',
             specifications: {
               ...formData.specifications,
@@ -371,6 +374,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
         fuelType: formData.fuelType,
         history: formData.history || '',
         wiseCategories: formData.wiseCategories || '',
+        reviewVideoUrl: formData.reviewVideoUrl || '',
         status: formData.status,
         specifications: cleanSpecifications,
         dealerIds: selectedDealers,
@@ -662,6 +666,23 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
             />
             <p className="text-xs text-gray-500 mt-1">
               Escribe las categorías separadas por comas. Estas aparecerán en la vista de detalle del vehículo.
+            </p>
+          </div>
+
+          <div className="md:col-span-2 lg:col-span-3">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              URL del Video Review
+            </label>
+            <input
+              type="url"
+              name="reviewVideoUrl"
+              value={formData.reviewVideoUrl}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              placeholder="https://www.youtube.com/watch?v=... o https://vimeo.com/..."
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              URL del video review del vehículo. Compatible con YouTube y Vimeo.
             </p>
           </div>
         </div>

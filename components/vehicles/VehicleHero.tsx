@@ -11,9 +11,10 @@ import { useRouter } from 'next/navigation';
 
 interface VehicleHeroProps {
   vehicle: any;
+  onVideoClick?: () => void;
 }
 
-export function VehicleHero({ vehicle }: VehicleHeroProps) {
+export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { isFavorite, toggleFavorite, loading: favoriteLoading } = useFavorites();
@@ -134,6 +135,7 @@ export function VehicleHero({ vehicle }: VehicleHeroProps) {
             }`}
           />
         </button>
+
       </div>
     </div>
   );

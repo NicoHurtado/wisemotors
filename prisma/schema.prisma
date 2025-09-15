@@ -50,6 +50,7 @@ model Vehicle {
   history        String?
   wiseCategories String?
   specifications String
+  reviewVideoUrl String?
   status         String          @default("Disponible")
   isTrending     Boolean         @default(false)
   trendingOrder  Int?

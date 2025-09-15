@@ -93,7 +93,6 @@ export async function PUT(
   try {
     const body = await request.json();
     
-    
     // Validar datos de entrada
     const validatedData = vehicleUpdateSchema.parse(body);
     

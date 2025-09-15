@@ -8,12 +8,15 @@ import { VehicleMetrics } from './VehicleMetrics';
 import { VehicleGallery } from './VehicleGallery';
 import { SimilarVehicles } from './SimilarVehicles';
 import { ScrollToTop } from '@/components/ui/ScrollToTop';
+import { VideoModal } from '@/components/ui/VideoModal';
 
 interface VehicleDetailProps {
   vehicle: any; // Using any for now due to complex type
 }
 
 export function VehicleDetail({ vehicle }: VehicleDetailProps) {
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+
   // Función para renderizar la sección de motor según el tipo de combustible
   const renderEngineSection = () => {
     const fuelType = (vehicle.specifications?.general?.fuelType || vehicle.fuelType)?.toLowerCase();
@@ -410,7 +413,10 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
   return (
     <div className="min-h-screen relative">
       {/* Hero Section */}
-      <VehicleHero vehicle={vehicle} />
+      <VehicleHero 
+        vehicle={vehicle} 
+        onVideoClick={() => setIsVideoModalOpen(true)}
+      />
       
       {/* Main Content */}
       <div className="w-full px-4 py-8">
@@ -418,9 +424,13 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
         {/* Section 1: Main Content - Specifications and Dealerships */}
         <section className="mb-16">
           <div className="max-w-7xl mx-auto">
-            <VehicleSpecifications vehicle={vehicle} />
+            <VehicleSpecifications 
+              vehicle={vehicle} 
+              onVideoClick={() => setIsVideoModalOpen(true)}
+            />
           </div>
         </section>
+
 
         {/* Section 2: Gallery and Categories (Full Width) */}
         <section className="mb-16">
@@ -1035,6 +1045,16 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
 
       {/* Scroll to top button */}
       <ScrollToTop />
+
+      {/* Video Modal */}
+      {vehicle.reviewVideoUrl && (
+        <VideoModal
+          isOpen={isVideoModalOpen}
+          onClose={() => setIsVideoModalOpen(false)}
+          videoUrl={vehicle.reviewVideoUrl}
+          vehicleTitle={`${vehicle.brand} ${vehicle.model}`}
+        />
+      )}
     </div>
   );
 }

@@ -24,6 +24,7 @@ export type VehicleDetail = VehicleCard & {
   cityConsumption: number;
   rating: number;
   slogan: string;
+  reviewVideoUrl?: string;
   dealerships: Array<{
     id: string;
     name: string;

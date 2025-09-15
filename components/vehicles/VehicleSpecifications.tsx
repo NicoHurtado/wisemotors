@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart, Zap, Car, Clock, BookOpen, MapPin } from 'lucide-react';
+import { Heart, Zap, Car, Clock, BookOpen, MapPin, Play } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,9 +8,10 @@ import { useRouter } from 'next/navigation';
 
 interface VehicleSpecificationsProps {
   vehicle: any;
+  onVideoClick?: () => void;
 }
 
-export function VehicleSpecifications({ vehicle }: VehicleSpecificationsProps) {
+export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecificationsProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { isFavorite, toggleFavorite, loading: favoriteLoading } = useFavorites();
@@ -85,7 +86,7 @@ export function VehicleSpecifications({ vehicle }: VehicleSpecificationsProps) {
             </button>
           </div>
           
-          {/* Vehicle Specifications - 2x2 Grid */}
+          {/* Vehicle Specifications - Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Brand Row */}
             <div className="flex items-center p-4 bg-white rounded-2xl border border-gray-200">
@@ -140,6 +141,27 @@ export function VehicleSpecifications({ vehicle }: VehicleSpecificationsProps) {
                 </div>
               </div>
             </div>
+
+            {/* Video Review Button */}
+            {vehicle.reviewVideoUrl && onVideoClick && (
+              <div className="md:col-span-2 flex justify-center">
+                <button 
+                  onClick={onVideoClick}
+                  className="flex items-center p-3 bg-white rounded-2xl border border-wise/30 hover:border-wise hover:bg-wise/5 transition-all duration-300 group w-fit"
+                  aria-label="Ver video review"
+                >
+                  <div className="w-10 h-10 bg-wise/20 rounded-full flex items-center justify-center mr-3 group-hover:bg-wise/30 transition-colors">
+                    <Play className="w-5 h-5 text-wise fill-wise" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-base font-semibold text-wise">Video Review</div>
+                  </div>
+                  <div className="text-wise opacity-70 group-hover:opacity-100 transition-opacity text-sm ml-3">
+                    Ver ahora →
+                  </div>
+                </button>
+              </div>
+            )}
           </div>
         </div>
         

@@ -237,6 +237,7 @@ export const vehicleSchema = z.object({
   coverImage: z.string().optional(),
   galleryImages: z.array(z.string()).optional(),
   thumbnailIndex: z.number().min(0).optional(),
+  reviewVideoUrl: z.string().url('Debe ser una URL válida').optional(),
 });
 
 // Esquema para actualizaciones parciales - más permisivo
@@ -255,6 +256,7 @@ export const vehicleUpdateSchema = z.object({
   coverImage: z.string().optional(),
   galleryImages: z.array(z.string()).optional(),
   thumbnailIndex: z.number().min(0).optional(),
+  reviewVideoUrl: z.string().optional(),
 });
 
 export type VehicleInput = z.infer<typeof vehicleSchema>;
