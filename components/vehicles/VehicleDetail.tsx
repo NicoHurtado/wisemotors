@@ -431,6 +431,33 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
               
               {/* Categories */}
               <VehicleCategories categories={vehicle.categories} />
+              
+              {/* Home Delivery Button */}
+              <div className="flex justify-center">
+                <button
+                  onClick={() => {
+                    const getEffectiveUserName = (): string | null => {
+                      // Try to get user from auth context if available, otherwise prompt
+                      const name = window.prompt('Para continuar, por favor ingresa tu nombre');
+                      if (name === null) return null; // cancel
+                      const trimmed = name.trim();
+                      return trimmed.length > 0 ? trimmed : 'Cliente';
+                    };
+                    
+                    const name = getEffectiveUserName();
+                    if (!name) return; // user cancelled
+                    
+                    const vehicleLabel = `${vehicle.brand || ''} ${vehicle.model || ''}`.trim();
+                    const message = `Hola, me interesa el vehículo ${vehicleLabel}. Mi nombre es ${name} y quiero hacer el testdrive desde mi casa.`;
+                    const encoded = encodeURIComponent(message);
+                    const url = `https://wa.me/573103818615?text=${encoded}`;
+                    window.open(url, '_blank');
+                  }}
+                  className="px-8 py-4 bg-wise text-white rounded-2xl hover:bg-wise-dark transition-colors text-lg font-semibold shadow-soft"
+                >
+                  Haz el testdrive desde tu casa
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -952,6 +979,37 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
         <section className="mb-16">
           <div className="max-w-7xl mx-auto">
             <VehicleMetrics metrics={vehicle.wisemetrics} />
+          </div>
+        </section>
+
+        {/* Test Drive Button */}
+        <section className="mb-16">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex justify-center">
+              <button
+                onClick={() => {
+                  const getEffectiveUserName = (): string | null => {
+                    // Try to get user from auth context if available, otherwise prompt
+                    const name = window.prompt('Para continuar, por favor ingresa tu nombre');
+                    if (name === null) return null; // cancel
+                    const trimmed = name.trim();
+                    return trimmed.length > 0 ? trimmed : 'Cliente';
+                  };
+                  
+                  const name = getEffectiveUserName();
+                  if (!name) return; // user cancelled
+                  
+                  const vehicleLabel = `${vehicle.brand || ''} ${vehicle.model || ''}`.trim();
+                  const message = `Hola, me interesa el vehículo ${vehicleLabel}. Mi nombre es ${name} y quiero agendar un test drive.`;
+                  const encoded = encodeURIComponent(message);
+                  const url = `https://wa.me/573103818615?text=${encoded}`;
+                  window.open(url, '_blank');
+                }}
+                className="px-6 py-3 bg-wise text-white rounded-lg hover:bg-wise-dark transition-colors text-base font-medium shadow-soft"
+              >
+                Agendar test drive
+              </button>
+            </div>
           </div>
         </section>
 

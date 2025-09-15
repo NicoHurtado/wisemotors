@@ -4,6 +4,121 @@ import { CategorizedIntent, QueryType } from './categorization';
 import { computeVehicleFeatures, getMarketStats, generateVehicleTags } from './features';
 import { getValidImageUrl, createImagePlaceholder } from '@/lib/utils/imageUtils';
 
+// Generic function to evaluate technical specifications filters
+function evaluateTechnicalFilter(specs: any, filter: any): boolean {
+  try {
+    if (!filter || !filter.field_path || !filter.operator || filter.value === undefined) {
+      return false;
+    }
+    
+    // Get the actual value from specs using the field path
+    const actualValue = getValueByPath(specs, filter.field_path);
+    
+    if (actualValue === null || actualValue === undefined) {
+      return false; // If field doesn't exist, filter doesn't match
+    }
+    
+    // Apply the operator
+    switch (filter.operator) {
+      case 'equals':
+        return actualValue === filter.value;
+      
+      case 'greater_than':
+        return typeof actualValue === 'number' && typeof filter.value === 'number' && 
+               actualValue > filter.value;
+      
+      case 'less_than':
+        return typeof actualValue === 'number' && typeof filter.value === 'number' && 
+               actualValue < filter.value;
+      
+      case 'greater_equal':
+        return typeof actualValue === 'number' && typeof filter.value === 'number' && 
+               actualValue >= filter.value;
+      
+      case 'less_equal':
+        return typeof actualValue === 'number' && typeof filter.value === 'number' && 
+               actualValue <= filter.value;
+      
+      case 'contains':
+        return typeof actualValue === 'string' && typeof filter.value === 'string' && 
+               actualValue.toLowerCase().includes(filter.value.toLowerCase());
+      
+      default:
+        return false;
+    }
+  } catch (error) {
+    console.error('Error evaluating technical filter:', error, filter);
+    return false;
+  }
+}
+
+// Helper function to get nested values by path (e.g., "performance.acceleration0to100")
+function getValueByPath(obj: any, path: string): any {
+  try {
+    if (!obj || !path) return null;
+    
+    // Handle multiple possible paths for engine-specific fields
+    const enginePaths = getEngineSpecificPaths(path);
+    
+    for (const enginePath of enginePaths) {
+      try {
+        const value = enginePath.split('.').reduce((current, key) => {
+          return current && current[key] !== undefined ? current[key] : null;
+        }, obj);
+        
+        if (value !== null && value !== undefined) {
+          // Convert string numbers to actual numbers
+          if (typeof value === 'string' && !isNaN(Number(value)) && value.trim() !== '') {
+            return Number(value);
+          }
+          return value;
+        }
+      } catch (pathError) {
+        continue; // Try next path if this one fails
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error getting value by path:', error, path);
+    return null;
+  }
+}
+
+// Generate all possible paths for engine-specific fields
+function getEngineSpecificPaths(path: string): string[] {
+  try {
+    if (!path || typeof path !== 'string') return [path];
+    
+    const engineTypes = ['combustion', 'hybrid', 'phev', 'electric'];
+    
+    // Common fields that exist in multiple engine types
+    const engineFields = [
+      'maxPower', 'maxTorque', 'displacement', 'turbo', 'fuelTankCapacity', 
+      'cityConsumption', 'highwayConsumption', 'transmissionType', 'gears'
+    ];
+    
+    // If the path starts with an engine-specific field, generate all variants
+    const fieldName = path.split('.').pop();
+    if (fieldName && engineFields.includes(fieldName)) {
+      const paths = [];
+      // Add original path
+      paths.push(path);
+      // Add engine-specific variants
+      for (const engineType of engineTypes) {
+        paths.push(`${engineType}.${fieldName}`);
+      }
+      return paths;
+    }
+    
+    // For non-engine fields, return as-is
+    return [path];
+  } catch (error) {
+    console.error('Error generating engine specific paths:', error, path);
+    return [path];
+  }
+}
+
 export interface VehicleResult {
   id: string;
   brand: string;
@@ -130,9 +245,13 @@ async function processSubjectiveQuery(intent: CategorizedIntent, startTime: numb
 // Process objective feature queries (show all matches)
 async function processObjectiveQuery(intent: CategorizedIntent, startTime: number): Promise<ProcessedResults> {
   const where = buildObjectiveWhereClause(intent);
+  const technicalFilters = (where as any)._technicalFilters;
   const filtersApplied = buildFiltersDescription(intent);
   
-  const vehicles = await prisma.vehicle.findMany({
+  // Remove the technical filters from the where clause since we'll filter manually
+  delete (where as any)._technicalFilters;
+  
+  let vehicles = await prisma.vehicle.findMany({
     where,
     include: {
       images: {
@@ -146,6 +265,23 @@ async function processObjectiveQuery(intent: CategorizedIntent, startTime: numbe
       { year: 'desc' }
     ]
   });
+  
+  // Apply technical specifications filtering if specified
+  if (technicalFilters && technicalFilters.length > 0) {
+    vehicles = vehicles.filter(vehicle => {
+      try {
+        const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
+        
+        // Check all technical specifications
+        return technicalFilters.every((filter: any) => {
+          return evaluateTechnicalFilter(specs, filter);
+        });
+      } catch (error) {
+        console.error('Error parsing vehicle specifications:', error);
+        return false; // Skip vehicles with invalid specifications
+      }
+    });
+  }
 
   const vehicleResults = vehicles.map(vehicle => {
     const rawImageUrl = vehicle.images?.[0]?.url || null;
@@ -293,6 +429,12 @@ function buildObjectiveWhereClause(intent: CategorizedIntent): any {
     if (filters.year_range.max) where.year.lte = filters.year_range.max;
   }
   
+  // Technical specifications filtering
+  if (filters.technical_specs && filters.technical_specs.length > 0) {
+    // Store technical specifications for post-processing
+    (where as any)._technicalFilters = filters.technical_specs;
+  }
+  
   // TODO: Add support for doors, seats, features when database schema supports it
   
   return where;
@@ -335,6 +477,13 @@ function buildFiltersDescription(intent: CategorizedIntent): string[] {
   
   if (filters.seat_count) {
     descriptions.push(`${filters.seat_count} asientos`);
+  }
+  
+  // Technical specifications
+  if (filters.technical_specs && filters.technical_specs.length > 0) {
+    filters.technical_specs.forEach(spec => {
+      descriptions.push(spec.description);
+    });
   }
   
   return descriptions;
@@ -439,8 +588,8 @@ function generateSubjectiveReasons(vehicle: any, intent: CategorizedIntent, rank
   
   // Find top 2 weighted criteria
   const topCriteria = Object.entries(weights)
-    .filter(([_, weight]) => weight > 0.3)
-    .sort(([_, a], [__, b]) => b - a)
+    .filter(([_, weight]) => (weight as number) > 0.3)
+    .sort(([_, a], [__, b]) => (b as number) - (a as number))
     .slice(0, 2);
   
   topCriteria.forEach(([criteria, weight]) => {
@@ -477,8 +626,8 @@ function generateSubjectiveReasons(vehicle: any, intent: CategorizedIntent, rank
 // Generate explanations
 function generateSubjectiveExplanation(intent: CategorizedIntent): string {
   const topWeights = Object.entries(intent.subjective_weights || {})
-    .filter(([_, weight]) => weight > 0.3)
-    .sort(([_, a], [__, b]) => b - a)
+    .filter(([_, weight]) => (weight as number) > 0.3)
+    .sort(([_, a], [__, b]) => (b as number) - (a as number))
     .slice(0, 2)
     .map(([key, _]) => key);
   

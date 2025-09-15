@@ -30,6 +30,12 @@ export const CategorizedIntentSchema = z.object({
       min: z.number().optional(),
       max: z.number().optional()
     }).optional(),
+    technical_specs: z.array(z.object({
+      field_path: z.string(),
+      operator: z.string(),
+      value: z.any(),
+      description: z.string()
+    })).optional(),
     features: z.array(z.string()).optional(), // sunroof, leather, etc.
   }).optional(),
   
@@ -126,6 +132,31 @@ export const categorizeQueryFunction = {
               max: { type: 'number' }
             },
             description: 'Rango de año específico'
+          },
+          technical_specs: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                field_path: {
+                  type: 'string',
+                  description: 'Ruta del campo en especificaciones (ej: performance.acceleration0to100, combustion.turbo, dimensions.length)'
+                },
+                operator: {
+                  type: 'string',
+                  description: 'Operador de comparación: equals, greater_than, less_than, greater_equal, less_equal, contains'
+                },
+                value: {
+                  description: 'Valor a comparar (número, boolean o string)'
+                },
+                description: {
+                  type: 'string',
+                  description: 'Descripción legible del filtro'
+                }
+              },
+              required: ['field_path', 'operator', 'value', 'description']
+            },
+            description: 'Especificaciones técnicas específicas y medibles extraídas de la consulta'
           },
           features: {
             type: 'array',
@@ -246,15 +277,31 @@ export async function categorizeQuery(prompt: string): Promise<CategorizedIntent
 
   const systemPrompt = `Eres un experto en categorización de consultas automotrices. Tu trabajo es determinar si una consulta requiere:
 
-1. SUBJECTIVE_PREFERENCE: Preferencias subjetivas que requieren ranking inteligente
+1. SUBJECTIVE_PREFERENCE: Preferencias subjetivas, necesidades de uso o tareas específicas
    - Ejemplos: "bonito", "elegante", "para familia", "deportivo", "confiable", "que se vea bien"
+   - Casos de uso: "trepar palmas", "para la finca", "trabajo pesado", "ciudad con huecos"
    - Requiere AI para ranking con métricas de afinidad
    - Muestra top 3 + más opciones ordenadas por afinidad
 
-2. OBJECTIVE_FEATURE: Características específicas y tangibles
+2. OBJECTIVE_FEATURE: Características técnicas específicas y medibles
    - Ejemplos: "pickup", "Mazda", "4 puertas", "eléctrico", "manual", "menos de $50M"
-   - Muestra TODOS los vehículos que cumplen el criterio
-   - Sin ranking de afinidad, solo filtrado directo
+   - Especificaciones: "0-100 en menos de 5 segundos", "con turbo", "más de 300 HP", "tanque mayor a 50 litros"
+   - CUALQUIER especificación técnica: potencia, torque, aceleración, velocidad, dimensiones, peso, consumo, etc.
+   - Muestra TODOS los vehículos que cumplen el criterio EXACTO
+   - Sin ranking de afinidad, solo filtrado directo con verificación de especificaciones
+
+CAMPOS TÉCNICOS DISPONIBLES EN ESPECIFICACIONES:
+- performance: acceleration0to100, acceleration0to200, maxSpeed, quarterMile, powerToWeight, launchControl
+- combustion/hybrid/phev/electric: maxPower, maxTorque, displacement, turbo, fuelTankCapacity, cityConsumption, highwayConsumption
+- dimensions: length, width, height, curbWeight, wheelbase, cargoCapacity
+- safety: airbags, ncapRating, stabilityControl, tractionControl, autonomousEmergencyBraking
+- comfort: airConditioning, automaticClimateControl, heatedSeats, ventilatedSeats, massageSeats
+- technology: bluetooth, touchscreen, navigation, smartphoneIntegration, wirelessCharger
+- chassis: groundClearance, brakingDistance100to0, maxLateralAcceleration, suspensionSetup
+- interior: trunkCapacitySeatsDown, seatRows, passengerCapacity
+- weight: payload, cargoBoxVolume, towingCapacity
+- lighting: headlightType, automaticHighBeam
+- assistance: brakeAssist, reverseCamera, hillStartAssist, parkingSensors, cameras360
 
 3. HYBRID: Mezcla de ambos
    - Ejemplos: "pickup deportivo", "SUV de lujo", "Mazda económico"
@@ -267,7 +314,18 @@ CONTEXTO DE BASE DE DATOS DISPONIBLE:
 - Años: ${dbOptions.yearRange.min}-${dbOptions.yearRange.max}
 - Precios: $${(dbOptions.priceRange.min / 1000000).toFixed(1)}M - $${(dbOptions.priceRange.max / 1000000).toFixed(1)}M
 
-IMPORTANTE: Si el usuario menciona una marca o tipo específico que EXISTE en la base de datos, probablemente es OBJECTIVE_FEATURE o HYBRID.
+REGLAS CRÍTICAS:
+1. Si menciona especificaciones técnicas medibles (aceleración, potencia, velocidad), es OBJECTIVE_FEATURE
+2. Si menciona actividades o necesidades subjetivas ("trepar palmas", "trabajo en finca"), es SUBJECTIVE_PREFERENCE
+3. Si combina marca/tipo específico + adjetivo subjetivo, es HYBRID
+4. Para OBJECTIVE_FEATURE: Los filtros deben ser EXACTOS y verificables en especificaciones
+
+EJEMPLOS DE TECHNICAL_SPECS:
+- "0-100 en menos de 5 segundos" → [{"field_path": "performance.acceleration0to100", "operator": "less_than", "value": 5, "description": "0-100 km/h en menos de 5 segundos"}]
+- "con turbo" → [{"field_path": "turbo", "operator": "equals", "value": true, "description": "con turbo"}]
+- "más de 300 HP" → [{"field_path": "maxPower", "operator": "greater_than", "value": 300, "description": "más de 300 HP"}]
+- "tanque mayor a 50 litros" → [{"field_path": "fuelTankCapacity", "operator": "greater_than", "value": 50, "description": "tanque mayor a 50 litros"}]
+- "peso menor a 1500 kg" → [{"field_path": "dimensions.curbWeight", "operator": "less_than", "value": 1500, "description": "peso menor a 1500 kg"}]
 
 Analiza la consulta y extrae tanto filtros objetivos como pesos subjetivos apropiados.`;
 
@@ -333,13 +391,21 @@ function categorizeQueryHeuristic(prompt: string, dbOptions: any): CategorizedIn
   const objectiveKeywords = [
     'pickup', 'suv', 'sedán', 'sedan', 'hatchback', 'deportivo', 'convertible',
     'manual', 'automática', 'automatica', 'eléctrico', 'electrico', 'híbrido', 'hibrido',
-    'gasolina', 'diésel', 'diesel', 'puertas', 'asientos', 'plazas'
+    'gasolina', 'diésel', 'diesel', 'puertas', 'asientos', 'plazas',
+    // Technical specifications
+    '0-100', '0 a 100', 'aceleración', 'aceleracion', 'segundos', 'turbo', 'hp', 'caballos',
+    'potencia', 'velocidad máxima', 'velocidad maxima', 'km/h', 'tanque', 'litros', 'capacidad',
+    'peso', 'kg', 'metros', 'altura', 'ancho', 'largo', 'consumo', 'airbags', 'tracción', 'frenos',
+    'bluetooth', 'pantalla', 'navegación', 'navegacion', 'asientos', 'maletero', 'suspensión', 'suspension'
   ];
   
   const subjectiveKeywords = [
     'bonito', 'elegante', 'hermoso', 'lindo', 'feo', 'deportivo', 'rápido', 'rapido',
     'familia', 'familiar', 'cómodo', 'comodo', 'confiable', 'seguro', 'económico', 'economico',
-    'barato', 'caro', 'lujo', 'premium', 'estatus', 'prestigio', 'moderno', 'clásico', 'clasico'
+    'barato', 'caro', 'lujo', 'premium', 'estatus', 'prestigio', 'moderno', 'clásico', 'clasico',
+    // Regional and use case keywords
+    'trepar palmas', 'subir palmas', 'finca', 'trabajo pesado', 'huecos', 'ciudad', 'campo',
+    'montaña', 'terreno difícil', 'terreno dificil', 'carga pesada', 'remolque'
   ];
   
   const hasObjective = objectiveKeywords.some(keyword => text.includes(keyword)) || 
@@ -374,6 +440,11 @@ function categorizeQueryHeuristic(prompt: string, dbOptions: any): CategorizedIn
       sportiness: text.includes('deportivo') || text.includes('rápido') ? 0.8 : 0,
       efficiency: text.includes('económico') || text.includes('barato') ? 0.7 : 0,
       luxury: text.includes('lujo') || text.includes('premium') ? 0.8 : 0,
+      reliability: 0,
+      practicality: 0,
+      status: 0,
+      comfort: 0,
+      safety: 0
     } : undefined,
     original_query: prompt,
     reasoning: `Heuristic categorization: ${hasObjective ? 'objective features' : ''} ${hasSubjective ? 'subjective preferences' : ''}`
