@@ -104,9 +104,31 @@ export async function GET(request: NextRequest) {
     const pageSize = limit ? parseInt(limit) : 12;
     const skip = (pageNumber - 1) * pageSize;
 
-    // Ordenamiento básico
+    // Ordenamiento con conversión de parámetros del frontend
     const orderBy: any = {};
-    orderBy[sortBy] = sortOrder;
+    
+    // Convertir sortBy del frontend a campos válidos de Prisma
+    switch(sortBy) {
+      case 'price-low':
+        orderBy.price = 'asc';
+        break;
+      case 'price-high':
+        orderBy.price = 'desc';
+        break;
+      case 'year-new':
+        orderBy.year = 'desc';
+        break;
+      case 'year-old':
+        orderBy.year = 'asc';
+        break;
+      case 'brand':
+        orderBy.brand = 'asc';
+        break;
+      case 'relevance':
+      default:
+        orderBy.createdAt = 'desc';
+        break;
+    }
 
     // Consulta principal
     const [vehicles, total] = await Promise.all([
