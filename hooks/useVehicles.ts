@@ -396,25 +396,21 @@ export function useVehicle(id: string) {
           similarVehicles: []
         };
 
-        // Buscar vehículos similares (misma marca o tipo)
-        try {
-          const similarResponse = await fetch(`/api/vehicles?brand=${data.brand}&type=${data.type}&limit=4&exclude=${data.id}`);
-          if (similarResponse.ok) {
-            const similarData = await similarResponse.json();
-            transformedVehicle.similarVehicles = similarData.vehicles.map((vehicle: any) => ({
-              id: vehicle.id,
-              brand: vehicle.brand,
-              model: vehicle.model,
-              year: vehicle.year,
-              price: vehicle.price,
-              fuel: vehicle.fuelType.toUpperCase() as any,
-              imageUrl: vehicle.images?.[0]?.url || null,
-              category: vehicle.type,
-              status: vehicle.status || 'NUEVO'
-            }));
-          }
-        } catch (error) {
-          console.error('Error fetching similar vehicles:', error);
+        // Usar vehículos similares que ya vienen del API (algoritmo mejorado)
+        if (data.similarVehicles && Array.isArray(data.similarVehicles)) {
+          transformedVehicle.similarVehicles = data.similarVehicles.map((vehicle: any) => ({
+            id: vehicle.id,
+            brand: vehicle.brand,
+            model: vehicle.model,
+            year: vehicle.year,
+            price: vehicle.price,
+            fuel: vehicle.fuelType?.toUpperCase() || 'GASOLINA',
+            imageUrl: vehicle.images?.[0]?.url || null,
+            category: vehicle.type,
+            status: vehicle.status || 'NUEVO',
+            type: vehicle.type,
+            specifications: vehicle.specifications
+          }));
         }
 
 

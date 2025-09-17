@@ -61,6 +61,7 @@ export function VehicleComparisonModal({
   const { toggleFavorite, isFavorite } = useFavorites();
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis[]>([]);
   const [profileRecommendations, setProfileRecommendations] = useState<ProfileRecommendation[]>([]);
+  const [keyDifferences, setKeyDifferences] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,6 +104,7 @@ export function VehicleComparisonModal({
       const aiResult = await getIntelligentAnalysis(vehiclesForAnalysis);
       setAiAnalysis(aiResult.analysis);
       setProfileRecommendations(aiResult.profileRecommendations);
+      setKeyDifferences(aiResult.keyDifferences);
 
     } catch (error) {
       console.error('Error generating comparison:', error);
@@ -319,6 +321,30 @@ export function VehicleComparisonModal({
               </Card>
             </div>
 
+            {/* Diferencias Clave */}
+            {keyDifferences.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-purple-600" />
+                    Diferencias Clave
+                  </CardTitle>
+                  <p className="text-sm text-gray-600 mt-2">Análisis de las diferencias más importantes entre estos vehículos</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="prose prose-gray max-w-none">
+                    <div className="space-y-4">
+                      {keyDifferences.map((difference, index) => (
+                        <p key={index} className="text-gray-700 leading-relaxed text-sm bg-purple-50 p-4 rounded-lg border-l-4 border-purple-500">
+                          {difference}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Recomendaciones por Perfil */}
             {profileRecommendations.length > 0 && (
               <Card>
@@ -330,7 +356,18 @@ export function VehicleComparisonModal({
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {profileRecommendations.map((rec, index) => (
+                    {profileRecommendations.map((rec, index) => {
+                      // Convertir ID a nombre si es necesario
+                      let vehicleName = rec.vehicle;
+                      if (rec.vehicle && rec.vehicle.length > 20) { // Es un ID
+                        if (rec.vehicle === currentVehicle?.id) {
+                          vehicleName = `${currentVehicle.brand} ${currentVehicle.model}`;
+                        } else if (rec.vehicle === compareVehicle?.id) {
+                          vehicleName = `${compareVehicle.brand} ${compareVehicle.model}`;
+                        }
+                      }
+                      
+                      return (
                       <div key={index} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                         <div className="flex items-center gap-3 mb-3">
                           <div className="w-8 h-8 bg-wise/20 rounded-full flex items-center justify-center">
@@ -348,7 +385,7 @@ export function VehicleComparisonModal({
                         <div className="space-y-2">
                           <div className="text-sm">
                             <span className="text-gray-600">Vehículo: </span>
-                            <span className="font-medium text-gray-900">{rec.vehicle}</span>
+                            <span className="font-medium text-gray-900">{vehicleName}</span>
                           </div>
                           <div className="text-sm">
                             <span className="text-gray-600">Razón: </span>
@@ -356,7 +393,8 @@ export function VehicleComparisonModal({
                           </div>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>

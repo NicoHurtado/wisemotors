@@ -30,6 +30,7 @@ interface ProfileRecommendation {
 export async function getIntelligentAnalysis(vehicles: VehicleSpecs[]): Promise<{
   analysis: AIAnalysis[];
   profileRecommendations: ProfileRecommendation[];
+  keyDifferences: string[];
 }> {
   try {
     // Usar el nuevo sistema optimizado
@@ -55,7 +56,8 @@ export async function getIntelligentAnalysis(vehicles: VehicleSpecs[]): Promise<
     
     return {
       analysis,
-      profileRecommendations: result.profileRecommendations
+      profileRecommendations: result.profileRecommendations,
+      keyDifferences: result.analysis.keyDifferences || []
     };
     
   } catch (error) {
@@ -64,7 +66,8 @@ export async function getIntelligentAnalysis(vehicles: VehicleSpecs[]): Promise<
     // Fallback al análisis básico
     return {
       analysis: generateFallbackAnalysis(vehicles),
-      profileRecommendations: generateFallbackProfileRecommendations(vehicles)
+      profileRecommendations: generateFallbackProfileRecommendations(vehicles),
+      keyDifferences: []
     };
   }
 }

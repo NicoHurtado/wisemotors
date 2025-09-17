@@ -126,6 +126,17 @@ export function ObjectiveResults({ results, query }: ObjectiveResultsProps) {
         )}
       </div>
 
+      {/* Mensaje de fallback aplicado */}
+      {results.all_matches.fallback_applied && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            <span className="font-medium">💡 Búsqueda ampliada:</span> {' '}
+            Hemos incluido vehículos que coinciden parcialmente con tus criterios para darte más opciones.
+            Los porcentajes de coincidencia aparecen en cada tarjeta.
+          </p>
+        </div>
+      )}
+
       {/* Results Grid */}
       {sortedVehicles.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -134,6 +145,7 @@ export function ObjectiveResults({ results, query }: ObjectiveResultsProps) {
               key={vehicle.id}
               vehicle={vehicle}
               onExplore={(id) => window.location.href = `/vehicles/${id}`}
+              matchPercentage={vehicle.matchPercentage}
             />
           ))}
         </div>

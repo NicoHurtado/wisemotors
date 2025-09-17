@@ -49,6 +49,7 @@ export interface ComparisonAnalysis {
     recommendation: string;
     score: number;
   }[];
+  keyDifferences?: string[];
 }
 
 export interface ProfileRecommendation {
@@ -111,6 +112,17 @@ export async function getOptimizedComparison(
       cleanExpiredCache();
     }
     
+    // 0.1. Forzar limpieza de cache tras actualizaciones (versión 4.3 - ANÁLISIS RICO)
+    const LOGIC_VERSION = '4.3'; // Análisis diversificado, más facetas, datos enriquecidos
+    const versionKey = `comparison_logic_version`;
+    const currentVersion = comparisonCache.get(versionKey);
+    
+    if (!currentVersion || currentVersion.version !== LOGIC_VERSION) {
+      console.log(`🔄 Actualizando lógica de comparación a versión ${LOGIC_VERSION}`);
+      clearComparisonCache(); // Limpiar todo el cache
+      comparisonCache.set(versionKey, { version: LOGIC_VERSION, timestamp: Date.now() });
+    }
+    
     // 1. Verificar cache con validación de vehículos
     const cacheKey = vehicleIds.sort().join('-');
     const cached = comparisonCache.get(cacheKey);
@@ -139,14 +151,8 @@ export async function getOptimizedComparison(
       throw new Error('No vehicles found for comparison');
     }
     
-    // 3. Análisis determinístico
-    const deterministicAnalysis = generateDeterministicComparison(vehicles);
-    
-    // 4. Rerank y justificaciones con LLM (contexto mínimo)
-    const { analysis, profileRecommendations, tokensUsed } = await enhanceWithLLM(
-      vehicles, 
-      deterministicAnalysis
-    );
+    // 3. Análisis 100% con IA (eliminar sistema determinístico)
+    const { analysis, profileRecommendations, tokensUsed } = await generatePureAIComparison(vehicles);
 
     const result: OptimizedComparisonResult = {
       analysis,
@@ -227,7 +233,299 @@ async function getVehiclesWithFeatures(vehicleIds: string[]): Promise<VehicleCom
   });
 }
 
-// Paso 2: Análisis determinístico basado en features
+// Nueva función: Análisis 100% con IA usando datos reales
+async function generatePureAIComparison(vehicles: VehicleComparisonData[]): Promise<{
+  analysis: ComparisonAnalysis,
+  profileRecommendations: ProfileRecommendation[],
+  tokensUsed: number
+}> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  
+  if (!apiKey) {
+    // Fallback simple sin rankings complicados
+    return generateSimpleFallback(vehicles);
+  }
+
+  // Crear payload compacto con DATOS REALES
+  const vehicleData = vehicles.map(vehicle => {
+    const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
+    const priceMillions = Math.round(vehicle.price / 1000000);
+    
+    return {
+      id: vehicle.id,
+      name: `${vehicle.brand} ${vehicle.model}`,
+      year: vehicle.year,
+      price: `$${priceMillions}M`,
+      type: vehicle.type,
+      fuel: vehicle.fuelType,
+      power: specs.performance?.maxPower || specs.combustion?.maxPower || 'N/A',
+      acceleration: specs.performance?.acceleration0to100 || 'N/A',
+      consumption: specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption || 'N/A',
+      maxSpeed: specs.performance?.maxSpeed || 'N/A',
+      airbags: specs.safety?.airbags || 'N/A',
+      range: specs.electric?.electricRange || 'N/A'
+    };
+  });
+
+  const systemPrompt = `Eres un experto consultor automotriz en Colombia. Tu trabajo es comparar vehículos usando los DATOS REALES, no rankings relativos.
+
+REGLAS CRÍTICAS:
+1. USA LOS NÚMEROS REALES para determinar ventajas/desventajas
+2. Si un carro cuesta $500M, NO es "accesible" - es de súper lujo
+3. Si un carro consume 12L/100km, NO es "eficiente" - consume mucho
+4. Si un carro consume 3L/100km, SÍ es eficiente
+5. Destaca las fortalezas REALES de cada vehículo
+6. Las ventajas y desventajas NO pueden contradecirse
+7. Máximo 3 ventajas y 3 desventajas por vehículo
+8. Genera recomendaciones específicas por contexto de precio
+
+Contexto colombiano:
+- Precios accesibles: < $100M
+- Precios premium: $100M - $300M  
+- Precios de lujo: $300M - $500M
+- Súper lujo: > $500M
+- Eficiencia buena: < 8L/100km
+- Eficiencia mala: > 12L/100km`;
+
+  const userPrompt = `COMPARA ESTOS VEHÍCULOS USANDO SUS DATOS REALES:
+
+${vehicleData.map(v => `
+🚗 ${v.name} (${v.year}) - ID: ${v.id}
+   💰 Precio: ${v.price}
+   🏎️ Tipo: ${v.type} ${v.fuel}
+   ⚡ Potencia: ${v.power}hp
+   🏁 Aceleración: ${v.acceleration}s (0-100km/h)
+   ⛽ Consumo: ${v.consumption}L/100km
+   🏃 Velocidad máxima: ${v.maxSpeed}km/h
+   🛡️ Airbags: ${v.airbags}
+   🔋 Autonomía eléctrica: ${v.range}km
+`).join('\n')}
+
+ANALIZA Y PROPORCIONA:
+1. Para cada vehículo: 3 ventajas, 3 desventajas, recomendación, score
+2. DIFERENCIAS CLAVE - Texto fluido y conversacional que explique:
+   - Escribe párrafos completos, NO viñetas ni listas
+   - Usa lenguaje natural y profesional, como un artículo de revista automotriz
+   - Explica las diferencias entre TODOS los vehículos de forma narrativa
+   - Evita enumerar especificaciones técnicas secas
+   - Enfócate en experiencias de uso y situaciones reales
+   - Haz que sea interesante y fácil de leer
+3. PERFILES DE USUARIO - Para cada vehículo asigna la categoría MÁS APROPIADA:
+   - Puedes repetir categorías si varios vehículos son del mismo tipo
+   - Elige entre: Performance, Familiar, Económico, Tecnología, Lujo
+   - Ejemplo: Si son 4 deportivos, pueden ser todos "Performance"
+   - Ejemplo: Si son 3 SUVs familiares, pueden ser todos "Familiar"
+
+IMPORTANTE: USA LOS IDs EXACTOS: ${vehicleData.map(v => v.id).join(', ')}
+
+Responde EXACTAMENTE en este formato JSON (sin texto adicional):
+{
+  "vehicles": [
+    {
+      "id": "${vehicleData[0]?.id}",
+      "pros": ["Ventaja específica con números", "Segunda ventaja", "Tercera ventaja"],
+      "cons": ["Desventaja específica con números", "Segunda desventaja", "Tercera desventaja"],
+      "recommendation": "Ideal para [tipo de usuario] por [razón específica con números]",
+      "score": 85
+    },
+    {
+      "id": "${vehicleData[1]?.id}",
+      "pros": ["Ventaja específica con números", "Segunda ventaja", "Tercera ventaja"],
+      "cons": ["Desventaja específica con números", "Segunda desventaja", "Tercera desventaja"],
+      "recommendation": "Perfecto para [tipo de usuario] por [razón específica con números]",
+      "score": 92
+    }
+  ],
+  "keyDifferences": [
+    "Cada uno de estos vehículos tiene una personalidad muy definida: mientras que el [Vehículo A] se destaca por su enfoque hacia [característica principal], el [Vehículo B] toma un camino completamente diferente priorizando [otra característica]. Si lo que buscas es [situación específica], claramente el [Vehículo A] será tu mejor aliado, pero si tus necesidades van más hacia [situación diferente], el [Vehículo B] te va a dar exactamente lo que necesitas.",
+    "La diferencia más notable entre estos modelos radica en [aspecto clave fundamental]. El [Vehículo A] ofrece una experiencia que se centra en [ventaja específica], algo que realmente marca la diferencia cuando [contexto de uso]. Por otro lado, el [Vehículo B] ha sido diseñado pensando en [ventaja diferente], lo que lo convierte en la opción ideal para quienes [otro contexto de uso].",
+    "Para el día a día, la elección entre estos vehículos depende mucho de tu estilo de vida. Si eres de los que [tipo de uso/persona], definitivamente vas a aprovechar mejor lo que ofrece el [Vehículo A]. Pero si tu rutina es más [otro tipo de uso], el [Vehículo B] se adapta perfectamente a lo que necesitas, especialmente por [razón específica]."
+  ],
+  "profiles": [
+    {
+      "name": "[Categoría más apropiada: Performance/Familiar/Económico/Tecnología/Lujo]",
+      "vehicle": "${vehicleData[0]?.id}",
+      "reason": "Razón específica por qué este vehículo es el mejor en esta categoría"
+    },
+    {
+      "name": "[Categoría más apropiada: Performance/Familiar/Económico/Tecnología/Lujo]", 
+      "vehicle": "${vehicleData[1]?.id}",
+      "reason": "Razón específica por qué este vehículo es el mejor en esta categoría"
+    }${vehicleData.length > 2 ? `,
+    {
+      "name": "[Categoría más apropiada: Performance/Familiar/Económico/Tecnología/Lujo]",
+      "vehicle": "${vehicleData[2]?.id}",
+      "reason": "Razón específica por qué este vehículo es el mejor en esta categoría"
+    }` : ''}${vehicleData.length > 3 ? `,
+    {
+      "name": "[Categoría más apropiada: Performance/Familiar/Económico/Tecnología/Lujo]",
+      "vehicle": "${vehicleData[3]?.id}",
+      "reason": "Razón específica por qué este vehículo es el mejor en esta categoría"
+    }` : ''}${vehicleData.length > 4 ? `,
+    {
+      "name": "[Categoría más apropiada: Performance/Familiar/Económico/Tecnología/Lujo]",
+      "vehicle": "${vehicleData[4]?.id}",
+      "reason": "Razón específica por qué este vehículo es el mejor en esta categoría"
+    }` : ''}
+  ]
+}`;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.3
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    
+    console.log('🤖 Respuesta cruda de IA:', content);
+    
+    let result;
+    try {
+      result = JSON.parse(content);
+      console.log('✅ JSON parseado exitosamente:', result);
+    } catch (parseError) {
+      console.error('❌ Error parsing JSON de IA:', parseError);
+      console.log('📄 Contenido que falló:', content);
+      throw new Error('IA devolvió JSON inválido');
+    }
+    
+    // Validar estructura de respuesta
+    if (!result.vehicles || !Array.isArray(result.vehicles)) {
+      console.error('❌ Estructura inválida - no hay vehicles array:', result);
+      throw new Error('IA devolvió estructura inválida');
+    }
+    
+    console.log('🔍 Vehicles encontrados:', result.vehicles.length);
+    result.vehicles.forEach((v: any, i: number) => {
+      console.log(`  Vehicle ${i + 1}:`, {
+        id: v.id,
+        prosCount: v.pros?.length || 0,
+        consCount: v.cons?.length || 0,
+        hasRecommendation: !!v.recommendation,
+        score: v.score
+      });
+    });
+    
+    // Transformar al formato esperado
+    const analysis: ComparisonAnalysis = {
+      categories: [], // No necesitamos categorías con IA
+      winner: {
+        overall: result.vehicles[0]?.id || '',
+        byCategory: {}
+      },
+      summary: result.vehicles.map((v: any) => ({
+        vehicleId: v.id,
+        pros: v.pros || [],
+        cons: v.cons || [],
+        recommendation: v.recommendation || 'Análisis en proceso',
+        score: typeof v.score === 'number' ? v.score / 100 : 0.75
+      })),
+      keyDifferences: result.keyDifferences || []
+    };
+    
+    console.log('📊 Analysis generado:', {
+      summaryCount: analysis.summary.length,
+      winner: analysis.winner.overall,
+      keyDifferencesCount: analysis.keyDifferences?.length || 0,
+      keyDifferences: analysis.keyDifferences || []
+    });
+
+    const profileRecommendations: ProfileRecommendation[] = result.profiles.map((p: any) => ({
+      profile: p.name,
+      vehicle: p.vehicle,
+      reason: p.reason
+    }));
+
+    return {
+      analysis,
+      profileRecommendations,
+      tokensUsed: data.usage?.total_tokens || 0
+    };
+
+  } catch (error) {
+    console.error('Error en IA pura:', error);
+    return generateSimpleFallback(vehicles);
+  }
+}
+
+// Fallback simple sin IA
+function generateSimpleFallback(vehicles: VehicleComparisonData[]): {
+  analysis: ComparisonAnalysis,
+  profileRecommendations: ProfileRecommendation[],
+  tokensUsed: number
+} {
+  const summary = vehicles.map(vehicle => {
+    const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
+    const priceMillions = Math.round(vehicle.price / 1000000);
+    const power = specs.performance?.maxPower || specs.combustion?.maxPower;
+    const consumption = specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption;
+
+    // Generar ventajas simples basadas en datos reales
+    const pros: string[] = [];
+    if (power > 400) pros.push(`Alta potencia: ${power}hp para rendimiento superior`);
+    if (vehicle.year >= 2020) pros.push(`Modelo reciente: ${vehicle.year} con tecnología actual`);
+    if (vehicle.price < 200000000) pros.push(`Precio competitivo: $${priceMillions}M en su categoría`);
+
+    // Generar desventajas simples
+    const cons: string[] = [];
+    if (vehicle.price > 400000000) cons.push(`Precio muy alto: $${priceMillions}M, inversión considerable`);
+    if (consumption && consumption > 12) cons.push(`Alto consumo: ${consumption}L/100km en ciudad`);
+    if (vehicle.year < 2018) cons.push(`Modelo anterior: ${vehicle.year}, tecnología menos actual`);
+
+    // Asegurar al menos 2 ventajas
+    if (pros.length < 2) {
+      pros.push(`${vehicle.type} ${vehicle.fuelType}: configuración versátil`);
+    }
+    if (pros.length < 2) {
+      pros.push(`Marca confiable: ${vehicle.brand} con reputación establecida`);
+    }
+
+    // Asegurar al menos 1 desventaja
+    if (cons.length === 0) {
+      cons.push(`Características específicas: puede no adaptarse a todos los usos`);
+    }
+
+    return {
+      vehicleId: vehicle.id,
+      pros: pros.slice(0, 3),
+      cons: cons.slice(0, 3),
+      recommendation: `Recomendado para quienes buscan un ${vehicle.type.toLowerCase()} ${vehicle.fuelType.toLowerCase()} con ${power ? `${power}hp` : 'características balanceadas'}`,
+      score: 0.75 // Score neutro
+    };
+  });
+
+  return {
+    analysis: {
+      categories: [],
+      winner: { overall: vehicles[0]?.id || '', byCategory: {} },
+      summary
+    },
+    profileRecommendations: [
+      { profile: 'General', vehicle: vehicles[0]?.id || '', reason: 'Opción equilibrada para diversos usos' }
+    ],
+    tokensUsed: 0
+  };
+}
+
+// Paso 2: Análisis determinístico basado en features (DEPRECATED - mantener para fallback)
 function generateDeterministicComparison(vehicles: VehicleComparisonData[]): ComparisonAnalysis {
   const categories: ComparisonCategory[] = [
     generatePerformanceCategory(vehicles),
@@ -369,6 +667,7 @@ async function enhanceWithLLM(
     price: v.price,
     fuel: v.fuelType,
     type: v.type,
+    brand: v.brand, // Prestigio de marca
     scores: {
       performance: Math.round(v.features.performance_score * 100),
       efficiency: Math.round(v.features.efficiency_score * 100),
@@ -377,7 +676,14 @@ async function enhanceWithLLM(
       tech: Math.round(v.features.tech_score * 100),
       value: Math.round(v.features.value_score * 100)
     },
-    tags: v.tags.slice(0, 3) // Solo top 3 tags
+    tags: v.tags.slice(0, 5), // Más tags para más contexto
+    // Aspectos adicionales para análisis más rico
+    priceRange: v.price > 500000000 ? 'ultra-lujo' : v.price > 300000000 ? 'lujo' : v.price > 200000000 ? 'premium' : v.price > 100000000 ? 'medio' : 'accesible',
+    isRecent: v.year >= 2022,
+    isLuxuryBrand: ['Mercedes', 'BMW', 'Audi', 'Porsche', 'Ferrari', 'Lamborghini', 'Maserati', 'Jaguar', 'Land Rover', 'Volvo', 'Lexus', 'Acura', 'Infiniti', 'Genesis', 'Tesla'].includes(v.brand),
+    isSportsCar: ['Deportivo', 'Convertible'].includes(v.type),
+    isFamilyOriented: ['SUV', 'Sedán', 'Wagon'].includes(v.type),
+    isEcoFriendly: ['Eléctrico', 'Híbrido', 'Híbrido Enchufable'].includes(v.fuelType)
   }));
 
   const prompt = `Eres un experto automotriz colombiano. Analiza esta comparación de vehículos y genera análisis COMPARATIVOS detallados:
@@ -392,15 +698,18 @@ INSTRUCCIONES CRÍTICAS:
 3. Compara cada vehículo CONTRA los otros en la lista
 4. Usa datos reales de las especificaciones
 5. Sé específico: "510hp vs 2 vehículos con menos potencia" no "potencia alta"
+6. EXPLORA TODAS LAS FACETAS: rendimiento, diseño, tecnología, confort, seguridad, prestigio, experiencia de conducción
+7. Si un dato no está disponible, NO digas "no especificado" - enfócate en otras características relevantes
+8. Varía los temas: no todo es consumo y precio - habla de estilo, deportividad, lujo, practicidad, innovación
 
 Responde en JSON:
 {
   "enhanced_summaries": [
     {
       "vehicleId": "id",
-      "pros": ["Ventaja específica vs otros vehículos", "Ventaja específica vs otros vehículos", "Ventaja específica vs otros vehículos"],
-      "cons": ["Desventaja específica vs otros vehículos", "Desventaja específica vs otros vehículos", "Desventaja específica vs otros vehículos"],
-      "recommendation": "Recomendación específica basada en comparación real"
+      "pros": ["Diseño más deportivo que los otros dos modelos", "Tecnología de conducción autónoma superior", "Experiencia de manejo más emocionante que sus competidores"],
+      "cons": ["Espacio trasero menor comparado con el rival familiar", "Mantenimiento más costoso que las opciones económicas", "Menor altura al suelo que los vehículos todoterreno"],
+      "recommendation": "Ideal para entusiastas que priorizan experiencia de conducción sobre practicidad familiar"
     }
   ],
   "profile_recommendations": [
@@ -691,9 +1000,15 @@ function generateUniquePros(vehicle: VehicleComparisonData, rankings: any, globa
   
   const totalVehicles = Object.keys(rankings).length;
   
-  // Ventaja de precio (top 3 más baratos o mejor que promedio)
+  // Ventaja de precio (SOLO para vehículos realmente accesibles o competitivos)
   if (rankings.price <= Math.ceil(totalVehicles / 2)) {
-    pros.push(`Precio accesible: $${priceMillions}M, ${rankings.price === 1 ? 'el más económico' : 'uno de los más baratos'} de la comparación`);
+    // SOLO mencionar precio como ventaja si realmente es accesible
+    if (vehicle.price < 100000000) { // Menos de 100M - realmente accesible
+      pros.push(`Precio accesible: $${priceMillions}M, ${rankings.price === 1 ? 'el más económico' : 'uno de los más baratos'} de la comparación`);
+    } else if (vehicle.price < 200000000) { // Entre 100M y 200M - competitivo
+      pros.push(`Precio competitivo: $${priceMillions}M, ${rankings.price === 1 ? 'el más económico' : 'mejor precio'} en esta categoría premium`);
+    }
+    // NO mencionar precio como ventaja para vehículos de más de $200M
   }
   
   // Ventaja de potencia (top 3 más potentes o mejor que promedio)
@@ -704,10 +1019,10 @@ function generateUniquePros(vehicle: VehicleComparisonData, rankings: any, globa
     }
   }
   
-  // Ventaja de eficiencia (top 3 más eficientes o mejor que promedio)
+  // Ventaja de eficiencia (SOLO si realmente es eficiente)
   if (rankings.efficiency <= Math.ceil(totalVehicles / 2)) {
     const consumption = specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption;
-    if (consumption) {
+    if (consumption && consumption < 8.0) { // Solo si consume menos de 8L/100km
       pros.push(`Eficiencia destacada: ${consumption}L/100km, ${rankings.efficiency === 1 ? 'el más eficiente' : 'uno de los más eficientes'} de la comparación`);
     } else if (vehicle.fuelType === 'Eléctrico') {
       const range = specs.electric?.electricRange;
@@ -715,6 +1030,7 @@ function generateUniquePros(vehicle: VehicleComparisonData, rankings: any, globa
         pros.push(`Tecnología eléctrica: ${range}km de autonomía sin emisiones, único en la comparación`);
       }
     }
+    // NO mencionar eficiencia si consume más de 8L/100km
   }
   
   // Ventaja de seguridad (top 3 más seguros o mejor que promedio)
@@ -730,22 +1046,54 @@ function generateUniquePros(vehicle: VehicleComparisonData, rankings: any, globa
     pros.push(`Modelo actualizado: ${vehicle.year}, ${rankings.year === 1 ? 'el más reciente' : 'uno de los más recientes'} de la comparación`);
   }
   
-  // Ventajas específicas por tipo de vehículo
+  // Ventajas específicas por tipo de vehículo (más específicas)
   if (vehicle.type === 'SUV') {
-    pros.push(`Versatilidad familiar: mayor espacio y capacidad vs sedanes y deportivos`);
+    const height = specs.dimensions?.height;
+    if (height && height > 1600) {
+      pros.push(`Altura de manejo superior: ${height}mm para mejor visibilidad y comando en carretera`);
+    } else {
+      pros.push(`Versatilidad SUV: mayor espacio de carga y capacidad para terrenos irregulares`);
+    }
   } else if (vehicle.type === 'Deportivo') {
-    pros.push(`Rendimiento deportivo: diseño y características de alto rendimiento`);
+    const acceleration = specs.performance?.acceleration0to100;
+    if (acceleration && acceleration < 5.0) {
+      pros.push(`Aceleración excepcional: 0-100 km/h en ${acceleration}s, rendimiento de supercarro`);
+    } else {
+      pros.push(`Diseño deportivo puro: aerodinámica y características optimizadas para rendimiento`);
+    }
   } else if (vehicle.type === 'Sedán') {
-    pros.push(`Elegancia y confort: diseño clásico y comodidad en viajes largos`);
+    const length = specs.dimensions?.length;
+    if (length && length > 4500) {
+      pros.push(`Espacio interior generoso: ${length}mm de longitud para máximo confort de pasajeros`);
+    } else {
+      pros.push(`Equilibrio perfecto: combina elegancia, confort y eficiencia en un diseño clásico`);
+    }
   }
   
-  // Ventajas específicas por tipo de combustible
+  // Ventajas específicas por tipo de combustible (más detalladas)
   if (vehicle.fuelType === 'Eléctrico') {
-    pros.push(`Tecnología del futuro: cero emisiones y mantenimiento mínimo`);
+    const range = specs.electric?.electricRange;
+    if (range && range > 500) {
+      pros.push(`Autonomía eléctrica excepcional: ${range}km sin emisiones, ideal para viajes largos`);
+    } else if (range) {
+      pros.push(`Tecnología eléctrica: ${range}km de autonomía con cero emisiones y costo operativo mínimo`);
+    } else {
+      pros.push(`Movilidad sostenible: tecnología eléctrica con mantenimiento mínimo y operación silenciosa`);
+    }
   } else if (vehicle.fuelType === 'Híbrido') {
-    pros.push(`Eficiencia híbrida: combina motor eléctrico y gasolina para máximo rendimiento`);
+    const cityConsumption = specs.hybrid?.cityConsumption;
+    if (cityConsumption && cityConsumption < 5.0) {
+      pros.push(`Eficiencia híbrida excepcional: ${cityConsumption}L/100km en ciudad, ideal para Medellín`);
+    } else {
+      pros.push(`Tecnología híbrida inteligente: combina eficiencia eléctrica con autonomía de gasolina`);
+    }
   } else if (vehicle.fuelType === 'Gasolina') {
-    pros.push(`Tecnología probada: motor convencional confiable y red de servicio amplia`);
+    const power = specs.performance?.maxPower || specs.combustion?.maxPower;
+    if (power && power > 400) {
+      pros.push(`Potencia de gasolina pura: ${power}hp para rendimiento sin compromiso y sonido auténtico`);
+    } else {
+      pros.push(`Confiabilidad probada: tecnología de gasolina madura con red de servicio completa en Colombia`);
+    }
   }
   
   // Ventajas por características específicas
@@ -759,8 +1107,35 @@ function generateUniquePros(vehicle: VehicleComparisonData, rankings: any, globa
     pros.push(`Navegación integrada: GPS incorporado para direcciones sin smartphone`);
   }
   
-  // Asegurar al menos 2 ventajas por vehículo
-  if (pros.length < 2) {
+  // Ventajas específicas para vehículos de lujo (cuando no hay precio o eficiencia)
+  if (pros.length < 2 && vehicle.price > 200000000) {
+    const acceleration = specs.performance?.acceleration0to100;
+    const maxSpeed = specs.performance?.maxSpeed;
+    const power = specs.performance?.maxPower || specs.combustion?.maxPower;
+    
+    if (acceleration && acceleration < 5.0) {
+      pros.push(`Aceleración excepcional: 0-100 km/h en ${acceleration}s, rendimiento de supercarro`);
+    }
+    
+    if (maxSpeed && maxSpeed > 250) {
+      pros.push(`Velocidad máxima: ${maxSpeed} km/h, diseñado para circuito`);
+    }
+    
+    if (power && power > 400) {
+      pros.push(`Motor de alto rendimiento: ${power}hp de potencia pura para experiencias extremas`);
+    }
+    
+    if (vehicle.brand === 'Porsche' || vehicle.brand === 'Ferrari' || vehicle.brand === 'McLaren') {
+      pros.push(`Prestigio exclusivo: legado de ${vehicle.brand} en deportivos de alto rendimiento`);
+    }
+    
+    if (vehicle.year >= 2020) {
+      pros.push(`Tecnología moderna: ${vehicle.year} con sistemas avanzados de última generación`);
+    }
+  }
+  
+  // Asegurar al menos 2 ventajas por vehículo (para vehículos normales)
+  if (pros.length < 2 && vehicle.price <= 200000000) {
     // Ventajas adicionales basadas en características generales
     if (vehicle.price < globalAnalysis.priceRange.avg) {
       pros.push(`Precio competitivo: $${priceMillions}M por debajo del promedio de $${Math.round(globalAnalysis.priceRange.avg/1000000)}M`);
@@ -787,9 +1162,18 @@ function generateUniqueCons(vehicle: VehicleComparisonData, rankings: any, globa
   
   const totalVehicles = Object.keys(rankings).length;
   
-  // Desventaja de precio (más caro que el promedio o top 3 más caros)
+  // Desventaja de precio (contextualizada según precio real)
   if (rankings.price >= Math.ceil(totalVehicles / 2)) {
-    cons.push(`Precio más alto: $${priceMillions}M, ${rankings.price === totalVehicles ? 'el más caro' : 'uno de los más caros'} de la comparación`);
+    // Contextualizar según precio real en el mercado
+    if (vehicle.price > 400000000) { // Más de 400M - súper lujo
+      cons.push(`Precio muy elevado: $${priceMillions}M, vehículo de súper lujo ${rankings.price === totalVehicles ? 'el más costoso' : 'uno de los más costosos'} del mercado`);
+    } else if (vehicle.price > 200000000) { // Entre 200M y 400M - premium
+      cons.push(`Precio premium: $${priceMillions}M, ${rankings.price === totalVehicles ? 'el más caro' : 'uno de los más caros'} en esta categoría de lujo`);
+    } else if (vehicle.price > 100000000) { // Entre 100M y 200M - medio-alto
+      cons.push(`Precio elevado: $${priceMillions}M, ${rankings.price === totalVehicles ? 'el más costoso' : 'uno de los más costosos'} de esta comparación`);
+    } else { // Menos de 100M pero aún caro dentro del grupo
+      cons.push(`Precio alto: $${priceMillions}M, ${rankings.price === totalVehicles ? 'el más caro' : 'uno de los más caros'} de las opciones económicas`);
+    }
   }
   
   // Desventaja de potencia (menos potente que el promedio o bottom 3)
@@ -800,17 +1184,18 @@ function generateUniqueCons(vehicle: VehicleComparisonData, rankings: any, globa
     }
   }
   
-  // Desventaja de eficiencia (menos eficiente que el promedio o bottom 3)
+  // Desventaja de eficiencia (SOLO si realmente consume mucho)
   if (rankings.efficiency >= Math.ceil(totalVehicles / 2)) {
     const consumption = specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption;
-    if (consumption) {
-      cons.push(`Mayor consumo: ${consumption}L/100km, ${rankings.efficiency === totalVehicles ? 'el menos eficiente' : 'uno de los menos eficientes'} de la comparación`);
+    if (consumption && consumption > 10.0) { // Solo si consume MÁS de 10L/100km
+      cons.push(`Consumo elevado: ${consumption}L/100km vulnerable a aumentos de precio de combustible`);
     } else if (vehicle.fuelType === 'Eléctrico') {
       const range = specs.electric?.electricRange;
-      if (range && range < 400) {
+      if (range && range < 300) { // Solo si la autonomía es realmente limitada
         cons.push(`Autonomía limitada: ${range}km insuficiente para viajes largos sin paradas`);
       }
     }
+    // NO mencionar eficiencia como desventaja si no consume realmente mucho
   }
   
   // Desventaja de seguridad (menos seguro que el promedio o bottom 3)
@@ -1393,18 +1778,32 @@ function generateBasicRecommendation(vehicle: VehicleComparisonData): string {
   const maintenanceCost = getMaintenanceCost(vehicle.brand, vehicle.year);
   const segmentAvg = getSegmentAveragePrice(vehicle.type, vehicle.year);
   
-  // Recomendación basada en el score más alto
+  // Recomendación basada en rendimiento y contexto de precio
   if (vehicle.features.performance_score > 0.8) {
     const power = specs.performance?.maxPower || specs.combustion?.maxPower;
     const acceleration = specs.performance?.acceleration0to100;
-    const torque = specs.performance?.maxTorque;
     
-    if (power && acceleration) {
-      return `Perfecto para entusiastas del volante: ${power}hp y 0-100km/h en ${acceleration}s ofrecen emociones puras de conducción deportiva`;
-    } else if (power) {
-      return `Ideal para conductores que buscan potencia: ${power}hp garantiza respuesta inmediata en cualquier situación de manejo`;
-    } else {
-      return `Recomendado para quienes priorizan deportividad: características de alto rendimiento en un ${vehicle.type.toLowerCase()} versátil`;
+    // Contextualizar según precio para ser consistente
+    if (vehicle.price > 400000000) { // Súper lujo
+      if (power && acceleration && acceleration < 4.0) {
+        return `Obra maestra de ingeniería: ${power}hp y 0-100 km/h en ${acceleration}s representan la cumbre del rendimiento automotriz mundial`;
+      } else if (power && power > 500) {
+        return `Supercarro exclusivo: ${power}hp de potencia brutal, diseñado para quienes buscan la experiencia de conducción más extrema`;
+      } else {
+        return `Vehículo de colección: rendimiento excepcional y exclusividad que solo unos pocos pueden poseer`;
+      }
+    } else if (vehicle.price > 200000000) { // Premium
+      if (power && acceleration) {
+        return `Deportivo premium: ${power}hp y 0-100 km/h en ${acceleration}s combinan rendimiento serio con lujo refinado`;
+      } else {
+        return `Ideal para conductores exigentes: rendimiento deportivo con el prestigio y calidad de una marca premium`;
+      }
+    } else { // Deportivo accesible
+      if (power && acceleration) {
+        return `Diversión accesible: ${power}hp y 0-100 km/h en ${acceleration}s ofrecen emociones deportivas sin sacrificar la practicidad`;
+      } else {
+        return `Perfecto para entusiastas: rendimiento deportivo genuino en un paquete más accesible para uso diario`;
+      }
     }
   } 
   
@@ -1441,11 +1840,16 @@ function generateBasicRecommendation(vehicle: VehicleComparisonData): string {
   }
   
   if (vehicle.features.value_score > 0.8) {
-    if (segmentAvg && vehicle.price < segmentAvg) {
+    // Contextualizar el "valor" según el rango de precio
+    if (vehicle.price > 400000000) { // Súper lujo
+      return `Inversión exclusiva: $${priceMillions}M por un vehículo que combina prestigio absoluto, tecnología avanzada y exclusividad mundial`;
+    } else if (vehicle.price > 200000000) { // Premium
+      return `Lujo justificado: $${priceMillions}M por equipamiento premium, ingeniería superior y la experiencia de marca de prestigio`;
+    } else if (segmentAvg && vehicle.price < segmentAvg) {
       const savings = Math.round((segmentAvg - vehicle.price) / 1000000);
-      return `Excelente valor: $${priceMillions}M vs promedio de segmento $${Math.round(segmentAvg/1000000)}M, ahorrando $${savings}M sin comprometer equipamiento`;
-  } else {
-      return `Recomendado por relación calidad-precio: $${priceMillions}M con equipamiento superior y confiabilidad probada de ${vehicle.brand}`;
+      return `Excelente oportunidad: $${priceMillions}M vs promedio de segmento $${Math.round(segmentAvg/1000000)}M, ahorrando $${savings}M sin comprometer equipamiento esencial`;
+    } else {
+      return `Equilibrio inteligente: $${priceMillions}M con equipamiento completo y confiabilidad probada de ${vehicle.brand}`;
     }
   }
   

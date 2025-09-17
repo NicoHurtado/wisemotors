@@ -40,24 +40,44 @@ export async function GET(
       }
     }
 
-    // Obtener vehículos similares (misma marca o tipo)
-    const similarVehicles = await prisma.vehicle.findMany({
+    // Obtener vehículos similares con algoritmo mejorado
+    const allSimilarVehicles = await prisma.vehicle.findMany({
       where: {
-        OR: [
-          { brand: vehicle.brand },
-          { type: vehicle.type }
-        ],
+        type: vehicle.type, // Solo mismo tipo
         NOT: {
           id: vehicle.id
         }
       },
-      take: 3,
       include: {
         images: {
           take: 1
         }
       }
     });
+
+    // Filtrar y ordenar por similaridad inteligente
+    const vehiclePrice = vehicle.price;
+    const priceRange = vehiclePrice * 0.5; // Rango del 50% del precio base
+    
+    const similarVehicles = allSimilarVehicles
+      .map(v => {
+        const priceDifference = Math.abs(v.price - vehiclePrice);
+        const priceRatio = priceDifference / vehiclePrice;
+        
+        // Penalizar mucho los precios muy diferentes (más del 100% de diferencia)
+        const priceScore = priceRatio > 1.0 ? 1000 + priceDifference : priceDifference;
+        
+        // Bonus por misma marca
+        const brandBonus = v.brand === vehicle.brand ? -50000 : 0;
+        
+        return {
+          ...v,
+          similarityScore: priceScore + brandBonus
+        };
+      })
+      .sort((a, b) => a.similarityScore - b.similarityScore)
+      .slice(0, 8) // Aumentar a 8 vehículos para permitir navegación
+      .map(({ similarityScore, ...v }) => v);
 
     // Parsear specifications de vehículos similares también
     const similarVehiclesWithParsedSpecs = similarVehicles.map(v => {

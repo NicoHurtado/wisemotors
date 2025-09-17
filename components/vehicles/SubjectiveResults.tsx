@@ -48,6 +48,16 @@ export function SubjectiveResults({ results, query, onFilterClick }: SubjectiveR
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-2">Top 3 Recomendaciones</h2>
           <p className="text-gray-600">Los vehículos que mejor se adaptan a lo que buscas</p>
+          
+          {/* Mensaje de fallback aplicado */}
+          {results.top_recommendations?.fallback_applied && (
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-2xl mx-auto">
+              <p className="text-sm text-blue-800">
+                <span className="font-medium">🎯 Recomendaciones ampliadas:</span> {' '}
+                Hemos incluido vehículos que pueden coincidir parcialmente con tus preferencias para darte más opciones.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -53,6 +53,70 @@ function evaluateTechnicalFilter(specs: any, filter: any): boolean {
 }
 
 // Helper function to get nested values by path (e.g., "performance.acceleration0to100")
+// Función para calcular porcentaje de coincidencia en búsquedas objetivas
+function calculateObjectiveMatchPercentage(vehicle: any, intent: CategorizedIntent): number {
+  if (!intent.hard_filters && !intent.soft_weights) return 100;
+  
+  let totalCriteria = 0;
+  let matchedCriteria = 0;
+  
+  // Evaluar filtros duros
+  if (intent.hard_filters) {
+    const filters = intent.hard_filters;
+    
+    if (filters.brand) {
+      totalCriteria++;
+      if (vehicle.brand?.toLowerCase() === filters.brand.toLowerCase()) {
+        matchedCriteria++;
+      }
+    }
+    
+    if (filters.body_type) {
+      totalCriteria++;
+      if (vehicle.type === filters.body_type) {
+        matchedCriteria++;
+      }
+    }
+    
+    if (filters.fuel_type) {
+      totalCriteria++;
+      if (vehicle.fuelType === filters.fuel_type) {
+        matchedCriteria++;
+      }
+    }
+    
+    if (filters.budget_min || filters.budget_max) {
+      totalCriteria++;
+      const price = vehicle.price;
+      const minOk = !filters.budget_min || price >= filters.budget_min;
+      const maxOk = !filters.budget_max || price <= filters.budget_max;
+      if (minOk && maxOk) {
+        matchedCriteria++;
+      } else if ((filters.budget_min && price >= filters.budget_min * 0.9) || 
+                 (filters.budget_max && price <= filters.budget_max * 1.1)) {
+        matchedCriteria += 0.7; // Coincidencia parcial para precios cercanos
+      }
+    }
+    
+    if (filters.year_min) {
+      totalCriteria++;
+      if (vehicle.year >= filters.year_min) {
+        matchedCriteria++;
+      } else if (vehicle.year >= filters.year_min - 2) {
+        matchedCriteria += 0.5; // Coincidencia parcial para años cercanos
+      }
+    }
+  }
+  
+  // Si no hay criterios específicos, asumir coincidencia por búsqueda textual
+  if (totalCriteria === 0) {
+    return 85; // Coincidencia general para búsquedas amplias
+  }
+  
+  const percentage = Math.round((matchedCriteria / totalCriteria) * 100);
+  return Math.max(50, Math.min(100, percentage)); // Mínimo 50%, máximo 100%
+}
+
 function getValueByPath(obj: any, path: string): any {
   try {
     if (!obj || !path) return null;
@@ -229,12 +293,14 @@ async function processSubjectiveQuery(intent: CategorizedIntent, startTime: numb
     total_matches: vehiclesWithAffinity.length,
     top_recommendations: {
       vehicles: top3WithReasons,
-      explanation: generateSubjectiveExplanation(intent)
+      explanation: generateSubjectiveExplanation(intent),
+      fallback_applied: top3WithReasons.some(v => v.affinity < 70)
     },
     all_matches: {
       vehicles: vehiclesWithAffinity.slice(3), // Rest of vehicles for "more options"
       filters_applied: ['Ranking por afinidad basado en preferencias'],
-      count_by_category: generateCategoryCount(vehiclesWithAffinity)
+      count_by_category: generateCategoryCount(vehiclesWithAffinity),
+      fallback_applied: vehiclesWithAffinity.slice(3).some(v => v.affinity < 60)
     },
     processing_time_ms: Date.now() - startTime,
     confidence: intent.confidence,
@@ -282,11 +348,95 @@ async function processObjectiveQuery(intent: CategorizedIntent, startTime: numbe
       }
     });
   }
+  
+  // Si no hay resultados, aplicar fallback progresivo para búsquedas objetivas
+  if (vehicles.length === 0) {
+    // Intentar relajar algunos filtros de manera inteligente
+    const relaxedWhere = { ...where };
+    
+    // Relajar filtros de precio si existen
+    if (relaxedWhere.price) {
+      if (relaxedWhere.price.lte) {
+        relaxedWhere.price.lte = Math.floor(relaxedWhere.price.lte * 1.3);
+      }
+      if (relaxedWhere.price.gte) {
+        relaxedWhere.price.gte = Math.floor(relaxedWhere.price.gte * 0.8);
+      }
+    }
+    
+    // Relajar filtro de año
+    if (relaxedWhere.year && relaxedWhere.year.gte) {
+      relaxedWhere.year.gte = Math.max(2010, relaxedWhere.year.gte - 3);
+    }
+    
+    vehicles = await prisma.vehicle.findMany({
+      where: relaxedWhere,
+      include: {
+        images: {
+          orderBy: { order: 'asc' },
+          take: 1
+        }
+      },
+      orderBy: [
+        { brand: 'asc' },
+        { model: 'asc' },
+        { year: 'desc' }
+      ]
+    });
+    
+    // Si aún no hay resultados, eliminar algunos filtros opcionales
+    if (vehicles.length === 0) {
+      const finalWhere = { ...relaxedWhere };
+      
+      // Mantener solo filtros esenciales (marca, tipo de combustible si es muy específico)
+      if (!finalWhere.brand && !finalWhere.fuelType) {
+        // Si no hay marca ni combustible específico, eliminar tipo de carrocería
+        delete finalWhere.type;
+      }
+      
+      vehicles = await prisma.vehicle.findMany({
+        where: finalWhere,
+        include: {
+          images: {
+            orderBy: { order: 'asc' },
+            take: 1
+          }
+        },
+        orderBy: [
+          { brand: 'asc' },
+          { model: 'asc' },
+          { year: 'desc' }
+        ],
+        take: 30
+      });
+    }
+    
+    // Último fallback: mostrar vehículos populares
+    if (vehicles.length === 0) {
+      vehicles = await prisma.vehicle.findMany({
+        include: {
+          images: {
+            orderBy: { order: 'asc' },
+            take: 1
+          }
+        },
+        orderBy: [
+          { brand: 'asc' },
+          { model: 'asc' },
+          { year: 'desc' }
+        ],
+        take: 20
+      });
+    }
+  }
 
   const vehicleResults = vehicles.map(vehicle => {
     const rawImageUrl = vehicle.images?.[0]?.url || null;
     const validImageUrl = getValidImageUrl(rawImageUrl);
     const finalImageUrl = validImageUrl || createImagePlaceholder(vehicle.brand, vehicle.model);
+    
+    // Calcular porcentaje de coincidencia para búsquedas objetivas
+    const matchPercentage = calculateObjectiveMatchPercentage(vehicle, intent);
     
     return {
       id: vehicle.id,
@@ -296,7 +446,8 @@ async function processObjectiveQuery(intent: CategorizedIntent, startTime: numbe
       price: vehicle.price,
       fuelType: vehicle.fuelType,
       type: vehicle.type,
-      imageUrl: finalImageUrl
+      imageUrl: finalImageUrl,
+      matchPercentage
     };
   });
 
@@ -306,7 +457,8 @@ async function processObjectiveQuery(intent: CategorizedIntent, startTime: numbe
     all_matches: {
       vehicles: vehicleResults,
       filters_applied: filtersApplied,
-      count_by_category: generateCategoryCount(vehicleResults)
+      count_by_category: generateCategoryCount(vehicleResults),
+      fallback_applied: vehicles.length > 0 && vehicleResults.some(v => v.matchPercentage < 100)
     },
     processing_time_ms: Date.now() - startTime,
     confidence: intent.confidence,

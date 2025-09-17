@@ -22,6 +22,7 @@ interface VehicleCardProps {
   affinityScore?: number;
   reasons?: string[];
   compact?: boolean;
+  matchPercentage?: number;
 }
 
 export function VehicleCard({ 
@@ -32,7 +33,8 @@ export function VehicleCard({
   showAffinity = false,
   affinityScore,
   reasons,
-  compact = false
+  compact = false,
+  matchPercentage
 }: VehicleCardProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -154,6 +156,26 @@ export function VehicleCard({
               }`}
             >
               {affinityScore}% match
+            </Badge>
+          </div>
+        )}
+        
+        {/* Match percentage badge for objective searches */}
+        {!showAffinity && matchPercentage !== undefined && matchPercentage < 100 && (
+          <div className="absolute bottom-3 left-3">
+            <Badge 
+              variant="wise" 
+              className={`text-xs ${
+                matchPercentage >= 90 
+                  ? 'bg-green-500 text-white' 
+                  : matchPercentage >= 75 
+                    ? 'bg-blue-500 text-white'
+                    : matchPercentage >= 60
+                      ? 'bg-yellow-500 text-white' 
+                      : 'bg-orange-500 text-white'
+              }`}
+            >
+              {matchPercentage}% coincidencia
             </Badge>
           </div>
         )}

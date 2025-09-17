@@ -18,14 +18,15 @@ export async function POST(request: NextRequest) {
     // STEP 2: Process results based on query type
     const processedResults = await processResults(categorizedIntent);
     
-    if (processedResults.total_matches === 0) {
-      return NextResponse.json({ 
-        prompt, 
-        results: [],
-        query_type: categorizedIntent.query_type,
-        message: 'No se encontraron vehículos que coincidan con los criterios'
-      });
-    }
+    // Ya no retornamos resultados vacíos, el sistema de fallback siempre devuelve algo
+    // if (processedResults.total_matches === 0) {
+    //   return NextResponse.json({ 
+    //     prompt, 
+    //     results: [],
+    //     query_type: categorizedIntent.query_type,
+    //     message: 'No se encontraron vehículos que coincidan con los criterios'
+    //   });
+    // }
 
     return NextResponse.json({ 
       prompt, 

@@ -52,24 +52,25 @@ export async function applyHardFilters(intent: VehicleIntent) {
     take: 40
   });
 
-  // Si no hay resultados, relajar progresivamente algunas restricciones demasiado estrictas
+  // Si no hay resultados, aplicar múltiples niveles de relajación progresiva
   if (candidates.length === 0 && intent.hard_filters) {
-    const relaxedWhere: any = { ...where };
+    // Nivel 1: Relajación moderada
+    let relaxedWhere: any = { ...where };
 
-    // Relajar budget máximo a +20%
+    // Relajar budget máximo a +30%
     if (intent.hard_filters.budget_max) {
       relaxedWhere.price = relaxedWhere.price || {};
-      relaxedWhere.price.lte = Math.floor(intent.hard_filters.budget_max * 1.2);
+      relaxedWhere.price.lte = Math.floor(intent.hard_filters.budget_max * 1.3);
     }
 
-    // Relajar body_type -> permitir tipos cercanos (SUV ~ Crossover ~ Pickup parcial)
+    // Relajar body_type -> permitir tipos cercanos
     if (intent.hard_filters.body_type && relaxedWhere.type) {
       const body = intent.hard_filters.body_type;
       const nearTypes: Record<string, string[]> = {
         'SUV': ['SUV', 'Pickup', 'Hatchback'],
         'Sedán': ['Sedán', 'Hatchback'],
-        'Hatchback': ['Hatchback', 'Sedán'],
         'Pickup': ['Pickup', 'SUV'],
+        'Hatchback': ['Hatchback', 'Sedán', 'SUV'],
         'Deportivo': ['Deportivo', 'Convertible', 'Sedán'],
         'Convertible': ['Convertible', 'Deportivo']
       };
@@ -86,6 +87,56 @@ export async function applyHardFilters(intent: VehicleIntent) {
       },
       take: 40
     });
+    
+    // Nivel 2: Si aún no hay resultados, relajar más
+    if (candidates.length === 0) {
+      relaxedWhere = { ...where };
+      
+      // Relajar budget máximo a +50% y mínimo a -20%
+      if (intent.hard_filters.budget_max || intent.hard_filters.budget_min) {
+        relaxedWhere.price = {};
+        if (intent.hard_filters.budget_max) {
+          relaxedWhere.price.lte = Math.floor(intent.hard_filters.budget_max * 1.5);
+        }
+        if (intent.hard_filters.budget_min) {
+          relaxedWhere.price.gte = Math.floor(intent.hard_filters.budget_min * 0.8);
+        }
+      }
+      
+      // Eliminar filtro de tipo de carrocería temporalmente
+      if (intent.hard_filters.body_type) {
+        delete relaxedWhere.type;
+      }
+      
+      candidates = await prisma.vehicle.findMany({
+        where: relaxedWhere,
+        include: {
+          images: {
+            orderBy: { order: 'asc' },
+            take: 1
+          }
+        },
+        take: 40
+      });
+    }
+    
+    // Nivel 3: Fallback final - mostrar vehículos populares si aún no hay resultados
+    if (candidates.length === 0) {
+      candidates = await prisma.vehicle.findMany({
+        include: {
+          images: {
+            orderBy: { order: 'asc' },
+            take: 1
+          }
+        },
+        orderBy: [
+          { brand: 'asc' },
+          { model: 'asc' },
+          { year: 'desc' }
+        ],
+        take: 20
+      });
+    }
   }
 
   return candidates;

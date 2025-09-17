@@ -30,6 +30,7 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
   const [vehiclesWithSpecs, setVehiclesWithSpecs] = useState<VehicleComparisonData[]>([]);
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis[]>([]);
   const [profileRecommendations, setProfileRecommendations] = useState<ProfileRecommendation[]>([]);
+  const [keyDifferences, setKeyDifferences] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
 
@@ -65,6 +66,7 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
           const aiResult = await getIntelligentAnalysis(vehiclesWithData);
           setAiAnalysis(aiResult.analysis);
           setProfileRecommendations(aiResult.profileRecommendations);
+          setKeyDifferences(aiResult.keyDifferences);
         } catch (error) {
           console.error('Error getting AI analysis:', error);
           // Fallback a análisis básico
@@ -327,6 +329,30 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
         })}
       </div>
 
+      {/* Diferencias Clave */}
+      {aiAnalysis.length > 0 && keyDifferences.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-purple-600" />
+              Diferencias Clave
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-2">Análisis de las diferencias más importantes entre estos vehículos</p>
+          </CardHeader>
+          <CardContent>
+            <div className="prose prose-gray max-w-none">
+              <div className="space-y-4">
+                {keyDifferences.map((difference, index) => (
+                  <p key={index} className="text-gray-700 leading-relaxed text-sm bg-purple-50 p-4 rounded-lg border-l-4 border-purple-500">
+                    {difference}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Recomendaciones por perfil */}
       <Card>
         <CardHeader>
@@ -337,7 +363,15 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {getProfileRecommendations().map((rec, index) => (
+            {(profileRecommendations.length > 0 ? profileRecommendations : getProfileRecommendations()).map((rec, index) => {
+              // Convertir ID a nombre si es necesario
+              let vehicleName = rec.vehicle;
+              if (rec.vehicle && rec.vehicle.length > 20) { // Es un ID
+                const vehicle = vehiclesWithSpecs.find(v => v.id === rec.vehicle);
+                vehicleName = vehicle ? `${vehicle.brand} ${vehicle.model}` : rec.vehicle;
+              }
+              
+              return (
               <div key={index} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2 bg-wise/20 rounded-full">
@@ -355,7 +389,7 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
                 <div className="space-y-2">
                   <div className="text-sm">
                     <span className="text-gray-600">Vehículo: </span>
-                    <span className="font-medium text-gray-900">{rec.vehicle}</span>
+                    <span className="font-medium text-gray-900">{vehicleName}</span>
                   </div>
                   <div className="text-sm">
                     <span className="text-gray-600">Razón: </span>
@@ -363,7 +397,8 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>
