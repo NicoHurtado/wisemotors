@@ -69,7 +69,7 @@ export function HybridResults({ results, query, onFilterClick }: HybridResultsPr
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium text-blue-900">Filtros aplicados:</span>
-            {filtersApplied.map((filter, index) => (
+            {filtersApplied.map((filter: string, index: number) => (
               <Badge key={index} variant="outline" className="text-xs border-blue-300 text-blue-700">
                 {filter}
               </Badge>

@@ -287,8 +287,8 @@ export function generateVehicleTags(vehicle: any, features: VehicleFeatures): st
   
   // Tags de categorías WiseMotors si existen - interpretación inteligente
   if (vehicle.wiseCategories) {
-    const wiseCategories = vehicle.wiseCategories.split(',').map(cat => cat.trim().toLowerCase());
-    wiseCategories.forEach(category => {
+    const wiseCategories = vehicle.wiseCategories.split(',').map((cat: string) => cat.trim().toLowerCase());
+    wiseCategories.forEach((category: string) => {
       // Interpretar categorías relacionadas con velocidad/performance
       if (category.includes('correr') || category.includes('rápido') || category.includes('velocidad') || 
           category.includes('deportiv') || category.includes('racing') || category.includes('speed')) {
@@ -345,5 +345,5 @@ export function generateVehicleTags(vehicle: any, features: VehicleFeatures): st
     });
   }
   
-  return [...new Set(tags)].slice(0, 10); // Remover duplicados y aumentar a 10 tags
+  return Array.from(new Set(tags)).slice(0, 10); // Remover duplicados y aumentar a 10 tags
 }

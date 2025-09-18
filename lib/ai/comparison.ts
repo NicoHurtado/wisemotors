@@ -117,10 +117,10 @@ export async function getOptimizedComparison(
     const versionKey = `comparison_logic_version`;
     const currentVersion = comparisonCache.get(versionKey);
     
-    if (!currentVersion || currentVersion.version !== LOGIC_VERSION) {
+    if (!currentVersion || (currentVersion as any).version !== LOGIC_VERSION) {
       console.log(`🔄 Actualizando lógica de comparación a versión ${LOGIC_VERSION}`);
       clearComparisonCache(); // Limpiar todo el cache
-      comparisonCache.set(versionKey, { version: LOGIC_VERSION, timestamp: Date.now() });
+      comparisonCache.set(versionKey, { version: LOGIC_VERSION, timestamp: Date.now() } as any);
     }
     
     // 1. Verificar cache con validación de vehículos

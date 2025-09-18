@@ -285,8 +285,8 @@ export function SimilarVehicles({ vehicles, currentVehicle }: SimilarVehiclesPro
             year: selectedVehicleToCompare.year,
             price: selectedVehicleToCompare.price,
             fuelType: selectedVehicleToCompare.fuel,
-            type: selectedVehicleToCompare.type || 'Sedán',
-            specifications: selectedVehicleToCompare.specifications || {}
+            type: (selectedVehicleToCompare as any).type || 'Sedán',
+            specifications: (selectedVehicleToCompare as any).specifications || {}
           }}
         />
       )}

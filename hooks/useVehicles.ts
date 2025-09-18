@@ -193,7 +193,6 @@ export function useVehicle(id: string) {
           cityConsumption: data.specifications?.combustion?.cityConsumption,
           rating: 4.3, // Valor por defecto
           slogan: `${data.brand} ${data.model} - Experiencia de conducción excepcional`,
-          reviewVideoUrl: data.reviewVideoUrl,
           dealerships: data.vehicleDealers?.map((vd: any) => ({
             id: vd.dealer.id,
             name: vd.dealer.name,

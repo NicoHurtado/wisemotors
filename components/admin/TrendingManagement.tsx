@@ -127,8 +127,8 @@ export function TrendingManagement({ onClose }: TrendingManagementProps) {
   });
 
   // Obtener tipos únicos para el filtro
-  const uniqueTypes = [...new Set(vehicles.map(v => v.type))].sort();
-  const uniqueFuels = [...new Set(vehicles.map(v => v.fuelType))].sort();
+  const uniqueTypes = Array.from(new Set(vehicles.map(v => v.type))).sort();
+  const uniqueFuels = Array.from(new Set(vehicles.map(v => v.fuelType))).sort();
 
   if (loading) {
     return (

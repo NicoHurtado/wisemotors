@@ -55,54 +55,54 @@ function evaluateTechnicalFilter(specs: any, filter: any): boolean {
 // Helper function to get nested values by path (e.g., "performance.acceleration0to100")
 // Función para calcular porcentaje de coincidencia en búsquedas objetivas
 function calculateObjectiveMatchPercentage(vehicle: any, intent: CategorizedIntent): number {
-  if (!intent.hard_filters && !intent.soft_weights) return 100;
+  if (!intent.objective_filters && !intent.subjective_weights) return 100;
   
   let totalCriteria = 0;
   let matchedCriteria = 0;
   
   // Evaluar filtros duros
-  if (intent.hard_filters) {
-    const filters = intent.hard_filters;
+  if (intent.objective_filters) {
+    const filters = intent.objective_filters;
     
-    if (filters.brand) {
+    if (filters.brands && filters.brands.length > 0) {
       totalCriteria++;
-      if (vehicle.brand?.toLowerCase() === filters.brand.toLowerCase()) {
+      if (filters.brands.includes(vehicle.brand)) {
         matchedCriteria++;
       }
     }
     
-    if (filters.body_type) {
+    if (filters.body_types && filters.body_types.length > 0) {
       totalCriteria++;
-      if (vehicle.type === filters.body_type) {
+      if (filters.body_types.includes(vehicle.type)) {
         matchedCriteria++;
       }
     }
     
-    if (filters.fuel_type) {
+    if (filters.fuel_types && filters.fuel_types.length > 0) {
       totalCriteria++;
-      if (vehicle.fuelType === filters.fuel_type) {
+      if (filters.fuel_types.includes(vehicle.fuelType)) {
         matchedCriteria++;
       }
     }
     
-    if (filters.budget_min || filters.budget_max) {
+    if (filters.price_range) {
       totalCriteria++;
       const price = vehicle.price;
-      const minOk = !filters.budget_min || price >= filters.budget_min;
-      const maxOk = !filters.budget_max || price <= filters.budget_max;
+      const minOk = !filters.price_range.min || price >= filters.price_range.min;
+      const maxOk = !filters.price_range.max || price <= filters.price_range.max;
       if (minOk && maxOk) {
         matchedCriteria++;
-      } else if ((filters.budget_min && price >= filters.budget_min * 0.9) || 
-                 (filters.budget_max && price <= filters.budget_max * 1.1)) {
+      } else if ((filters.price_range.min && price >= filters.price_range.min * 0.9) || 
+                 (filters.price_range.max && price <= filters.price_range.max * 1.1)) {
         matchedCriteria += 0.7; // Coincidencia parcial para precios cercanos
       }
     }
     
-    if (filters.year_min) {
+    if (filters.year_range && filters.year_range.min) {
       totalCriteria++;
-      if (vehicle.year >= filters.year_min) {
+      if (vehicle.year >= filters.year_range.min) {
         matchedCriteria++;
-      } else if (vehicle.year >= filters.year_min - 2) {
+      } else if (vehicle.year >= filters.year_range.min - 2) {
         matchedCriteria += 0.5; // Coincidencia parcial para años cercanos
       }
     }
@@ -293,14 +293,12 @@ async function processSubjectiveQuery(intent: CategorizedIntent, startTime: numb
     total_matches: vehiclesWithAffinity.length,
     top_recommendations: {
       vehicles: top3WithReasons,
-      explanation: generateSubjectiveExplanation(intent),
-      fallback_applied: top3WithReasons.some(v => v.affinity < 70)
+      explanation: generateSubjectiveExplanation(intent)
     },
     all_matches: {
       vehicles: vehiclesWithAffinity.slice(3), // Rest of vehicles for "more options"
       filters_applied: ['Ranking por afinidad basado en preferencias'],
-      count_by_category: generateCategoryCount(vehiclesWithAffinity),
-      fallback_applied: vehiclesWithAffinity.slice(3).some(v => v.affinity < 60)
+      count_by_category: generateCategoryCount(vehiclesWithAffinity)
     },
     processing_time_ms: Date.now() - startTime,
     confidence: intent.confidence,
@@ -458,7 +456,6 @@ async function processObjectiveQuery(intent: CategorizedIntent, startTime: numbe
       vehicles: vehicleResults,
       filters_applied: filtersApplied,
       count_by_category: generateCategoryCount(vehicleResults),
-      fallback_applied: vehicles.length > 0 && vehicleResults.some(v => v.matchPercentage < 100)
     },
     processing_time_ms: Date.now() - startTime,
     confidence: intent.confidence,

@@ -77,7 +77,7 @@ export function TrendingVehicles({ loading, error }: TrendingVehiclesProps) {
         // Ordenar: miniatura primero, luego el resto por orden
         const orderedGalleryImages = [
           ...(thumbnailImage ? [thumbnailImage] : []),
-          ...otherGalleryImages.sort((a, b) => a.order - b.order)
+          ...otherGalleryImages.sort((a, b) => (a as any).order - (b as any).order)
         ];
         
         // Devolver URLs de las imágenes ordenadas

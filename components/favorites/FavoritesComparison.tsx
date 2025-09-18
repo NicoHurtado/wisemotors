@@ -107,7 +107,7 @@ export function FavoritesComparison() {
                 fuel: vehicle.fuelType.toUpperCase() as any,
                 imageUrl: vehicle.imageUrl,
                 category: vehicle.type,
-                status: 'Disponible'
+                status: 'NUEVO' as const
               }}
               isFavorite={true}
               onExplore={(id) => window.location.href = `/vehicles/${id}`}

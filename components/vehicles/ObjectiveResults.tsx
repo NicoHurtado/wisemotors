@@ -40,12 +40,12 @@ export function ObjectiveResults({ results, query }: ObjectiveResultsProps) {
   const brandCounts = Object.entries(categoryCount)
     .filter(([key]) => key.startsWith('brand_'))
     .map(([key, count]) => ({ name: key.replace('brand_', ''), count }))
-    .sort((a, b) => b.count - a.count);
+    .sort((a, b) => (b.count as number) - (a.count as number));
 
   const typeCounts = Object.entries(categoryCount)
     .filter(([key]) => key.startsWith('type_'))
     .map(([key, count]) => ({ name: key.replace('type_', ''), count }))
-    .sort((a, b) => b.count - a.count);
+    .sort((a, b) => (b.count as number) - (a.count as number));
 
   return (
     <div className="w-full space-y-6">
@@ -67,7 +67,7 @@ export function ObjectiveResults({ results, query }: ObjectiveResultsProps) {
             {filtersApplied.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 <span className="text-gray-600">Filtros aplicados:</span>
-                {filtersApplied.map((filter, index) => (
+                {filtersApplied.map((filter: string, index: number) => (
                   <Badge key={index} variant="outline" className="text-xs">
                     <Filter className="w-3 h-3 mr-1" />
                     {filter}
@@ -104,7 +104,7 @@ export function ObjectiveResults({ results, query }: ObjectiveResultsProps) {
                   {brandCounts.slice(0, 5).map((brand, index) => (
                     <span key={brand.name} className="text-gray-600">
                       {index > 0 && ', '}
-                      {brand.name} ({brand.count})
+                      {brand.name} ({brand.count as number})
                     </span>
                   ))}
                   {brandCounts.length > 5 && <span className="text-gray-500"> y más...</span>}
@@ -116,7 +116,7 @@ export function ObjectiveResults({ results, query }: ObjectiveResultsProps) {
                   {typeCounts.map((type, index) => (
                     <span key={type.name} className="text-gray-600">
                       {index > 0 && ', '}
-                      {type.name} ({type.count})
+                      {type.name} ({type.count as number})
                     </span>
                   ))}
                 </div>

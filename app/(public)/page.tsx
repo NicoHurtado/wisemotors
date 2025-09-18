@@ -5,13 +5,13 @@ import { TrendingVehicles } from '@/components/landing/TrendingVehicles';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 import { Button } from '@/components/ui/button';
 import { routes } from '@/lib/urls';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { AIResultsLoader } from '@/components/vehicles/AIResultsLoader';
 import { AdaptiveResults } from '@/components/vehicles/AdaptiveResults';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FilterButtons } from '@/components/landing/FilterButtons';
 
-export default function HomePage() {
+function HomePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
@@ -115,5 +115,13 @@ export default function HomePage() {
         </div>
       </section>
     </>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <HomePageContent />
+    </Suspense>
   );
 }
