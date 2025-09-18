@@ -36,7 +36,7 @@ export async function GET(
         vehicleData.specifications = JSON.parse(vehicleData.specifications);
       } catch (parseError) {
         console.error('Error parseando specifications:', parseError);
-        vehicleData.specifications = {};
+        vehicleData.specifications = '{}';
       }
     }
 
@@ -86,7 +86,7 @@ export async function GET(
         try {
           vData.specifications = JSON.parse(vData.specifications);
         } catch (parseError) {
-          vData.specifications = {};
+          vData.specifications = '{}';
         }
       }
       return vData;
