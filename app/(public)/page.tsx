@@ -89,7 +89,7 @@ export default function HomePage() {
       )}
 
       {/* Trending Vehicles Section - Solo mostrar si no hay query subjetivo */}
-      {!query || (aiResults && aiResults.query_type === 'OBJECTIVE_FEATURE') ? (
+      {!query || (aiResults && (aiResults as any).query_type === 'OBJECTIVE_FEATURE') ? (
         <TrendingVehicles />
       ) : null}
 
