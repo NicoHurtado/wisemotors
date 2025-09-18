@@ -63,7 +63,7 @@ export default function HomePage() {
         <section className="py-6">
           <div className="container mx-auto px-4">
             {loadingAI && <AIResultsLoader />}
-            {!loadingAI && aiResults && (aiResults.total_matches > 0 || (Array.isArray(aiResults) && aiResults.length > 0)) && (
+            {!loadingAI && aiResults && ((Array.isArray(aiResults) && aiResults.length > 0) || (aiResults.total_matches && aiResults.total_matches > 0)) && (
               <AdaptiveResults 
                 results={aiResults} 
                 query={query}
