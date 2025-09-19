@@ -309,7 +309,7 @@ export function CompareRadar({ vehicles }: CompareRadarProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto responsive-table">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">

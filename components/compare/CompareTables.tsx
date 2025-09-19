@@ -302,16 +302,16 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
 
           {expandedSections.has(section.key) && (
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto responsive-table">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="text-left p-4 font-semibold text-gray-900 bg-gray-50 min-w-[200px]">
-                        Especificación
+                      <th className="text-left p-2 md:p-4 font-semibold text-gray-900 bg-gray-50 min-w-[140px] md:min-w-[200px]">
+                        <span className="text-xs md:text-sm">Especificación</span>
                       </th>
                       {vehiclesWithSpecs.map((vehicle, index) => (
-                        <th key={vehicle.id} className="text-center p-4 font-semibold text-gray-900 bg-gray-50 min-w-[180px]">
-                          <div className="text-sm font-bold">{vehicle.brand}</div>
+                        <th key={vehicle.id} className="text-center p-2 md:p-4 font-semibold text-gray-900 bg-gray-50 min-w-[120px] md:min-w-[180px]">
+                          <div className="text-xs md:text-sm font-bold">{vehicle.brand}</div>
                           <div className="text-xs text-gray-600">{vehicle.model}</div>
                           <div className="text-xs text-gray-500">{vehicle.year}</div>
                         </th>
@@ -324,16 +324,18 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
                       
                       return (
                         <tr key={field.key} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="p-4 font-medium text-gray-700">
-                            <div className="flex items-center gap-2">
-                              <span>{field.label}</span>
-                              {field.unit && (
-                                <span className="text-xs text-gray-500">({field.unit})</span>
-                              )}
-                              <div className="relative group">
-                                <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                                  {field.better === 'higher' ? 'Mayor es mejor' : field.better === 'lower' ? 'Menor es mejor' : 'Característica'}
+                          <td className="p-2 md:p-4 font-medium text-gray-700">
+                            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+                              <span className="text-xs md:text-sm">{field.label}</span>
+                              <div className="flex items-center gap-1">
+                                {field.unit && (
+                                  <span className="text-xs text-gray-500">({field.unit})</span>
+                                )}
+                                <div className="relative group">
+                                  <Info className="w-3 h-3 md:w-4 md:h-4 text-gray-400 cursor-help" />
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                    {field.better === 'higher' ? 'Mayor es mejor' : field.better === 'lower' ? 'Menor es mejor' : 'Característica'}
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -346,17 +348,17 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
                             return (
                               <td 
                                 key={vehicle.id} 
-                                className={`p-4 text-center ${
+                                className={`p-2 md:p-4 text-center ${
                                   isWinner 
                                     ? 'bg-wise/10 border-2 border-wise/30 font-semibold' 
                                     : ''
                                 }`}
                               >
-                                <div className="flex items-center justify-center gap-2">
-                                  <span className={value === '✗' ? 'text-gray-400' : ''}>
+                                <div className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2">
+                                  <span className={`text-xs md:text-sm ${value === '✗' ? 'text-gray-400' : ''}`}>
                                     {value}
                                   </span>
-                                  {isWinner && <Trophy className="w-4 h-4 text-wise" />}
+                                  {isWinner && <Trophy className="w-3 h-3 md:w-4 md:h-4 text-wise" />}
                                 </div>
                               </td>
                             );

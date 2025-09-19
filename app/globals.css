@@ -95,3 +95,53 @@
   z-index: 9999 !important;
 }
 
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  /* Ensure minimum touch target size */
+  button, [role="button"], input[type="button"], input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better text readability on mobile */
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.2;
+  }
+  
+  /* Prevent text from being too small */
+  p, span, div {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  
+  /* Better container padding for mobile */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Responsive tables */
+.responsive-table {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.responsive-table::-webkit-scrollbar {
+  height: 6px;
+}
+
+.responsive-table::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.responsive-table::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.responsive-table::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
