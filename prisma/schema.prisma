@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -34,6 +34,7 @@ model Dealer {
   updatedAt      DateTime        @updatedAt
   vehicleDealers VehicleDealer[]
   vehicles       Vehicle[]       @relation("DealerVehicles")
+  whatsappLeads  WhatsAppLead[]
 
   @@map("dealers")
 }
@@ -60,6 +61,7 @@ model Vehicle {
   vehicleDealers VehicleDealer[]
   images         VehicleImage[]
   dealers        Dealer[]        @relation("DealerVehicles")
+  whatsappLeads  WhatsAppLead[]
 
   @@map("vehicles")
 }
@@ -101,4 +103,26 @@ model Favorite {
 
   @@unique([userId, vehicleId], map: "favorites_user_vehicle_unique")
   @@map("favorites")
+}
+
+model WhatsAppLead {
+  id           String    @id @default(cuid())
+  name         String
+  username     String?
+  email        String?
+  phone        String?
+  vehicleId    String?
+  vehicleBrand String?
+  vehicleModel String?
+  dealershipId String?
+  dealershipName String?
+  status       String    @default("Nuevo") // Nuevo, Contactado, Interesado, Vendido, Perdido
+  message      String?   // Mensaje completo enviado por WhatsApp
+  source       String    @default("website") // website, specific_dealership, home_delivery
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  vehicle      Vehicle?  @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  dealership   Dealer?   @relation(fields: [dealershipId], references: [id], onDelete: SetNull)
+
+  @@map("whatsapp_leads")
 }
