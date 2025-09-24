@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     // Validar datos de entrada
     const validatedData = loginSchema.parse(body);
     
-    // Buscar usuario por email o username
+    // Buscar usuario por email o username (name en la base de datos)
     const user = await prisma.user.findFirst({
       where: {
         OR: [
@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
         username: true,
       }
     });
+    
     
     if (!user) {
       return NextResponse.json(

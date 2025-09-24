@@ -32,6 +32,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (token && userData) {
       try {
         const parsedUser = JSON.parse(userData);
+        
+        // El usuario ya tiene username del API
+        
         setUser(parsedUser);
         
         // Si es admin, verificar que la contraseña esté guardada
