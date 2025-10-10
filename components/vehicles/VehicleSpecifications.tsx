@@ -5,6 +5,7 @@ import { formatPrice } from '@/lib/utils';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useWhatsAppLeads } from '@/hooks/useWhatsAppLeads';
 
 interface VehicleSpecificationsProps {
   vehicle: any;
@@ -15,6 +16,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
   const router = useRouter();
   const { user } = useAuth();
   const { isFavorite, toggleFavorite, loading: favoriteLoading } = useFavorites();
+  const { createLead } = useWhatsAppLeads();
 
   const handleFavoriteClick = async () => {
     if (!user) {
@@ -47,17 +49,41 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
     return trimmed.length > 0 ? trimmed : 'Cliente';
   };
 
-  const handleContactDealership = (dealership?: { name: string; location?: string }) => {
+  const handleContactDealership = async (dealership?: { name: string; location?: string; id?: string }) => {
     const name = getEffectiveUserName();
     if (!name) return; // user cancelled
+    
     const vehicleLabel = `${vehicle.brand || ''} ${vehicle.model || ''}`.trim();
     let message = '';
+    let source = 'website';
+    
     if (dealership) {
       const locationSuffix = dealership.location ? ` (${dealership.location})` : '';
       message = `Hola, me interesa el vehículo ${vehicleLabel}. Mi nombre es ${name} y quiero atención en el concesionario ${dealership.name}${locationSuffix}.`;
+      source = 'specific_dealership';
     } else {
       message = `Hola, me interesa el vehículo ${vehicleLabel}. Mi nombre es ${name} y no tengo preferencia de concesionario, ayúdame a escoger uno.`;
     }
+
+    // Crear el lead en la base de datos
+    try {
+      await createLead({
+        name,
+        username: user?.username || undefined,
+        email: user?.email || undefined,
+        vehicleId: vehicle.id,
+        vehicleBrand: vehicle.brand,
+        vehicleModel: vehicle.model,
+        dealershipId: dealership?.id || undefined,
+        dealershipName: dealership?.name || undefined,
+        message,
+        source
+      });
+    } catch (error) {
+      console.error('Error creating WhatsApp lead:', error);
+      // Continuar con WhatsApp aunque falle el guardado del lead
+    }
+
     const url = buildWhatsAppUrl(message);
     window.open(url, '_blank');
   };
@@ -185,7 +211,11 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   </div>
                   <button
                     className="px-4 py-2 bg-wise text-white rounded-lg hover:bg-wise-dark transition-colors text-sm"
-                    onClick={() => handleContactDealership({ name: dealership.name, location: dealership.location })}
+                    onClick={() => handleContactDealership({ 
+                      name: dealership.name, 
+                      location: dealership.location,
+                      id: dealership.id 
+                    })}
                   >
                     Agendar aquí
                   </button>

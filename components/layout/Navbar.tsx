@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/hooks/useAdmin';
-import { User, LogOut, Heart, Target, Settings, Menu, X } from 'lucide-react';
+import { User, LogOut, Heart, Target, Settings, Menu, X, MessageSquare } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export function Navbar() {
@@ -87,13 +87,22 @@ export function Navbar() {
                 
                 {/* Dashboard solo para usuarios admin */}
                 {isFullyAuthorized && (
-                  <Link
-                    href="/admin"
-                    className="text-gray-700 hover:text-wise transition-colors font-medium flex items-center space-x-2"
-                  >
-                    <Settings className="w-4 h-4" />
-                    <span>Dashboard</span>
-                  </Link>
+                  <>
+                    <Link
+                      href="/admin"
+                      className="text-gray-700 hover:text-wise transition-colors font-medium flex items-center space-x-2"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>Dashboard</span>
+                    </Link>
+                    <Link
+                      href="/admin/whatsapp-leads"
+                      className="text-gray-700 hover:text-wise transition-colors font-medium flex items-center space-x-2"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      <span>WhatsApp Leads</span>
+                    </Link>
+                  </>
                 )}
               </>
             )}
@@ -187,14 +196,24 @@ export function Navbar() {
                 
                 {/* Dashboard solo para usuarios admin */}
                 {isFullyAuthorized && (
-                  <Link
-                    href="/admin"
-                    className="block text-gray-700 hover:text-wise transition-colors font-medium py-2 flex items-center space-x-2"
-                    onClick={closeMobileMenu}
-                  >
-                    <Settings className="w-4 h-4" />
-                    <span>Dashboard</span>
-                  </Link>
+                  <>
+                    <Link
+                      href="/admin"
+                      className="block text-gray-700 hover:text-wise transition-colors font-medium py-2 flex items-center space-x-2"
+                      onClick={closeMobileMenu}
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>Dashboard</span>
+                    </Link>
+                    <Link
+                      href="/admin/whatsapp-leads"
+                      className="block text-gray-700 hover:text-wise transition-colors font-medium py-2 flex items-center space-x-2"
+                      onClick={closeMobileMenu}
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      <span>WhatsApp Leads</span>
+                    </Link>
+                  </>
                 )}
 
                 <div className="border-t border-gray-100 pt-3 mt-3">

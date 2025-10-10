@@ -10,6 +10,7 @@ import { AIResultsLoader } from '@/components/vehicles/AIResultsLoader';
 import { AdaptiveResults } from '@/components/vehicles/AdaptiveResults';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FilterButtons } from '@/components/landing/FilterButtons';
+import { AdminQuickAccess } from '@/components/admin/AdminQuickAccess';
 
 function HomePageContent() {
   const router = useRouter();
@@ -114,6 +115,9 @@ function HomePageContent() {
           </div>
         </div>
       </section>
+      
+      {/* Admin Quick Access */}
+      <AdminQuickAccess />
     </>
   );
 }

@@ -9,6 +9,8 @@ import { VehicleGallery } from './VehicleGallery';
 import { SimilarVehicles } from './SimilarVehicles';
 import { ScrollToTop } from '@/components/ui/ScrollToTop';
 import { VideoModal } from '@/components/ui/VideoModal';
+import { useWhatsAppLeads } from '@/hooks/useWhatsAppLeads';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface VehicleDetailProps {
   vehicle: any; // Using any for now due to complex type
@@ -16,6 +18,8 @@ interface VehicleDetailProps {
 
 export function VehicleDetail({ vehicle }: VehicleDetailProps) {
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const { createLead } = useWhatsAppLeads();
+  const { user } = useAuth();
 
   // Función para renderizar la sección de motor según el tipo de combustible
   const renderEngineSection = () => {
@@ -445,9 +449,9 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
               {/* Home Delivery Button */}
               <div className="flex justify-center">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const getEffectiveUserName = (): string | null => {
-                      // Try to get user from auth context if available, otherwise prompt
+                      if (user?.username) return user.username;
                       const name = window.prompt('Para continuar, por favor ingresa tu nombre');
                       if (name === null) return null; // cancel
                       const trimmed = name.trim();
@@ -459,6 +463,24 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     
                     const vehicleLabel = `${vehicle.brand || ''} ${vehicle.model || ''}`.trim();
                     const message = `Hola, me interesa el vehículo ${vehicleLabel}. Mi nombre es ${name} y quiero hacer el testdrive desde mi casa.`;
+
+                    // Crear el lead en la base de datos
+                    try {
+                      await createLead({
+                        name,
+                        username: user?.username || undefined,
+                        email: user?.email || undefined,
+                        vehicleId: vehicle.id,
+                        vehicleBrand: vehicle.brand,
+                        vehicleModel: vehicle.model,
+                        message,
+                        source: 'home_delivery'
+                      });
+                    } catch (error) {
+                      console.error('Error creating WhatsApp lead:', error);
+                      // Continuar con WhatsApp aunque falle el guardado del lead
+                    }
+
                     const encoded = encodeURIComponent(message);
                     const url = `https://wa.me/573103818615?text=${encoded}`;
                     window.open(url, '_blank');

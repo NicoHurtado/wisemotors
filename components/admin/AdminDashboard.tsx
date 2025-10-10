@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Car, Building2, Star, Settings } from 'lucide-react';
+import { Plus, Car, Building2, Star, Settings, MessageSquare } from 'lucide-react';
 import { VehiclesTable } from './VehiclesTable';
 import { DealershipsTable } from './DealershipsTable';
 import { TrendingManagement } from './TrendingManagement';
@@ -36,6 +36,13 @@ export function AdminDashboard() {
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Nuevo Concesionario
+              </button>
+              <button
+                onClick={() => router.push('/admin/whatsapp-leads')}
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Leads WhatsApp
               </button>
             </div>
           </div>

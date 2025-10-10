@@ -32,7 +32,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (token && userData) {
       try {
         const parsedUser = JSON.parse(userData);
+        
+        // El usuario ya tiene username del API
+        
         setUser(parsedUser);
+        
+        // Si es admin, verificar que la contraseña esté guardada
+        if (parsedUser.email === 'adminwise@wisemotors.co') {
+          const adminPassword = localStorage.getItem('adminPassword');
+          if (!adminPassword) {
+            // Si no hay contraseña admin guardada, limpiar todo
+            logout();
+            return false;
+          }
+        }
+        
         return true;
       } catch (error) {
         console.error('Error parsing user data:', error);
