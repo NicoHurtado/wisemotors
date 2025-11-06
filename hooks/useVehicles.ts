@@ -47,6 +47,10 @@ export interface VehicleDetail extends VehicleCard {
     type: string;
     order: number;
   }>;
+  fuelType?: string;
+  vehicleType?: string;
+  type?: string;
+  reviewVideoUrl?: string | null;
 }
 
 interface UseVehiclesOptions {
@@ -176,6 +180,17 @@ export function useVehicle(id: string) {
         
         // Transformar datos de la API al formato esperado por la UI
         
+        // Parsear specifications si es un string (ya viene parseado desde la API, pero asegurarse)
+        let parsedSpecs = data.specifications;
+        if (typeof parsedSpecs === 'string') {
+          try {
+            parsedSpecs = JSON.parse(parsedSpecs);
+          } catch (e) {
+            console.error('Error parsing specifications:', e);
+            parsedSpecs = {};
+          }
+        }
+
         const transformedVehicle: VehicleDetail = {
           id: data.id,
           brand: data.brand,
@@ -187,10 +202,10 @@ export function useVehicle(id: string) {
           images: data.images || [], // Agregar las imágenes completas
           category: data.type,
           status: data.status || 'NUEVO',
-          power: data.specifications?.combustion?.maxPower || data.specifications?.electric?.maxPower,
-          engine: data.specifications?.combustion?.displacement,
-          acceleration: data.specifications?.performance?.acceleration0to100,
-          cityConsumption: data.specifications?.combustion?.cityConsumption,
+          power: parsedSpecs?.powertrain?.potenciaMaxMotorTermico || parsedSpecs?.powertrain?.potenciaMaxEV,
+          engine: parsedSpecs?.powertrain?.cilindrada,
+          acceleration: parsedSpecs?.performance?.acceleration0to100,
+          cityConsumption: parsedSpecs?.efficiency?.consumoCiudad,
           rating: 4.3, // Valor por defecto
           slogan: `${data.brand} ${data.model} - Experiencia de conducción excepcional`,
           dealerships: data.vehicleDealers?.map((vd: any) => ({
@@ -198,170 +213,14 @@ export function useVehicle(id: string) {
             name: vd.dealer.name,
             location: vd.dealer.location
           })) || [],
-          specifications: {
-            general: {
-              brand: data.brand,
-              model: data.model,
-              year: data.year,
-              category: data.type,
-              fuelType: data.fuelType,
-              vehicleType: data.vehicleType,
-            },
-            performance: {
-              acceleration0to100: data.specifications?.performance?.acceleration0to100,
-              acceleration0to200: data.specifications?.performance?.acceleration0to200,
-              quarterMile: data.specifications?.performance?.quarterMile,
-              overtaking80to120: data.specifications?.performance?.overtaking80to120,
-              maxSpeed: data.specifications?.performance?.maxSpeed,
-              powerToWeight: data.specifications?.performance?.powerToWeight,
-              launchControl: data.specifications?.performance?.launchControl
-            },
-            chassis: {
-              groundClearance: data.specifications?.chassis?.groundClearance,
-              brakingDistance100to0: data.specifications?.chassis?.brakingDistance100to0,
-              maxLateralAcceleration: data.specifications?.chassis?.maxLateralAcceleration,
-              maxLongitudinalAcceleration: data.specifications?.chassis?.maxLongitudinalAcceleration,
-            },
-            offRoad: {
-              approachAngle: data.specifications?.offRoad?.approachAngle,
-              departureAngle: data.specifications?.offRoad?.departureAngle,
-              breakoverAngle: data.specifications?.offRoad?.breakoverAngle,
-              wadingDepth: data.specifications?.offRoad?.wadingDepth,
-              wadingHeight: data.specifications?.offRoad?.wadingHeight,
-            },
-            weight: {
-              grossCombinedWeight: data.specifications?.weight?.grossCombinedWeight,
-              payload: data.specifications?.weight?.payload,
-              towingCapacity: data.specifications?.weight?.towingCapacity,
-              cargoBoxVolume: data.specifications?.weight?.cargoBoxVolume
-            },
-            dimensions: {
-              length: data.specifications?.dimensions?.length,
-              width: data.specifications?.dimensions?.width,
-              height: data.specifications?.dimensions?.height,
-              curbWeight: data.specifications?.dimensions?.curbWeight,
-              wheelbase: data.specifications?.dimensions?.wheelbase,
-              cargoCapacity: data.specifications?.dimensions?.cargoCapacity
-            },
-
-            safety: {
-              airbags: data.specifications?.safety?.airbags,
-              ncapRating: data.specifications?.safety?.ncapRating,
-              adultSafetyScore: data.specifications?.safety?.adultSafetyScore,
-              childSafetyScore: data.specifications?.safety?.childSafetyScore,
-              assistanceScore: data.specifications?.safety?.assistanceScore,
-              brakeType: data.specifications?.safety?.brakeType,
-              brakingSystem: data.specifications?.safety?.brakingSystem,
-              stabilityControl: data.specifications?.safety?.stabilityControl,
-              tractionControl: data.specifications?.safety?.tractionControl,
-              autonomousEmergencyBraking: data.specifications?.safety?.autonomousEmergencyBraking,
-              forwardCollisionWarning: data.specifications?.safety?.forwardCollisionWarning,
-              laneAssist: data.specifications?.safety?.laneAssist,
-              adaptiveCruiseControl: data.specifications?.safety?.adaptiveCruiseControl,
-              blindSpotDetection: data.specifications?.safety?.blindSpotDetection,
-              crossTrafficAlert: data.specifications?.safety?.crossTrafficAlert,
-              fatigueMonitor: data.specifications?.safety?.fatigueMonitor,
-              tirePressureMonitoring: data.specifications?.safety?.tirePressureMonitoring
-            },
-            assistance: {
-              brakeAssist: data.specifications?.assistance?.brakeAssist,
-              hillStartAssist: data.specifications?.assistance?.hillStartAssist,
-              reverseCamera: data.specifications?.assistance?.reverseCamera,
-              parkingSensors: data.specifications?.assistance?.parkingSensors,
-              cameras360: data.specifications?.assistance?.cameras360
-            },
-            lighting: {
-              headlightType: data.specifications?.lighting?.headlightType,
-              automaticHighBeam: data.specifications?.lighting?.automaticHighBeam
-            },
-            comfort: {
-              airConditioning: data.specifications?.comfort?.airConditioning,
-              automaticClimateControl: data.specifications?.comfort?.automaticClimateControl,
-              heatedSeats: data.specifications?.comfort?.heatedSeats,
-              ventilatedSeats: data.specifications?.comfort?.ventilatedSeats,
-              massageSeats: data.specifications?.comfort?.massageSeats
-            },
-            technology: {
-              bluetooth: data.specifications?.technology?.bluetooth,
-              touchscreen: data.specifications?.technology?.touchscreen,
-              navigation: data.specifications?.technology?.navigation,
-              smartphoneIntegration: data.specifications?.technology?.smartphoneIntegration,
-              wirelessCharger: data.specifications?.technology?.wirelessCharger
-            },
-            interior: {
-              trunkCapacitySeatsDown: data.specifications?.interior?.trunkCapacitySeatsDown,
-              seatRows: data.specifications?.interior?.seatRows,
-              interiorCargoCapacity: data.specifications?.interior?.interiorCargoCapacity
-            },
-            combustion: {
-              displacement: data.specifications?.combustion?.displacement,
-              turbo: data.specifications?.combustion?.turbo,
-              engineConfiguration: data.specifications?.combustion?.engineConfiguration,
-              inductionType: data.specifications?.combustion?.inductionType,
-              compressionRatio: data.specifications?.combustion?.compressionRatio,
-              maxPower: data.specifications?.combustion?.maxPower,
-              maxTorque: data.specifications?.combustion?.maxTorque,
-              rpmLimit: data.specifications?.combustion?.rpmLimit,
-              transmissionType: data.specifications?.combustion?.transmissionType,
-              gears: data.specifications?.combustion?.gears,
-              fuelTankCapacity: data.specifications?.combustion?.fuelTankCapacity,
-              powerAtRpm: data.specifications?.combustion?.powerAtRpm,
-              cityConsumption: data.specifications?.combustion?.cityConsumption,
-              highwayConsumption: data.specifications?.combustion?.highwayConsumption,
-              emissionStandard: data.specifications?.combustion?.emissionStandard,
-              startStop: data.specifications?.combustion?.startStop,
-              ecoMode: data.specifications?.combustion?.ecoMode
-            },
-            hybrid: {
-              displacement: data.specifications?.hybrid?.displacement,
-              engineConfiguration: data.specifications?.hybrid?.engineConfiguration,
-              maxPower: data.specifications?.hybrid?.maxPower,
-              maxTorque: data.specifications?.hybrid?.maxTorque,
-              transmissionType: data.specifications?.hybrid?.transmissionType,
-              gears: data.specifications?.hybrid?.gears,
-              fuelTankCapacity: data.specifications?.hybrid?.fuelTankCapacity,
-              cityConsumption: data.specifications?.hybrid?.cityConsumption,
-              highwayConsumption: data.specifications?.hybrid?.highwayConsumption,
-              batteryCapacity: data.specifications?.hybrid?.batteryCapacity,
-              regenerativeBraking: data.specifications?.hybrid?.regenerativeBraking,
-              startStop: data.specifications?.hybrid?.startStop,
-              ecoMode: data.specifications?.hybrid?.ecoMode
-            },
-            phev: {
-              displacement: data.specifications?.phev?.displacement,
-              engineConfiguration: data.specifications?.phev?.engineConfiguration,
-              maxPower: data.specifications?.phev?.maxPower,
-              maxTorque: data.specifications?.phev?.maxTorque,
-              transmissionType: data.specifications?.phev?.transmissionType,
-              gears: data.specifications?.phev?.gears,
-              fuelTankCapacity: data.specifications?.phev?.fuelTankCapacity,
-              cityConsumption: data.specifications?.phev?.cityConsumption,
-              highwayConsumption: data.specifications?.phev?.highwayConsumption,
-              batteryCapacity: data.specifications?.phev?.batteryCapacity,
-              electricRange: data.specifications?.phev?.electricRange,
-              acChargingTime: data.specifications?.phev?.acChargingTime,
-              dcChargingTime: data.specifications?.phev?.dcChargingTime,
-              regenerativeBraking: data.specifications?.phev?.regenerativeBraking,
-              batteryWeight: data.specifications?.phev?.batteryWeight,
-              homeChargerCost: data.specifications?.phev?.homeChargerCost,
-              chargingConvenienceIndex: data.specifications?.phev?.chargingConvenienceIndex
-            },
-            electric: {
-              cityElectricConsumption: data.specifications?.electric?.cityElectricConsumption,
-              highwayElectricConsumption: data.specifications?.electric?.highwayElectricConsumption,
-              mpge: data.specifications?.electric?.mpge,
-              electricRange: data.specifications?.electric?.electricRange,
-              acChargingTime: data.specifications?.electric?.acChargingTime,
-              dcChargingTime: data.specifications?.electric?.dcChargingTime,
-              regenerativeBraking: data.specifications?.electric?.regenerativeBraking,
-              batteryCapacity: data.specifications?.electric?.batteryCapacity,
-              batteryWeight: data.specifications?.electric?.batteryWeight,
-              batteryCost: data.specifications?.electric?.batteryCost,
-              homeChargerCost: data.specifications?.electric?.homeChargerCost,
-              chargingConvenienceIndex: data.specifications?.electric?.chargingConvenienceIndex
-            }
-          },
-                      wisemetrics: data.specifications?.wisemetrics || null,
+          // Pasar las specifications directamente sin transformar
+          specifications: parsedSpecs || {},
+          wisemetrics: parsedSpecs?.wisemetrics || null,
+          // Pasar también fuelType y vehicleType para uso en el componente
+          fuelType: data.fuelType,
+          vehicleType: data.vehicleType,
+          type: data.type,
+          reviewVideoUrl: data.reviewVideoUrl,
           categories: (() => {
             // Si hay categorías personalizadas, usarlas
             if (data.wiseCategories) {

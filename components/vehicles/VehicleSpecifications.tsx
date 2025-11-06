@@ -132,7 +132,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
               </div>
               <div className="flex-1">
                 <div className="text-sm text-gray-600">Tipo de vehículo</div>
-                <div className="text-lg font-semibold text-gray-900">{vehicle.type || 'N/A'}</div>
+                <div className="text-lg font-semibold text-gray-900">{vehicle.vehicleType || vehicle.type || 'N/A'}</div>
               </div>
             </div>
             
@@ -155,15 +155,43 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
               <div className="flex-1">
                 <div className="text-sm text-gray-600">Motor</div>
                 <div className="text-lg font-semibold text-gray-900">
-                  {vehicle.specifications?.combustion?.displacement || 
-                   vehicle.specifications?.hybrid?.displacement || 
-                   vehicle.specifications?.phev?.displacement || 
-                   vehicle.specifications?.electric?.batteryCapacity || 
-                   vehicle.engine || 'N/A'} 
-                  {vehicle.specifications?.combustion?.displacement || 
-                   vehicle.specifications?.hybrid?.displacement || 
-                   vehicle.specifications?.phev?.displacement ? ' cc' : 
-                   vehicle.specifications?.electric?.batteryCapacity ? ' kWh' : ''}
+                  {(() => {
+                    // Intentar obtener información del motor desde diferentes fuentes
+                    const powertrain = vehicle.specifications?.powertrain;
+                    const fuelType = vehicle.fuelType || vehicle.specifications?.powertrain?.combustible;
+                    
+                    // Para vehículos eléctricos
+                    if (fuelType?.toLowerCase().includes('eléctrico') || fuelType?.toLowerCase().includes('electric')) {
+                      const batteryCapacity = vehicle.specifications?.battery?.capacidadBrutaBateria || 
+                                             vehicle.specifications?.electric?.batteryCapacity;
+                      return batteryCapacity ? `${batteryCapacity} kWh` : fuelType || 'N/A';
+                    }
+                    
+                    // Para vehículos híbridos
+                    if (fuelType?.toLowerCase().includes('híbrido') || fuelType?.toLowerCase().includes('hybrid')) {
+                      const displacement = powertrain?.cilindrada || 
+                                          vehicle.specifications?.hybrid?.displacement ||
+                                          vehicle.specifications?.phev?.displacement;
+                      const systemPower = powertrain?.potenciaMaxSistemaHibrido || 
+                                         powertrain?.potenciaMaxMotorTermico;
+                      if (displacement) {
+                        return `${displacement}L ${systemPower ? `${systemPower}kW` : ''}`.trim();
+                      }
+                      return fuelType || 'N/A';
+                    }
+                    
+                    // Para vehículos de combustión
+                    const displacement = powertrain?.cilindrada || 
+                                        vehicle.specifications?.combustion?.displacement;
+                    const power = powertrain?.potenciaMaxMotorTermico || 
+                                 vehicle.specifications?.combustion?.maxPower;
+                    if (displacement) {
+                      return `${displacement}L ${power ? `${power}kW` : ''}`.trim();
+                    }
+                    
+                    // Fallback: mostrar tipo de combustible
+                    return fuelType || powertrain?.combustible || 'N/A';
+                  })()}
                 </div>
               </div>
             </div>
