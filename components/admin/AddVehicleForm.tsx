@@ -148,7 +148,7 @@ export function AddVehicleForm() {
     appRemotaOTA: false,
     audioMarca: '',
     audioNumeroBocinas: '',
-    bluetooth: false,
+        bluetooth: false,
     cargadorInalambrico: false,
     navegacionIntegrada: false,
     pantallaCentralTamano: '',
@@ -781,7 +781,7 @@ export function AddVehicleForm() {
           {renderField('v2hV2g', 'V2H/V2G (bidireccional)', 'checkbox', undefined, undefined, 'EV')}
           {renderField('potenciaV2hV2g', 'V2H/V2G Potencia', 'number', undefined, 'kW', 'EV')}
         </div>
-      </div>
+          </div>
 
       {/* Chasis, frenos y dirección */}
       <div className="mb-8">
@@ -797,7 +797,7 @@ export function AddVehicleForm() {
           {renderField('materialMuelles', 'Material de muelles', 'text', undefined)}
           {renderField('tipoPinzasFreno', 'Tipo de pinzas de freno', 'text', undefined)}
         </div>
-      </div>
+          </div>
 
       {/* Prestaciones */}
       <div className="mb-8">
@@ -818,7 +818,7 @@ export function AddVehicleForm() {
           {renderField('relacionPesoPotencia', 'Relación peso/potencia', 'number', undefined, 'HP/ton')}
           {renderField('cuartoMilla', '1/4 de milla (tiempo)', 'number', undefined, 's', 'Deportivo')}
         </div>
-      </div>
+          </div>
 
       {/* Seguridad pasiva y estructural */}
       <div className="mb-8">
@@ -837,7 +837,7 @@ export function AddVehicleForm() {
           {renderField('latinNCAPSubPuntajes', 'Latin NCAP (sub-puntajes %)', 'text', undefined)}
           {renderField('isofixTopTether', 'ISOFIX y Top Tether', 'checkbox')}
         </div>
-      </div>
+          </div>
 
       {/* ADAS */}
       <div className="mb-8">
@@ -856,7 +856,7 @@ export function AddVehicleForm() {
           {renderField('parkAssist', 'Park Assist (autónomo)', 'checkbox')}
           {renderField('sensoresEstacionamientoDelantero', 'Sensores estacionamiento delantero', 'number', undefined)}
         </div>
-      </div>
+          </div>
 
       {/* Iluminación y visibilidad */}
       <div className="mb-8">
@@ -871,7 +871,7 @@ export function AddVehicleForm() {
           {renderField('lavafaros', 'Lavafaros', 'checkbox', undefined, undefined, 'Premium')}
           {renderField('sensorLluvia', 'Sensor de lluvia', 'checkbox')}
         </div>
-      </div>
+          </div>
 
       {/* Infoentretenimiento y conectividad */}
       <div className="mb-8">
@@ -895,7 +895,7 @@ export function AddVehicleForm() {
           {renderField('puertosUSBC', 'Puertos USB-C (cantidad)', 'number', undefined)}
           {renderField('wifiBordo', 'Wi-Fi a bordo', 'checkbox', undefined, undefined, 'Premium')}
         </div>
-      </div>
+          </div>
 
       {/* Interior y confort */}
       <div className="mb-8">
@@ -924,7 +924,7 @@ export function AddVehicleForm() {
           {renderField('volanteMaterialAjustes', 'Volante (material y ajustes)', 'text', undefined, undefined, 'Todos')}
           {renderField('volanteCalefactable', 'Volante calefactable', 'checkbox', undefined, undefined, 'Premium')}
         </div>
-      </div>
+          </div>
 
       {/* Off-road y 4x4 */}
       <div className="mb-8">
@@ -936,7 +936,7 @@ export function AddVehicleForm() {
           {renderField('controlDescenso', 'Control de descenso', 'checkbox', undefined, undefined, 'SUV/4x4')}
           {renderField('controlTraccionOffRoad', 'Control de tracción off-road', 'checkbox', undefined, undefined, '4x4')}
         </div>
-      </div>
+          </div>
 
       {/* Comercial */}
       <div className="mb-8">
@@ -953,7 +953,7 @@ export function AddVehicleForm() {
           {renderField('costoMantenimiento3Primeros', 'Costo mantenimiento (3 primeros)', 'number', undefined, 'COP')}
           {renderField('origenPaisPlanta', 'Origen (país/planta)', 'text', undefined)}
         </div>
-      </div>
+          </div>
 
       {/* Metadatos */}
       <div className="mb-8">

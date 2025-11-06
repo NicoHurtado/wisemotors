@@ -190,7 +190,7 @@ export function useVehicle(id: string) {
             parsedSpecs = {};
           }
         }
-
+        
         const transformedVehicle: VehicleDetail = {
           id: data.id,
           brand: data.brand,
@@ -217,8 +217,8 @@ export function useVehicle(id: string) {
           specifications: parsedSpecs || {},
           wisemetrics: parsedSpecs?.wisemetrics || null,
           // Pasar también fuelType y vehicleType para uso en el componente
-          fuelType: data.fuelType,
-          vehicleType: data.vehicleType,
+              fuelType: data.fuelType,
+              vehicleType: data.vehicleType,
           type: data.type,
           reviewVideoUrl: data.reviewVideoUrl,
           categories: (() => {

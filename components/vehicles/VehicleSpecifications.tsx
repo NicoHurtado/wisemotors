@@ -170,7 +170,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                     // Para vehículos híbridos
                     if (fuelType?.toLowerCase().includes('híbrido') || fuelType?.toLowerCase().includes('hybrid')) {
                       const displacement = powertrain?.cilindrada || 
-                                          vehicle.specifications?.hybrid?.displacement ||
+                   vehicle.specifications?.hybrid?.displacement || 
                                           vehicle.specifications?.phev?.displacement;
                       const systemPower = powertrain?.potenciaMaxSistemaHibrido || 
                                          powertrain?.potenciaMaxMotorTermico;
