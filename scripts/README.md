@@ -71,3 +71,4 @@ El script genera un vehículo con:
 - Confort e interior
 - Información comercial
 
+

@@ -682,14 +682,14 @@ async function processObjectiveQuery(intent: CategorizedIntent, startTime: numbe
           return evaluateTechnicalFilter(specs, filter, { brand: vehicle.brand, model: vehicle.model });
         });
         
-        const allMatch = filterResults.every(result => result.matches);
+        const allMatch = filterResults.every((result: { matches: boolean; reason?: string }) => result.matches);
         
         if (allMatch) {
           filterStats.passed++;
         } else {
           filterStats.failed++;
           const failedFilters = filterResults
-            .map((result, index) => !result.matches ? technicalFilters[index].description : null)
+            .map((result: { matches: boolean; reason?: string }, index: number) => !result.matches ? technicalFilters[index].description : null)
             .filter(Boolean);
           console.log(`[processObjectiveQuery] EXCLUDING ${vehicle.brand} ${vehicle.model} - Failed: ${failedFilters.join(', ')}`);
         }
@@ -974,7 +974,7 @@ async function processHybridQuery(intent: CategorizedIntent, startTime: number):
           return evaluateTechnicalFilter(specs, filter, { brand: vehicle.brand, model: vehicle.model });
         });
         
-        return filterResults.every(result => result.matches);
+        return filterResults.every((result: { matches: boolean; reason?: string }) => result.matches);
       } catch (error) {
         console.error(`[processHybridQuery] Error parsing specifications for ${vehicle.brand} ${vehicle.model}:`, error);
         return false;
