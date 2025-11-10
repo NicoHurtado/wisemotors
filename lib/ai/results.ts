@@ -1004,12 +1004,12 @@ async function processHybridQuery(intent: CategorizedIntent, startTime: number):
   // Check if we have objective filters
   // If vehicle passed Prisma WHERE clause AND technical filters, it meets ALL objective filters = 100%
   const hasObjectiveFilters = !!(intent.objective_filters && (
-    intent.objective_filters.brands?.length > 0 ||
-    intent.objective_filters.body_types?.length > 0 ||
-    intent.objective_filters.fuel_types?.length > 0 ||
+    (intent.objective_filters.brands?.length ?? 0) > 0 ||
+    (intent.objective_filters.body_types?.length ?? 0) > 0 ||
+    (intent.objective_filters.fuel_types?.length ?? 0) > 0 ||
     intent.objective_filters.price_range ||
     intent.objective_filters.year_range ||
-    (intent.objective_filters.technical_specs && intent.objective_filters.technical_specs.length > 0)
+    (intent.objective_filters.technical_specs && (intent.objective_filters.technical_specs.length ?? 0) > 0)
   ));
   
   // Apply hybrid scoring: objective match + subjective ranking
@@ -2504,21 +2504,21 @@ function generateHybridReasons(vehicle: any, intent: CategorizedIntent, rank: nu
     // Solo agregar razones subjetivas si hay pesos subjetivos significativos
     if (hasSignificantSubjectiveWeights) {
       const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
-      const weights = intent.subjective_weights || {};
-      
+  const weights = intent.subjective_weights || {};
+  
       // Solo agregar razones subjetivas si son relevantes y válidas
       const topSubjectiveCriteria = Object.entries(weights)
-        .filter(([_, weight]) => (weight as number) > 0.3)
-        .sort(([_, a], [__, b]) => (b as number) - (a as number))
-        .slice(0, 2);
-      
+    .filter(([_, weight]) => (weight as number) > 0.3)
+    .sort(([_, a], [__, b]) => (b as number) - (a as number))
+    .slice(0, 2);
+  
       for (const [criteria, weight] of topSubjectiveCriteria) {
         if (reasons.length >= 3) break;
         
         let score = 0;
         let isValid = false;
         
-        switch (criteria) {
+    switch (criteria) {
           case 'comfort':
             score = calculateComprehensiveComfortScore(vehicle, specs, features);
             isValid = score > 0.6; // Solo si es realmente cómodo
@@ -2565,7 +2565,7 @@ function generateHybridReasons(vehicle: any, intent: CategorizedIntent, rank: nu
   if (reasons.length === 0) {
     // Si tenemos filtros objetivos pero no generamos razones, algo salió mal
     // Agregar razón genérica basada en que cumple los filtros
-    if (objectiveFilters && (objectiveFilters.brands?.length > 0 || objectiveFilters.fuel_types?.length > 0)) {
+    if (objectiveFilters && ((objectiveFilters.brands?.length ?? 0) > 0 || (objectiveFilters.fuel_types?.length ?? 0) > 0)) {
       reasons.push('Cumple todos los criterios solicitados');
     } else if (rank === 1) {
       reasons.push('Mejor opción que cumple tus criterios');

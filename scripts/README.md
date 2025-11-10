@@ -72,3 +72,4 @@ El script genera un vehículo con:
 - Información comercial
 
 
+
