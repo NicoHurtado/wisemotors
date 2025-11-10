@@ -67,20 +67,31 @@ export function computeVehicleFeatures(vehicle: any, marketStats: any): VehicleF
   const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
   
   // Extraer valores numéricos de las especificaciones reales
-  const power = parseFloat(specs.performance?.maxPower) || parseFloat(specs.combustion?.maxPower) || 150;
-  const weight = parseFloat(specs.dimensions?.weight) || 1500; // kg default
+  // Potencia: buscar en múltiples ubicaciones (powertrain, performance, combustion)
+  const power = parseFloat(specs.powertrain?.potenciaMaxMotorTermico) || 
+                parseFloat(specs.powertrain?.potenciaMaxSistemaHibrido) ||
+                parseFloat(specs.powertrain?.potenciaMaxEV) ||
+                parseFloat(specs.performance?.maxPower) || 
+                parseFloat(specs.combustion?.maxPower) || 
+                parseFloat(specs.hybrid?.maxPower) ||
+                parseFloat(specs.electric?.maxPower) ||
+                150;
+  const weight = parseFloat(specs.dimensions?.curbWeight) || parseFloat(specs.dimensions?.weight) || 1500; // kg default
   const acceleration = parseFloat(specs.performance?.acceleration0to100) || 10; // 0-100 km/h
   const topSpeed = parseFloat(specs.performance?.maxSpeed) || 180; // km/h
-  const fuelConsumption = parseFloat(specs.combustion?.cityConsumption) || 8; // L/100km
-  const groundClearance = parseFloat(specs.chassis?.groundClearance) * 1000 || 150; // convertir m a mm
+  const fuelConsumption = parseFloat(specs.combustion?.cityConsumption) || 
+                          parseFloat(specs.hybrid?.cityConsumption) ||
+                          parseFloat(specs.phev?.cityConsumption) ||
+                          8; // L/100km
+  const groundClearance = parseFloat(specs.chassis?.groundClearance) || 0;
+  const groundClearanceMM = groundClearance > 10 ? groundClearance : (groundClearance * 1000) || 150; // convertir m a mm si es necesario
   
   // Calcular scores basados en especificaciones reales (todos normalizados 0-1)
   const sportiness = Math.max(0, Math.min(1, ((power / 200) + (10 - acceleration) / 10) / 2));
-  const comfort = Math.max(0, Math.min(1, (
-    (specs.comfort?.airConditioning ? 0.3 : 0) + 
-    (specs.comfort?.heatedSeats ? 0.2 : 0) + 
-    (specs.comfort?.ventilatedSeats ? 0.2 : 0) + 0.3
-  )));
+  
+  // MEJORADO: Cálculo de comfort más robusto
+  // Nota: Este comfort se usa para features básicas, pero el scoring subjetivo usa calculateComprehensiveComfortScore
+  const comfort = calculateComfortScore(vehicle, specs);
   const efficiency = Math.max(0, Math.min(1, (15 - fuelConsumption) / 10)); // 5-15 L/100km range
   const luxury = Math.max(0, Math.min(1, (
     (specs.technology?.touchscreen ? 0.25 : 0) + 
@@ -96,7 +107,7 @@ export function computeVehicleFeatures(vehicle: any, marketStats: any): VehicleF
   const acceleration_norm = normalize(15 - acceleration, 0, 10); // Inverso: menos tiempo = mejor
   const braking_norm = normalize(45 - (acceleration * 3), 0, 15); // Estimado basado en aceleración
   const max_speed_norm = normalize(topSpeed, marketStats.top_speed.min, marketStats.top_speed.max);
-  const ground_clearance_norm = normalize(groundClearance, marketStats.ground_clearance.min, marketStats.ground_clearance.max);
+  const ground_clearance_norm = normalize(groundClearanceMM, marketStats.ground_clearance.min, marketStats.ground_clearance.max);
   const efficiency_norm = normalize(12 - fuelConsumption, 0, 8); // Inverso: menos consumo = mejor
   
   // Scores compuestos basados en tipo de vehículo y especificaciones
@@ -153,6 +164,121 @@ export function computeVehicleFeatures(vehicle: any, marketStats: any): VehicleF
     consumption_score,
     electric_range
   };
+}
+
+// MEJORADO: Calcular comfort score considerando múltiples factores
+function calculateComfortScore(vehicle: any, specs: any): number {
+  let score = 0;
+  let maxScore = 0;
+  
+  // 1. Si existe wisemetrics.comfort, usarlo como base (30% del score)
+  if (specs.wisemetrics?.comfort !== undefined && specs.wisemetrics.comfort !== null) {
+    const wisemetricsComfort = parseFloat(specs.wisemetrics.comfort);
+    if (!isNaN(wisemetricsComfort)) {
+      score += (wisemetricsComfort / 100) * 0.3;
+      maxScore += 0.3;
+    }
+  }
+  
+  // 2. Características de comfort (40% del score)
+  const comfortFeatures = {
+    airConditioning: specs.comfort?.airConditioning ? 0.08 : 0,
+    automaticClimateControl: specs.comfort?.automaticClimateControl ? 0.08 : 0,
+    heatedSeats: specs.comfort?.heatedSeats ? 0.06 : 0,
+    ventilatedSeats: specs.comfort?.ventilatedSeats ? 0.06 : 0,
+    massageSeats: specs.comfort?.massageSeats ? 0.04 : 0,
+    // Campos adicionales de comfort si existen
+    climatizadorZonas: specs.comfort?.climatizadorZonas ? parseFloat(specs.comfort.climatizadorZonas) * 0.02 : 0,
+    ajusteElectricoConductor: specs.comfort?.ajusteElectricoConductor ? 0.04 : 0,
+    ajusteElectricoPasajero: specs.comfort?.ajusteElectricoPasajero ? 0.02 : 0,
+    memoriaAsientos: specs.comfort?.memoriaAsientos ? 0.02 : 0,
+    cristalesAcusticos: specs.comfort?.cristalesAcusticos ? 0.03 : 0,
+    iluminacionAmbiental: specs.comfort?.iluminacionAmbiental ? 0.02 : 0,
+    techoPanoramico: specs.comfort?.techoPanoramico || specs.comfort?.sunroof ? 0.03 : 0,
+  };
+  
+  const comfortFeaturesScore = Object.values(comfortFeatures).reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
+  score += Math.min(comfortFeaturesScore, 0.4); // Cap at 0.4
+  maxScore += 0.4;
+  
+  // 3. Tipo de vehículo (20% del score) - SUV y Sedán son más cómodos para uso diario
+  let typeScore = 0;
+  if (vehicle.type === 'SUV') typeScore = 0.15;
+  else if (vehicle.type === 'Sedán') typeScore = 0.12;
+  else if (vehicle.type === 'Hatchback') typeScore = 0.08;
+  else if (vehicle.type === 'Pickup') typeScore = 0.06;
+  else if (vehicle.type === 'Deportivo') typeScore = 0.04;
+  else typeScore = 0.05;
+  
+  score += typeScore;
+  maxScore += 0.2;
+  
+  // 4. Espacio interior (10% del score) - más espacio = más cómodo
+  const passengerCapacity = parseFloat(specs.interior?.passengerCapacity) || 0;
+  const seatRows = parseFloat(specs.interior?.seatRows) || 0;
+  const wheelbase = parseFloat(specs.dimensions?.wheelbase) || 0;
+  
+  let spaceScore = 0;
+  if (passengerCapacity >= 7) spaceScore = 0.1;
+  else if (passengerCapacity >= 5) spaceScore = 0.08;
+  else if (passengerCapacity >= 4) spaceScore = 0.06;
+  else spaceScore = 0.04;
+  
+  // Bonificación por wheelbase largo (más espacio entre ejes = más cómodo)
+  if (wheelbase > 2800) spaceScore += 0.02;
+  else if (wheelbase > 2700) spaceScore += 0.01;
+  
+  score += Math.min(spaceScore, 0.1);
+  maxScore += 0.1;
+  
+  // 5. Año del vehículo (10% del score) - vehículos más nuevos suelen ser más cómodos
+  const currentYear = new Date().getFullYear();
+  const age = currentYear - vehicle.year;
+  let ageScore = 0;
+  if (age <= 1) ageScore = 0.1;
+  else if (age <= 3) ageScore = 0.08;
+  else if (age <= 5) ageScore = 0.06;
+  else if (age <= 8) ageScore = 0.04;
+  else ageScore = 0.02;
+  
+  score += ageScore;
+  maxScore += 0.1;
+  
+  // 6. Si no hay wisemetrics.comfort, usar score base según tipo de vehículo
+  // Esto asegura que vehículos cómodos (SUV, Sedán) tengan un score mínimo razonable
+  if (!specs.wisemetrics?.comfort) {
+    const baseScoreByType = {
+      'SUV': 0.70,      // SUV son muy cómodos para uso diario
+      'Sedán': 0.65,    // Sedán son cómodos y elegantes
+      'Hatchback': 0.60, // Hatchback son prácticos y cómodos
+      'Pickup': 0.55,   // Pickup son cómodos pero más rústicos
+      'Deportivo': 0.45, // Deportivos priorizan performance sobre comfort
+      'Convertible': 0.50,
+    };
+    const baseScore = baseScoreByType[vehicle.type as keyof typeof baseScoreByType] || 0.55;
+    
+    // Si el score calculado es muy bajo, usar el score base del tipo
+    // Pero combinar ambos: 60% score base del tipo + 40% score calculado
+    if (score / Math.max(maxScore, 1) < baseScore * 0.8) {
+      score = (baseScore * 0.6) + ((score / Math.max(maxScore, 1)) * 0.4);
+      maxScore = 1.0;
+    }
+  }
+  
+  // Normalizar el score (0-1)
+  const normalizedScore = maxScore > 0 ? score / maxScore : 0.6; // Default 0.6 si no hay datos
+  
+  // Asegurar que el score esté en el rango 0-1
+  // Para vehículos cómodos (SUV, Sedán), asegurar mínimo 0.5
+  const finalScore = Math.max(0, Math.min(1, normalizedScore));
+  const minComfortByType: Record<string, number> = {
+    'SUV': 0.55,
+    'Sedán': 0.50,
+    'Hatchback': 0.48,
+  };
+  const minComfort = minComfortByType[vehicle.type] || 0.4;
+  
+  return Math.max(minComfort, finalScore);
 }
 
 function calculateUrbanScore(type: string, specs: any, practicality: number): number {
@@ -239,10 +365,23 @@ export async function getMarketStats() {
     }
   });
   
-  const powers = specs.map(s => parseFloat(s.performance?.maxPower) || parseFloat(s.combustion?.maxPower) || 150).filter(Boolean);
-  const weights = specs.map(s => parseFloat(s.dimensions?.weight) || 1500).filter(Boolean);
+  // Extraer potencia de múltiples ubicaciones
+  const powers = specs.map(s => {
+    return parseFloat(s.powertrain?.potenciaMaxMotorTermico) || 
+           parseFloat(s.powertrain?.potenciaMaxSistemaHibrido) ||
+           parseFloat(s.powertrain?.potenciaMaxEV) ||
+           parseFloat(s.performance?.maxPower) || 
+           parseFloat(s.combustion?.maxPower) || 
+           parseFloat(s.hybrid?.maxPower) ||
+           parseFloat(s.electric?.maxPower) ||
+           150;
+  }).filter(Boolean);
+  const weights = specs.map(s => parseFloat(s.dimensions?.curbWeight) || parseFloat(s.dimensions?.weight) || 1500).filter(Boolean);
   const topSpeeds = specs.map(s => parseFloat(s.performance?.maxSpeed) || 180).filter(Boolean);
-  const clearances = specs.map(s => (parseFloat(s.chassis?.groundClearance) * 1000) || 150).filter(Boolean);
+  const clearances = specs.map(s => {
+    const clearance = parseFloat(s.chassis?.groundClearance) || 0;
+    return clearance > 10 ? clearance : (clearance * 1000) || 150;
+  }).filter(Boolean);
   const prices = vehicles.map(v => v.price).filter(Boolean);
   
   return {

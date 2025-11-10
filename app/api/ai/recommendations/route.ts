@@ -15,6 +15,13 @@ export async function POST(request: NextRequest) {
     // STEP 1: Categorize the query (subjective vs objective vs hybrid)
     const categorizedIntent = await categorizeQuery(prompt);
     
+    // DEBUG: Log what the AI categorized
+    console.log(`[AI Recommendations] Query: "${prompt}"`);
+    console.log(`[AI Recommendations] Query type: ${categorizedIntent.query_type}`);
+    console.log(`[AI Recommendations] Confidence: ${categorizedIntent.confidence}`);
+    console.log(`[AI Recommendations] Objective filters:`, JSON.stringify(categorizedIntent.objective_filters, null, 2));
+    console.log(`[AI Recommendations] Reasoning: ${categorizedIntent.reasoning}`);
+    
     // STEP 2: Process results based on query type
     const processedResults = await processResults(categorizedIntent);
     

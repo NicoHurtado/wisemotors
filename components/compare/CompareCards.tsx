@@ -38,96 +38,132 @@ export function CompareCards({ vehicles }: CompareCardsProps) {
     return baseMetrics.filter(metric => metric.show);
   };
 
+  // Función helper para obtener valor desde una ruta
+  const getValueFromPath = (specs: any, path: string): any => {
+    if (!specs) return null;
+    const keys = path.split('.');
+    let value = specs;
+    for (const key of keys) {
+      if (value && typeof value === 'object' && key in value) {
+        value = value[key];
+      } else {
+        return null;
+      }
+    }
+    return value !== null && value !== undefined ? value : null;
+  };
+
   // Función para obtener el valor de una métrica específica según el tipo de combustible
   const getMetricValue = (vehicle: VehicleComparisonData, metricKey: string) => {
     const { specifications, fuelType } = vehicle;
+    if (!specifications) return 'N/A';
     
     switch (metricKey) {
       case 'power':
         if (fuelType === 'Eléctrico') {
-          // Para vehículos eléctricos, obtener la potencia desde performance
-          return specifications?.performance?.maxPower ? 
-                 `${Math.round(specifications.performance.maxPower)} HP` : 'N/A';
+          let power = getValueFromPath(specifications, 'powertrain.potenciaMaxEV') || 
+                     getValueFromPath(specifications, 'powertrain.potenciaMaxMotorTermico');
+          // Si la potencia es muy grande (>500), probablemente está en kW, convertir a HP (1 kW ≈ 1.34 HP)
+          if (power && power > 500) {
+            power = Math.round(power * 1.34);
+          }
+          return power ? `${Math.round(power)} HP` : 'N/A';
+        } else if (fuelType === 'Híbrido' || fuelType === 'Híbrido Enchufable') {
+          let power = getValueFromPath(specifications, 'powertrain.potenciaMaxSistemaHibrido') || 
+                     getValueFromPath(specifications, 'powertrain.potenciaMaxMotorTermico') ||
+                     getValueFromPath(specifications, 'powertrain.potenciaMaxEV');
+          // Si la potencia es muy grande (>500), probablemente está en kW, convertir a HP
+          if (power && power > 500) {
+            power = Math.round(power * 1.34);
+          }
+          return power ? `${Math.round(power)} HP` : 'N/A';
         } else {
-          // Para vehículos de combustión, híbridos y PHEV
-          return specifications?.combustion?.maxPower || 
-                 specifications?.hybrid?.maxPower || 
-                 specifications?.phev?.maxPower ? 
-                 `${specifications.combustion?.maxPower || specifications.hybrid?.maxPower || specifications.phev?.maxPower} HP` : 'N/A';
+          let power = getValueFromPath(specifications, 'powertrain.potenciaMaxMotorTermico') || 
+                     getValueFromPath(specifications, 'powertrain.potenciaMaxEV');
+          // Si la potencia es muy grande (>500), probablemente está en kW, convertir a HP
+          if (power && power > 500) {
+            power = Math.round(power * 1.34);
+          }
+          return power ? `${Math.round(power)} HP` : 'N/A';
         }
       
       case 'acceleration':
-        return specifications?.performance?.acceleration0to100 ? 
-               `${specifications.performance.acceleration0to100}s` : 'N/A';
+        const acc = getValueFromPath(specifications, 'performance.acceleration0to100');
+        return acc ? `${acc.toFixed(1)}s` : 'N/A';
       
       case 'torque':
-        return specifications?.combustion?.maxTorque || 
-               specifications?.hybrid?.maxTorque || 
-               specifications?.phev?.maxTorque || 'N/A';
+        if (fuelType === 'Eléctrico') {
+          const torque = getValueFromPath(specifications, 'powertrain.torqueMaxEV');
+          return torque ? `${Math.round(torque)} Nm` : 'N/A';
+        } else if (fuelType === 'Híbrido' || fuelType === 'Híbrido Enchufable') {
+          const torque = getValueFromPath(specifications, 'powertrain.torqueMaxSistemaHibrido') || 
+                        getValueFromPath(specifications, 'powertrain.torqueMaxMotorTermico') ||
+                        getValueFromPath(specifications, 'powertrain.torqueMaxEV');
+          return torque ? `${Math.round(torque)} Nm` : 'N/A';
+        } else {
+          const torque = getValueFromPath(specifications, 'powertrain.torqueMaxMotorTermico') || 
+                        getValueFromPath(specifications, 'powertrain.torqueMaxEV');
+          return torque ? `${Math.round(torque)} Nm` : 'N/A';
+        }
       
       case 'maxSpeed':
-        return specifications?.performance?.maxSpeed ? 
-               `${specifications.performance.maxSpeed} km/h` : 'N/A';
+        const speed = getValueFromPath(specifications, 'performance.maxSpeed');
+        return speed ? `${Math.round(speed)} km/h` : 'N/A';
       
       case 'passengers':
-        return specifications?.dimensions?.passengerCapacity || 'N/A';
+        const passengers = getValueFromPath(specifications, 'interior.passengerCapacity') || 
+                          getValueFromPath(specifications, 'identification.plazas');
+        return passengers || 'N/A';
       
       case 'cargo':
-        const cargoCapacity = specifications?.dimensions?.cargoCapacity || 
-                             specifications?.dimensions?.trunkCapacitySeatsDown;
-        return cargoCapacity ? `${Math.round(cargoCapacity)} L` : 'N/A';
+        const cargo = getValueFromPath(specifications, 'dimensions.cargoCapacity') || 
+                     getValueFromPath(specifications, 'interior.trunkCapacitySeatsDown') ||
+                     getValueFromPath(specifications, 'dimensions.cargoCapacityMin');
+        return cargo ? `${Math.round(cargo)} L` : 'N/A';
       
       case 'cityConsumption':
+        const cityConsumption = getValueFromPath(specifications, 'efficiency.consumoCiudad');
         if (fuelType === 'Eléctrico') {
-          return specifications?.electric?.cityElectricConsumption ? 
-                 `${specifications.electric.cityElectricConsumption} kWh/100km` : 'N/A';
+          return cityConsumption ? `${cityConsumption.toFixed(1)} kWh/100km` : 'N/A';
         } else {
-          const consumption = specifications?.combustion?.cityConsumption || 
-                            specifications?.hybrid?.cityConsumption || 
-                            specifications?.phev?.cityConsumption;
-          return consumption ? `${consumption.toFixed(1)} L/100km` : 'N/A';
+          return cityConsumption ? `${cityConsumption.toFixed(1)} L/100km` : 'N/A';
         }
       
       case 'highwayConsumption':
+        const highwayConsumption = getValueFromPath(specifications, 'efficiency.consumoCarretera');
         if (fuelType === 'Eléctrico') {
-          return specifications?.electric?.highwayElectricConsumption ? 
-                 `${specifications.electric.highwayElectricConsumption} kWh/100km` : 'N/A';
+          return highwayConsumption ? `${highwayConsumption.toFixed(1)} kWh/100km` : 'N/A';
         } else {
-          const consumption = specifications?.combustion?.highwayConsumption || 
-                            specifications?.hybrid?.highwayConsumption || 
-                            specifications?.phev?.highwayConsumption;
-          return consumption ? `${consumption.toFixed(1)} L/100km` : 'N/A';
+          return highwayConsumption ? `${highwayConsumption.toFixed(1)} L/100km` : 'N/A';
         }
       
       case 'displacement':
-        return specifications?.combustion?.displacement || 
-               specifications?.hybrid?.displacement || 
-               specifications?.phev?.displacement ? 
-               `${specifications.combustion?.displacement || specifications.hybrid?.displacement || specifications.phev?.displacement} cc` : 'N/A';
+        const displacement = getValueFromPath(specifications, 'powertrain.cilindrada');
+        if (!displacement) return 'N/A';
+        // Si el valor es menor a 10, asumir que está en litros y convertir a cc
+        // Si es mayor a 10, asumir que ya está en cc
+        const displacementCc = displacement < 10 ? Math.round(displacement * 1000) : Math.round(displacement);
+        return `${displacementCc} cc`;
       
       case 'fuelTank':
-        return specifications?.combustion?.fuelTankCapacity || 
-               specifications?.hybrid?.fuelTankCapacity || 
-               specifications?.phev?.fuelTankCapacity ? 
-               `${Math.round(specifications.combustion?.fuelTankCapacity || specifications.hybrid?.fuelTankCapacity || specifications.phev?.fuelTankCapacity)} L` : 'N/A';
+        const fuelTank = getValueFromPath(specifications, 'efficiency.capacidadTanque');
+        return fuelTank ? `${Math.round(fuelTank)} L` : 'N/A';
       
       case 'weight':
-        return specifications?.dimensions?.curbWeight ? 
-               `${Math.round(specifications.dimensions.curbWeight)} kg` : 'N/A';
+        const weight = getValueFromPath(specifications, 'dimensions.curbWeight');
+        return weight ? `${Math.round(weight)} kg` : 'N/A';
       
       case 'electricRange':
-        return specifications?.electric?.electricRange || 
-               specifications?.phev?.electricRange ? 
-               `${Math.round(specifications.electric?.electricRange || specifications.phev?.electricRange)} km` : 'N/A';
+        const range = getValueFromPath(specifications, 'efficiency.autonomiaOficial');
+        return range ? `${Math.round(range)} km` : 'N/A';
       
       case 'gears':
-        return specifications?.combustion?.gears || 
-               specifications?.hybrid?.gears || 
-               specifications?.phev?.gears || 'N/A';
+        const gears = getValueFromPath(specifications, 'transmission.numeroMarchas');
+        return gears || 'N/A';
       
       case 'value':
-        return specifications?.wisemetrics?.qualityPriceRatio ? 
-               `${Math.round(specifications.wisemetrics.qualityPriceRatio)}/100` : 'N/A';
+        const value = getValueFromPath(specifications, 'wisemetrics.qualityPriceRatio');
+        return value ? `${Math.round(value)}/100` : 'N/A';
       
       default:
         return 'N/A';

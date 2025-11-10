@@ -179,6 +179,97 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
       }
     ];
 
+    // Función helper para obtener valor desde una ruta
+    const getValueFromPath = (specs: any, path: string): any => {
+      if (!specs) return null;
+      const keys = path.split('.');
+      let value = specs;
+      for (const key of keys) {
+        if (value && typeof value === 'object' && key in value) {
+          value = value[key];
+        } else {
+          return null;
+        }
+      }
+      return value !== null && value !== undefined ? value : null;
+    };
+    
+    // Función para obtener valor de un criterio
+    const getCriterionValue = (vehicle: VehicleComparisonData, criterion: string): number => {
+      const { specifications, fuelType } = vehicle;
+      if (!specifications) return 0;
+      
+      switch (criterion) {
+        case 'maxPower':
+          if (fuelType === 'Eléctrico') {
+            return getValueFromPath(specifications, 'powertrain.potenciaMaxEV') || 
+                   getValueFromPath(specifications, 'powertrain.potenciaMaxMotorTermico') || 0;
+          } else if (fuelType === 'Híbrido' || fuelType === 'Híbrido Enchufable') {
+            return getValueFromPath(specifications, 'powertrain.potenciaMaxSistemaHibrido') || 
+                   getValueFromPath(specifications, 'powertrain.potenciaMaxMotorTermico') ||
+                   getValueFromPath(specifications, 'powertrain.potenciaMaxEV') || 0;
+          } else {
+            return getValueFromPath(specifications, 'powertrain.potenciaMaxMotorTermico') || 
+                   getValueFromPath(specifications, 'powertrain.potenciaMaxEV') || 0;
+          }
+        
+        case 'acceleration0to100':
+          const acc = getValueFromPath(specifications, 'performance.acceleration0to100');
+          // Invertir: menor aceleración = mejor (más puntos)
+          return acc ? Math.max(0, 100 - (acc * 10)) : 0;
+        
+        case 'maxSpeed':
+          return getValueFromPath(specifications, 'performance.maxSpeed') || 0;
+        
+        case 'drivingFun':
+          return getValueFromPath(specifications, 'wisemetrics.drivingFun') || 0;
+        
+        case 'passengerCapacity':
+          return getValueFromPath(specifications, 'interior.passengerCapacity') || 
+                 getValueFromPath(specifications, 'identification.plazas') || 0;
+        
+        case 'cargoCapacity':
+          return getValueFromPath(specifications, 'dimensions.cargoCapacity') || 
+                 getValueFromPath(specifications, 'interior.trunkCapacitySeatsDown') ||
+                 getValueFromPath(specifications, 'dimensions.cargoCapacityMin') || 0;
+        
+        case 'safety':
+          return getValueFromPath(specifications, 'wisemetrics.reliability') || 
+                 (getValueFromPath(specifications, 'safety.airbags') || 0) * 10 ||
+                 (getValueFromPath(specifications, 'safety.ncapRating') || 0) * 20;
+        
+        case 'comfort':
+          return getValueFromPath(specifications, 'wisemetrics.comfort') || 0;
+        
+        case 'efficiency':
+          return getValueFromPath(specifications, 'wisemetrics.efficiency') || 0;
+        
+        case 'cityConsumption':
+          const cityCons = getValueFromPath(specifications, 'efficiency.consumoCiudad');
+          // Invertir: menor consumo = mejor (más puntos)
+          if (fuelType === 'Eléctrico') {
+            return cityCons ? Math.max(0, 100 - (cityCons * 5)) : 0;
+          } else {
+            return cityCons ? Math.max(0, 100 - (cityCons * 10)) : 0;
+          }
+        
+        case 'qualityPriceRatio':
+          return getValueFromPath(specifications, 'wisemetrics.qualityPriceRatio') || 0;
+        
+        case 'reliability':
+          return getValueFromPath(specifications, 'wisemetrics.reliability') || 0;
+        
+        case 'technology':
+          return getValueFromPath(specifications, 'wisemetrics.technology') || 0;
+        
+        case 'environmentalImpact':
+          return getValueFromPath(specifications, 'wisemetrics.environmentalImpact') || 0;
+        
+        default:
+          return 0;
+      }
+    };
+
     return profiles.map(profile => {
       let bestVehicle = vehiclesWithSpecs[0];
       let bestScore = 0;
@@ -186,10 +277,10 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
       vehiclesWithSpecs.forEach(vehicle => {
         let score = 0;
         profile.criteria.forEach(criterion => {
-          const value = vehicle.specifications?.[criterion] || 0;
+          const value = getCriterionValue(vehicle, criterion);
           if (typeof value === 'number') {
             score += value;
-            }
+          }
         });
         
         if (score > bestScore) {

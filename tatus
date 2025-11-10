@@ -1,0 +1,5 @@
+[33m96bb535[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix all TypeScript compilation errors and Suspense boundary for deployment
+[33m4c29b77[m Fix TypeScript errors in API route specifications parsing
+[33m6c0025e[m Fix another TypeScript error with query_type property
+[33m0474359[m Use type assertion to fix TypeScript compilation error
+[33m2167694[m Fix TypeScript type checking for aiResults property access

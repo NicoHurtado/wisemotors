@@ -38,6 +38,7 @@ export function AddVehicleForm() {
     combustible: '',
     modosConduccion: '',
     octanajeRecomendado: '',
+    arquitecturaMotorTermico: '',
     potenciaMaxEV: '',
     potenciaMaxMotorTermico: '',
     potenciaMaxSistemaHibrido: '',
@@ -178,6 +179,7 @@ export function AddVehicleForm() {
     vidriosElectricos: false,
     volanteMaterialAjustes: '',
     volanteCalefactable: false,
+    espejoInteriorElectrocromico: false,
 
     // Off-road y 4x4
     controlDescenso: false,
@@ -190,6 +192,7 @@ export function AddVehicleForm() {
     asistenciaCarretera: '',
     intervaloMantenimiento: '',
     costoMantenimiento3Primeros: '',
+    financiacionCuotaEstimada: '',
     origenPaisPlanta: '',
 
     // Metadatos
@@ -253,6 +256,7 @@ export function AddVehicleForm() {
           combustible: formData.combustible,
           modosConduccion: formData.modosConduccion,
           octanajeRecomendado: formData.octanajeRecomendado ? parseFloat(formData.octanajeRecomendado) : undefined,
+          arquitecturaMotorTermico: formData.arquitecturaMotorTermico || undefined,
           potenciaMaxEV: formData.potenciaMaxEV ? parseFloat(formData.potenciaMaxEV) : undefined,
           potenciaMaxMotorTermico: formData.potenciaMaxMotorTermico ? parseFloat(formData.potenciaMaxMotorTermico) : undefined,
           potenciaMaxSistemaHibrido: formData.potenciaMaxSistemaHibrido ? parseFloat(formData.potenciaMaxSistemaHibrido) : undefined,
@@ -278,12 +282,16 @@ export function AddVehicleForm() {
           curbWeight: formData.pesoOrdenMarcha ? parseFloat(formData.pesoOrdenMarcha) : undefined,
           wheelbase: formData.distanciaEntreEjes ? parseFloat(formData.distanciaEntreEjes) : undefined,
           cargoCapacity: formData.capacidadBaulMaxima ? parseFloat(formData.capacidadBaulMaxima) : undefined,
+          cargoCapacityMin: formData.capacidadBaulMinima ? parseFloat(formData.capacidadBaulMinima) : undefined,
+          roofCapacity: formData.capacidadTecho ? parseFloat(formData.capacidadTecho) : undefined,
+          turningRadius: formData.radioGiro ? parseFloat(formData.radioGiro) : undefined,
         },
         weight: {
           payload: formData.cargaUtil ? parseFloat(formData.cargaUtil) : undefined,
         },
         interior: {
           trunkCapacitySeatsDown: formData.capacidadBaulMaxima ? parseFloat(formData.capacidadBaulMaxima) : undefined,
+          trunkCapacityMin: formData.capacidadBaulMinima ? parseFloat(formData.capacidadBaulMinima) : undefined,
           passengerCapacity: formData.plazas ? parseInt(formData.plazas) : undefined,
         },
         efficiency: {
@@ -337,7 +345,10 @@ export function AddVehicleForm() {
           ncapRating: formData.euroNCAPEstrellas ? parseInt(formData.euroNCAPEstrellas) : undefined,
           adultSafetyScore: formData.euroNCAPAdulto ? parseFloat(formData.euroNCAPAdulto) : undefined,
           childSafetyScore: formData.euroNCAPNino ? parseFloat(formData.euroNCAPNino) : undefined,
+          pedestrianScore: formData.euroNCAPPeaton ? parseFloat(formData.euroNCAPPeaton) : undefined,
           assistanceScore: formData.euroNCAPAsistencias ? parseFloat(formData.euroNCAPAsistencias) : undefined,
+          latinNCAPRating: formData.latinNCAPEstrellas ? parseInt(formData.latinNCAPEstrellas) : undefined,
+          latinNCAPSubScores: formData.latinNCAPSubPuntajes || undefined,
         },
         adas: {
           acc: formData.acc,
@@ -393,6 +404,7 @@ export function AddVehicleForm() {
           vidriosElectricos: formData.vidriosElectricos,
           volanteMaterialAjustes: formData.volanteMaterialAjustes,
           volanteCalefactable: formData.volanteCalefactable,
+          espejoInteriorElectrocromico: formData.espejoInteriorElectrocromico,
         },
         offRoad: {
           controlDescenso: formData.controlDescenso,
@@ -405,6 +417,7 @@ export function AddVehicleForm() {
           asistenciaCarretera: formData.asistenciaCarretera ? parseFloat(formData.asistenciaCarretera) : undefined,
           intervaloMantenimiento: formData.intervaloMantenimiento,
           costoMantenimiento3Primeros: formData.costoMantenimiento3Primeros ? parseFloat(formData.costoMantenimiento3Primeros) : undefined,
+          financiacionCuotaEstimada: formData.financiacionCuotaEstimada ? parseFloat(formData.financiacionCuotaEstimada) : undefined,
           origenPaisPlanta: formData.origenPaisPlanta,
         },
         metadata: {
@@ -695,6 +708,7 @@ export function AddVehicleForm() {
           {renderField('combustible', 'Combustible', 'select', ['Gasolina', 'Diésel', 'GNV', 'Etanol', 'Eléctrico', 'Híbrido', 'Híbrido Enchufable'], undefined, 'Todos')}
           {renderField('modosConduccion', 'Modos de conducción', 'text', undefined, undefined, 'Todos')}
           {renderField('octanajeRecomendado', 'Octanaje recomendado', 'number', undefined, 'RON', 'ICE/HEV/PHE')}
+          {renderField('arquitecturaMotorTermico', 'Arquitectura motor térmico', 'select', ['En línea', 'V', 'Boxer', 'W'], undefined, 'ICE/HEV/PHE')}
           {renderField('potenciaMaxEV', 'Potencia máx. (EV)', 'number', undefined, 'kW; HP', 'EV')}
           {renderField('potenciaMaxMotorTermico', 'Potencia máx. (motor térmico)', 'number', undefined, 'kW; HP', 'ICE/HEV/PHE')}
           {renderField('potenciaMaxSistemaHibrido', 'Potencia máx. (sistema híbrido)', 'number', undefined, 'kW; HP', 'HEV/PHEV')}
@@ -923,6 +937,7 @@ export function AddVehicleForm() {
           {renderField('vidriosElectricos', 'Vidrios eléctricos (del/tras)', 'checkbox', undefined, undefined, 'Todos')}
           {renderField('volanteMaterialAjustes', 'Volante (material y ajustes)', 'text', undefined, undefined, 'Todos')}
           {renderField('volanteCalefactable', 'Volante calefactable', 'checkbox', undefined, undefined, 'Premium')}
+          {renderField('espejoInteriorElectrocromico', 'Espejo interior electrocrómico', 'checkbox', undefined, undefined, 'Todos')}
         </div>
           </div>
 
@@ -951,6 +966,7 @@ export function AddVehicleForm() {
           {renderField('asistenciaCarretera', 'Asistencia en carretera', 'number', undefined, 'años')}
           {renderField('intervaloMantenimiento', 'Intervalo de mantenimiento', 'text', undefined)}
           {renderField('costoMantenimiento3Primeros', 'Costo mantenimiento (3 primeros)', 'number', undefined, 'COP')}
+          {renderField('financiacionCuotaEstimada', 'Financiación (cuota estimada)', 'number', undefined, 'COP')}
           {renderField('origenPaisPlanta', 'Origen (país/planta)', 'text', undefined)}
         </div>
           </div>

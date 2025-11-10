@@ -76,20 +76,38 @@ export function CompareRadar({ vehicles }: CompareRadarProps) {
       vehicles.forEach(vehicle => {
         let value = 0;
         
+        // Función helper para obtener valor desde una ruta
+        const getValue = (path: string): any => {
+          if (!vehicle.specifications) return null;
+          const keys = path.split('.');
+          let value = vehicle.specifications;
+          for (const key of keys) {
+            if (value && typeof value === 'object' && key in value) {
+              value = value[key];
+            } else {
+              return null;
+            }
+          }
+          return value !== null && value !== undefined ? value : null;
+        };
+        
         switch (metric.key) {
           case 'performance':
             // Obtener potencia desde diferentes ubicaciones según el tipo de combustible
             let power = 0;
             if (vehicle.fuelType === 'Eléctrico') {
-              power = vehicle.specifications?.performance?.maxPower || 0;
+              power = getValue('powertrain.potenciaMaxEV') || getValue('powertrain.potenciaMaxMotorTermico') || 0;
+            } else if (vehicle.fuelType === 'Híbrido' || vehicle.fuelType === 'Híbrido Enchufable') {
+              power = getValue('powertrain.potenciaMaxSistemaHibrido') || 
+                     getValue('powertrain.potenciaMaxMotorTermico') ||
+                     getValue('powertrain.potenciaMaxEV') || 0;
             } else {
-              power = vehicle.specifications?.combustion?.maxPower || 
-                     vehicle.specifications?.hybrid?.maxPower || 
-                     vehicle.specifications?.phev?.maxPower || 0;
+              power = getValue('powertrain.potenciaMaxMotorTermico') || 
+                     getValue('powertrain.potenciaMaxEV') || 0;
             }
             
-            const acceleration = vehicle.specifications?.performance?.acceleration0to100 || 15;
-            const speed = vehicle.specifications?.performance?.maxSpeed || 150;
+            const acceleration = getValue('performance.acceleration0to100') || 15;
+            const speed = getValue('performance.maxSpeed') || 150;
             
             // Normalizar rendimiento (0-100)
             value = Math.min(100, Math.max(0, (
@@ -101,17 +119,17 @@ export function CompareRadar({ vehicles }: CompareRadarProps) {
             
           case 'technology':
             // Usar WiseMetrics si está disponible, sino calcular basado en features
-            const techScore = vehicle.specifications?.wisemetrics?.technology;
+            const techScore = getValue('wisemetrics.technology');
             if (techScore) {
               value = techScore;
             } else {
               // Calcular score basado en features de tecnología
               const techFeatures = [
-                vehicle.specifications?.technology?.bluetooth,
-                vehicle.specifications?.technology?.touchscreen,
-                vehicle.specifications?.technology?.navigation,
-                vehicle.specifications?.technology?.smartphoneIntegration,
-                vehicle.specifications?.technology?.wirelessCharger
+                getValue('technology.bluetooth') || getValue('infotainment.bluetooth'),
+                getValue('technology.touchscreen') || getValue('infotainment.pantallaCentralTamano'),
+                getValue('technology.navigation') || getValue('infotainment.navegacionIntegrada'),
+                getValue('infotainment.androidAuto') || getValue('infotainment.appleCarPlay'),
+                getValue('technology.wirelessCharger') || getValue('infotainment.cargadorInalambrico')
               ].filter(Boolean).length;
               value = Math.min(100, (techFeatures / 5) * 100);
             }
@@ -119,16 +137,16 @@ export function CompareRadar({ vehicles }: CompareRadarProps) {
             
           case 'safety':
             // Usar WiseMetrics si está disponible, sino calcular basado en features de seguridad
-            const safetyScore = vehicle.specifications?.wisemetrics?.safety;
+            const safetyScore = getValue('wisemetrics.reliability');
             if (safetyScore) {
               value = safetyScore;
             } else {
               const safetyFeatures = [
-                vehicle.specifications?.safety?.airbags,
-                vehicle.specifications?.safety?.stabilityControl,
-                vehicle.specifications?.safety?.tractionControl,
-                vehicle.specifications?.safety?.autonomousEmergencyBraking,
-                vehicle.specifications?.safety?.laneAssist
+                getValue('safety.airbags'),
+                getValue('safety.stabilityControl'),
+                getValue('safety.tractionControl'),
+                getValue('safety.autonomousEmergencyBraking') || getValue('adas.aeb'),
+                getValue('safety.laneAssist') || getValue('adas.lka')
               ].filter(Boolean).length;
               value = Math.min(100, (safetyFeatures / 5) * 100);
             }
@@ -136,15 +154,15 @@ export function CompareRadar({ vehicles }: CompareRadarProps) {
             
           case 'comfort':
             // Usar WiseMetrics si está disponible, sino calcular basado en features de confort
-            const comfortScore = vehicle.specifications?.wisemetrics?.comfort;
+            const comfortScore = getValue('wisemetrics.comfort');
             if (comfortScore) {
               value = comfortScore;
             } else {
               const comfortFeatures = [
-                vehicle.specifications?.comfort?.airConditioning,
-                vehicle.specifications?.comfort?.automaticClimateControl,
-                vehicle.specifications?.comfort?.heatedSeats,
-                vehicle.specifications?.comfort?.ventilatedSeats
+                getValue('comfort.airConditioning'),
+                getValue('comfort.automaticClimateControl') || getValue('comfort.climatizadorZonas'),
+                getValue('comfort.heatedSeats') || getValue('comfort.calefaccionAsientos'),
+                getValue('comfort.ventilatedSeats') || getValue('comfort.ventilacionAsientos')
               ].filter(Boolean).length;
               value = Math.min(100, (comfortFeatures / 4) * 100);
             }
@@ -154,38 +172,46 @@ export function CompareRadar({ vehicles }: CompareRadarProps) {
             // Calcular eficiencia basada en consumo y tipo de combustible
             let consumption = 0;
             if (vehicle.fuelType === 'Eléctrico') {
-              const cityConsumption = vehicle.specifications?.electric?.cityElectricConsumption || 20;
-              const highwayConsumption = vehicle.specifications?.electric?.highwayElectricConsumption || 25;
+              const cityConsumption = getValue('efficiency.consumoCiudad') || 20;
+              const highwayConsumption = getValue('efficiency.consumoCarretera') || 25;
               consumption = (cityConsumption + highwayConsumption) / 2;
               // Para eléctricos, menor consumo = mayor eficiencia
               value = Math.max(0, 100 - (consumption / 30) * 100);
             } else {
-              const cityConsumption = vehicle.specifications?.combustion?.cityConsumption || 
-                                    vehicle.specifications?.hybrid?.cityConsumption || 
-                                    vehicle.specifications?.phev?.cityConsumption || 10;
-              const highwayConsumption = vehicle.specifications?.combustion?.highwayConsumption || 
-                                       vehicle.specifications?.hybrid?.highwayConsumption || 
-                                       vehicle.specifications?.phev?.highwayConsumption || 10;
+              const cityConsumption = getValue('efficiency.consumoCiudad') || 10;
+              const highwayConsumption = getValue('efficiency.consumoCarretera') || 10;
               consumption = (cityConsumption + highwayConsumption) / 2;
               // Para combustión, menor consumo = mayor eficiencia
               value = Math.max(0, 100 - (consumption / 15) * 100);
             }
+            
+            // Si hay WiseMetrics de eficiencia, usarlo en su lugar
+            const efficiencyScore = getValue('wisemetrics.efficiency');
+            if (efficiencyScore) {
+              value = efficiencyScore;
+            }
             break;
             
           case 'value':
-            // Calcular valor basado en precio y características
-            const basePrice = vehicle.price || 100000000;
-            const priceScore = Math.max(0, 100 - (basePrice / 10000000));
-            
-            // Ajustar por características disponibles
-            const totalFeatures = [
-              vehicle.specifications?.technology?.bluetooth,
-              vehicle.specifications?.safety?.airbags,
-              vehicle.specifications?.comfort?.airConditioning
-            ].filter(Boolean).length;
-            
-            const featureBonus = Math.min(20, totalFeatures * 4);
-            value = Math.min(100, priceScore + featureBonus);
+            // Usar WiseMetrics si está disponible
+            const qualityPriceRatio = getValue('wisemetrics.qualityPriceRatio');
+            if (qualityPriceRatio) {
+              value = qualityPriceRatio;
+            } else {
+              // Calcular valor basado en precio y características
+              const basePrice = vehicle.price || 100000000;
+              const priceScore = Math.max(0, 100 - (basePrice / 10000000));
+              
+              // Ajustar por características disponibles
+              const totalFeatures = [
+                getValue('technology.bluetooth') || getValue('infotainment.bluetooth'),
+                getValue('safety.airbags'),
+                getValue('comfort.airConditioning')
+              ].filter(Boolean).length;
+              
+              const featureBonus = Math.min(20, totalFeatures * 4);
+              value = Math.min(100, priceScore + featureBonus);
+            }
             break;
         }
         

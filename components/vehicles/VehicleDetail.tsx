@@ -11,10 +11,103 @@ import { ScrollToTop } from '@/components/ui/ScrollToTop';
 import { VideoModal } from '@/components/ui/VideoModal';
 import { useWhatsAppLeads } from '@/hooks/useWhatsAppLeads';
 import { useAuth } from '@/contexts/AuthContext';
-import InteractiveShowcase from './InteractiveShowcase';
 
 interface VehicleDetailProps {
   vehicle: any; // Using any for now due to complex type
+}
+
+// Tipos para las tarjetas
+interface SpecificationCardProps {
+  title: string;
+  icon: string;
+  colorScheme: {
+    bgFrom: string; // Tailwind class like "from-blue-50"
+    bgTo: string;   // Tailwind class like "to-blue-100"
+    iconBgFrom: string; // Tailwind class like "from-blue-500"
+    iconBgTo: string;   // Tailwind class like "to-blue-600"
+    circleBg: string;   // Tailwind class like "bg-blue-500/10"
+  };
+  fields: Array<{
+    label: string;
+    value: string | number | boolean | undefined | null;
+    formatter?: (val: any) => string | undefined;
+  }>;
+  id?: string;
+}
+
+// Componente reutilizable para tarjetas de especificaciones
+function SpecificationCard({ title, icon, colorScheme, fields, id }: SpecificationCardProps) {
+  // Filtrar campos que tienen valores válidos y procesar formatters
+  type ProcessedField = {
+    label: string;
+    displayValue: string;
+  };
+  
+  const validFields: ProcessedField[] = fields
+    .map(field => {
+      const val = field.value;
+      // Si el campo no tiene valor válido, excluirlo
+      if (val === undefined || val === null || val === '' || val === false) {
+        return null;
+      }
+      
+      // Si tiene formatter, verificar que devuelva un valor válido
+      if (field.formatter) {
+        const formatted = field.formatter(val);
+        if (formatted === undefined || formatted === null) {
+          return null;
+        }
+        return { label: field.label, displayValue: formatted };
+      }
+      
+      // Sin formatter, usar el valor directamente
+      return { 
+        label: field.label,
+        displayValue: typeof val === 'boolean' 
+          ? (val ? '✓ Sí' : '✗ No') 
+          : String(val) 
+      };
+    })
+    .filter((field): field is ProcessedField => field !== null);
+
+  // Si no hay campos válidos, no renderizar la tarjeta
+  if (validFields.length === 0) return null;
+
+  // Determinar clases de grid según cantidad de campos (usando clases estáticas de Tailwind)
+  const getGridClasses = () => {
+    if (validFields.length <= 4) {
+      return "grid-cols-2";
+    } else if (validFields.length <= 8) {
+      return "grid-cols-2 md:grid-cols-3";
+    } else {
+      return "grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
+    }
+  };
+
+  return (
+    <div 
+      id={id}
+      className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${colorScheme.bgFrom} ${colorScheme.bgTo} p-8 shadow-lg hover:shadow-2xl transition-all duration-300 w-full`}
+    >
+      <div className={`absolute top-0 right-0 w-48 h-48 ${colorScheme.circleBg} rounded-full -mr-24 -mt-24 opacity-50`}></div>
+      <div className="relative">
+        <div className="flex items-center mb-6">
+          <div className={`w-16 h-16 bg-gradient-to-br ${colorScheme.iconBgFrom} ${colorScheme.iconBgTo} rounded-2xl flex items-center justify-center mr-4 shadow-lg group-hover:scale-110 transition-transform flex-shrink-0`}>
+            <span className="text-white text-3xl">{icon}</span>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900">{title}</h3>
+        </div>
+        <div className={`grid ${getGridClasses()} gap-x-8 gap-y-4`}>
+          {validFields.map((field, index) => (
+            <div key={index} className="flex flex-col">
+              <span className="text-gray-600 text-sm mb-1 font-medium">{field.label}</span>
+              <span className="font-semibold text-gray-900 text-base">{field.displayValue}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function VehicleDetail({ vehicle }: VehicleDetailProps) {
@@ -22,494 +115,36 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
   const { createLead } = useWhatsAppLeads();
   const { user } = useAuth();
 
-  // Función para renderizar la sección de motor según el tipo de combustible
-  const renderEngineSection = () => {
-    const fuelType = (vehicle.fuelType || vehicle.specifications?.powertrain?.combustible)?.toLowerCase();
-    const powertrain = vehicle.specifications?.powertrain || {};
-    const transmission = vehicle.specifications?.transmission || {};
-    const battery = vehicle.specifications?.battery || {};
-    
-    if (fuelType === 'eléctrico' || fuelType === 'electric') {
-      return (
-        <div className="rounded-2xl shadow-soft p-6 bg-white">
-          <div className="flex items-center mb-4">
-            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mr-3">
-              <span className="text-white text-xl">⚡</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Motor Eléctrico</h3>
-          </div>
-          <div className="space-y-2">
-            {powertrain.potenciaMaxEV && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Potencia Máxima (EV):</span>
-                <span className="font-medium">{powertrain.potenciaMaxEV} kW</span>
-              </div>
-            )}
-            {powertrain.torqueMaxEV && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Torque Máximo (EV):</span>
-                <span className="font-medium">{powertrain.torqueMaxEV} Nm</span>
-              </div>
-            )}
-            {battery.capacidadBrutaBateria && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Capacidad de Batería:</span>
-                <span className="font-medium">{battery.capacidadBrutaBateria} kWh</span>
-            </div>
-            )}
-            {battery.cargadorOBCAC && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Cargador a bordo (OBC) AC:</span>
-                <span className="font-medium">{battery.cargadorOBCAC} kW</span>
-            </div>
-            )}
-            {battery.conduccionOnePedal !== undefined && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Conducción One-Pedal:</span>
-                <span className="font-medium">{battery.conduccionOnePedal ? '✓ Sí' : '✗ No'}</span>
-            </div>
-            )}
-            {battery.regeneracionNiveles && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Regeneración (niveles):</span>
-                <span className="font-medium">{battery.regeneracionNiveles}</span>
-            </div>
-            )}
-            {battery.tiempo0100AC && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Tiempo 0-100% (AC):</span>
-                <span className="font-medium">{battery.tiempo0100AC} h</span>
-            </div>
-            )}
-            {battery.tiempo1080DC && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Tiempo 10-80% (DC):</span>
-                <span className="font-medium">{battery.tiempo1080DC} min</span>
-            </div>
-            )}
-            {battery.highPowerChargingTimes && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">High Power Charging times:</span>
-                <span className="font-medium">{battery.highPowerChargingTimes}</span>
-              </div>
-            )}
-            {battery.v2hV2g !== undefined && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">V2H/V2G (bidireccional):</span>
-                <span className="font-medium">{battery.v2hV2g ? '✓ Sí' : '✗ No'}</span>
-              </div>
-            )}
-            {battery.potenciaV2hV2g && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">V2H/V2G Potencia:</span>
-                <span className="font-medium">{battery.potenciaV2hV2g} kW</span>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    } else if (fuelType === 'híbrido' || fuelType === 'hybrid' || fuelType === 'híbrido enchufable' || fuelType === 'híbrido enchufable') {
-      return (
-        <div className="rounded-2xl shadow-soft p-6 bg-white">
-          <div className="flex items-center mb-4">
-            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-3">
-              <span className="text-white text-xl">🔋</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Motor Híbrido</h3>
-          </div>
-          <div className="space-y-2">
-            {powertrain.alimentacion !== undefined && powertrain.alimentacion !== null && powertrain.alimentacion !== '' && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Alimentación:</span>
-                <span className="font-medium">{powertrain.alimentacion}</span>
-            </div>
-            )}
-            {powertrain.cicloTrabajo !== undefined && powertrain.cicloTrabajo !== null && powertrain.cicloTrabajo !== '' && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Ciclo de trabajo:</span>
-                <span className="font-medium">{powertrain.cicloTrabajo}</span>
-            </div>
-            )}
-            {powertrain.cilindrada !== undefined && powertrain.cilindrada !== null && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Cilindrada:</span>
-                <span className="font-medium">{powertrain.cilindrada} L</span>
-            </div>
-            )}
-            {powertrain.combustible !== undefined && powertrain.combustible !== null && powertrain.combustible !== '' && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Combustible:</span>
-                <span className="font-medium">{powertrain.combustible}</span>
-            </div>
-            )}
-            {powertrain.modosConduccion !== undefined && powertrain.modosConduccion !== null && powertrain.modosConduccion !== '' && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Modos de conducción:</span>
-                <span className="font-medium">{powertrain.modosConduccion}</span>
-            </div>
-            )}
-            {powertrain.octanajeRecomendado !== undefined && powertrain.octanajeRecomendado !== null && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Octanaje recomendado:</span>
-                <span className="font-medium">{powertrain.octanajeRecomendado} RON</span>
-            </div>
-            )}
-            {powertrain.potenciaMaxMotorTermico !== undefined && powertrain.potenciaMaxMotorTermico !== null && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Potencia máx. (motor térmico):</span>
-                <span className="font-medium">{powertrain.potenciaMaxMotorTermico} kW</span>
-            </div>
-            )}
-            {powertrain.potenciaMaxSistemaHibrido !== undefined && powertrain.potenciaMaxSistemaHibrido !== null && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Potencia máx. (sistema híbrido):</span>
-                <span className="font-medium">{powertrain.potenciaMaxSistemaHibrido} kW</span>
-            </div>
-            )}
-            {powertrain.torqueMaxMotorTermico !== undefined && powertrain.torqueMaxMotorTermico !== null && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Torque máx. (motor térmico):</span>
-                <span className="font-medium">{powertrain.torqueMaxMotorTermico} Nm</span>
-            </div>
-            )}
-            {powertrain.torqueMaxSistemaHibrido !== undefined && powertrain.torqueMaxSistemaHibrido !== null && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Torque máx. (sistema híbrido):</span>
-                <span className="font-medium">{powertrain.torqueMaxSistemaHibrido} Nm</span>
-            </div>
-            )}
-            {powertrain.traccion !== undefined && powertrain.traccion !== null && powertrain.traccion !== '' && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Tracción:</span>
-                <span className="font-medium">{powertrain.traccion}</span>
-            </div>
-            )}
-            {transmission.tipoTransmision !== undefined && transmission.tipoTransmision !== null && transmission.tipoTransmision !== '' && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Tipo de Transmisión:</span>
-                <span className="font-medium">{transmission.tipoTransmision}</span>
-            </div>
-            )}
-            {transmission.numeroMarchas !== undefined && transmission.numeroMarchas !== null && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Número de Marchas:</span>
-                <span className="font-medium">{transmission.numeroMarchas}</span>
-            </div>
-            )}
-            {powertrain.startStop !== undefined && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Sistema Start-Stop:</span>
-                <span className="font-medium">{powertrain.startStop ? '✓ Sí' : '✗ No'}</span>
-            </div>
-            )}
-            {powertrain.launchControl !== undefined && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Launch control:</span>
-                <span className="font-medium">{powertrain.launchControl ? '✓ Sí' : '✗ No'}</span>
-            </div>
-            )}
-            {battery.capacidadBrutaBateria !== undefined && battery.capacidadBrutaBateria !== null && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Capacidad de Batería:</span>
-                <span className="font-medium">{battery.capacidadBrutaBateria} kWh</span>
-            </div>
-            )}
-            {battery.regeneracionNiveles !== undefined && battery.regeneracionNiveles !== null && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Regeneración (niveles):</span>
-                <span className="font-medium">{battery.regeneracionNiveles}</span>
-            </div>
-            )}
-            {battery.v2hV2g !== undefined && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">V2H/V2G (bidireccional):</span>
-                <span className="font-medium">{battery.v2hV2g ? '✓ Sí' : '✗ No'}</span>
-            </div>
-            )}
-          </div>
-        </div>
-      );
-    } else {
-      // Motor de combustión tradicional
-      return (
-        <div className="rounded-2xl shadow-soft p-6 bg-white">
-          <div className="flex items-center mb-4">
-            <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center mr-3">
-              <span className="text-white text-xl">🔧</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Motor</h3>
-          </div>
-          <div className="space-y-2">
-            {powertrain.alimentacion && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Alimentación:</span>
-                <span className="font-medium">{powertrain.alimentacion}</span>
-            </div>
-            )}
-            {powertrain.cilindrada && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Cilindrada:</span>
-                <span className="font-medium">{powertrain.cilindrada} L</span>
-            </div>
-            )}
-            {powertrain.combustible && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Combustible:</span>
-                <span className="font-medium">{powertrain.combustible}</span>
-            </div>
-            )}
-            {powertrain.octanajeRecomendado && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Octanaje recomendado:</span>
-                <span className="font-medium">{powertrain.octanajeRecomendado} RON</span>
-            </div>
-            )}
-            {powertrain.potenciaMaxMotorTermico && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Potencia máx. (motor térmico):</span>
-                <span className="font-medium">{powertrain.potenciaMaxMotorTermico} kW</span>
-            </div>
-            )}
-            {powertrain.torqueMaxMotorTermico && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Torque máx. (motor térmico):</span>
-                <span className="font-medium">{powertrain.torqueMaxMotorTermico} Nm</span>
-            </div>
-            )}
-            {transmission.tipoTransmision && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Tipo de transmisión:</span>
-                <span className="font-medium">{transmission.tipoTransmision}</span>
-            </div>
-            )}
-            {transmission.numeroMarchas !== undefined && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Número de marchas:</span>
-                <span className="font-medium">{transmission.numeroMarchas}</span>
-            </div>
-            )}
-            {powertrain.startStop !== undefined && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Sistema start-stop:</span>
-                <span className="font-medium">{powertrain.startStop ? '✓ Sí' : '✗ No'}</span>
-            </div>
-            )}
-          </div>
-        </div>
-      );
-    }
+  // Utilidad: verifica si un objeto tiene al menos un valor significativo
+  const hasAnyValue = (obj: any) => {
+    if (!obj || typeof obj !== 'object') return false;
+    return Object.values(obj).some((v) => v !== undefined && v !== null && v !== '' && v !== false);
   };
 
-  // Función para renderizar la sección de consumo según el tipo de combustible
-  const renderConsumptionSection = () => {
-    const fuelType = (vehicle.fuelType || vehicle.specifications?.powertrain?.combustible)?.toLowerCase();
-    const efficiency = vehicle.specifications?.efficiency || {};
-    const battery = vehicle.specifications?.battery || {};
-    
-    if (fuelType === 'eléctrico' || fuelType === 'electric') {
-      return (
-        <div className="rounded-2xl shadow-soft p-6 bg-white">
-          <div className="flex items-center mb-4">
-            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mr-3">
-              <span className="text-white text-xl">⚡</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Consumo Eléctrico</h3>
-          </div>
-          <div className="space-y-2">
-            {efficiency.consumoCiudad && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Consumo Ciudad:</span>
-                <span className="font-medium">{efficiency.consumoCiudad} kWh/100km</span>
-            </div>
-            )}
-            {efficiency.consumoCarretera && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Consumo Carretera:</span>
-                <span className="font-medium">{efficiency.consumoCarretera} kWh/100km</span>
-            </div>
-            )}
-            {efficiency.consumoMixto && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Consumo Mixto:</span>
-                <span className="font-medium">{efficiency.consumoMixto} kWh/100km</span>
-            </div>
-            )}
-            {efficiency.mpgeCiudad && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">MPGe Ciudad:</span>
-                <span className="font-medium">{efficiency.mpgeCiudad} mpge</span>
-            </div>
-            )}
-            {efficiency.mpgeCarretera && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">MPGe Carretera:</span>
-                <span className="font-medium">{efficiency.mpgeCarretera} mpge</span>
-            </div>
-            )}
-            {efficiency.mpgeCombinado && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">MPGe Combinado:</span>
-                <span className="font-medium">{efficiency.mpgeCombinado} mpge</span>
-            </div>
-            )}
-            {efficiency.autonomiaOficial && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Autonomía Oficial:</span>
-                <span className="font-medium">{efficiency.autonomiaOficial} km</span>
-              </div>
-            )}
-            {battery.tiempo0100AC && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tiempo Carga AC (0-100%):</span>
-                <span className="font-medium">{battery.tiempo0100AC} h</span>
-              </div>
-            )}
-            {battery.tiempo1080DC && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tiempo Carga DC (10-80%):</span>
-                <span className="font-medium">{battery.tiempo1080DC} min</span>
-              </div>
-            )}
-            {efficiency.costoEnergia100km && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Costo energía por 100 km:</span>
-                <span className="font-medium">${efficiency.costoEnergia100km.toLocaleString()} COP</span>
-              </div>
-            )}
-            {efficiency.ahorro5Anos && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Ahorro a 5 años:</span>
-                <span className="font-medium">${efficiency.ahorro5Anos.toLocaleString()} COP</span>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    } else if (fuelType === 'híbrido' || fuelType === 'hybrid' || fuelType === 'híbrido enchufable' || fuelType === 'híbrido enchufable') {
-      return (
-        <div className="rounded-2xl shadow-soft p-6 bg-white">
-          <div className="flex items-center mb-4">
-            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-3">
-              <span className="text-white text-xl">🔋</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Consumo Híbrido</h3>
-          </div>
-          <div className="space-y-2">
-            {efficiency.consumoCiudad !== undefined && efficiency.consumoCiudad !== null && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Consumo Ciudad:</span>
-                <span className="font-medium">{efficiency.consumoCiudad} L/100km</span>
-            </div>
-            )}
-            {efficiency.consumoCarretera !== undefined && efficiency.consumoCarretera !== null && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Consumo Carretera:</span>
-                <span className="font-medium">{efficiency.consumoCarretera} L/100km</span>
-            </div>
-            )}
-            {efficiency.consumoMixto !== undefined && efficiency.consumoMixto !== null && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Consumo Mixto:</span>
-                <span className="font-medium">{efficiency.consumoMixto} L/100km</span>
-            </div>
-            )}
-            {efficiency.capacidadTanque !== undefined && efficiency.capacidadTanque !== null && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Capacidad de Tanque:</span>
-                <span className="font-medium">{efficiency.capacidadTanque} L</span>
-          </div>
-            )}
-            {efficiency.costoEnergia100km !== undefined && efficiency.costoEnergia100km !== null && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Costo energía por 100 km:</span>
-                <span className="font-medium">${efficiency.costoEnergia100km.toLocaleString()} COP</span>
-        </div>
-            )}
-            {efficiency.ahorro5Anos !== undefined && efficiency.ahorro5Anos !== null && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Ahorro a 5 años:</span>
-                <span className="font-medium">${efficiency.ahorro5Anos.toLocaleString()} COP</span>
-            </div>
-            )}
-            {efficiency.autonomiaOficial && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Autonomía Oficial:</span>
-                <span className="font-medium">{efficiency.autonomiaOficial} km</span>
-            </div>
-            )}
-            {efficiency.mpgeCiudad && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">MPGe Ciudad:</span>
-                <span className="font-medium">{efficiency.mpgeCiudad} mpge</span>
-            </div>
-            )}
-            {efficiency.mpgeCarretera && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">MPGe Carretera:</span>
-                <span className="font-medium">{efficiency.mpgeCarretera} mpge</span>
-            </div>
-            )}
-            {efficiency.mpgeCombinado && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">MPGe Combinado:</span>
-                <span className="font-medium">{efficiency.mpgeCombinado} mpge</span>
-            </div>
-            )}
-            {efficiency.costoEnergia100km && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Costo energía por 100 km:</span>
-                <span className="font-medium">${efficiency.costoEnergia100km.toLocaleString()} COP</span>
-            </div>
-            )}
-            {efficiency.ahorro5Anos && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Ahorro a 5 años:</span>
-                <span className="font-medium">${efficiency.ahorro5Anos.toLocaleString()} COP</span>
-            </div>
-            )}
-          </div>
-        </div>
-      );
-    } else {
-      // Consumo de combustión tradicional
-      return (
-        <div className="rounded-2xl shadow-soft p-6 bg-white">
-          <div className="flex items-center mb-4">
-            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-3">
-              <span className="text-white text-xl">⛽</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Consumo</h3>
-          </div>
-          <div className="space-y-2">
-            {efficiency.consumoCiudad && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Ciudad:</span>
-                <span className="font-medium">{efficiency.consumoCiudad} L/100km</span>
-            </div>
-            )}
-            {efficiency.consumoCarretera && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Carretera:</span>
-                <span className="font-medium">{efficiency.consumoCarretera} L/100km</span>
-            </div>
-            )}
-            {efficiency.consumoMixto && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Consumo mixto:</span>
-                <span className="font-medium">{efficiency.consumoMixto} L/100km</span>
-            </div>
-            )}
-            {efficiency.capacidadTanque && (
-            <div className="flex justify-between">
-                <span className="text-gray-600">Capacidad de Tanque:</span>
-                <span className="font-medium">{efficiency.capacidadTanque} L</span>
-            </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-  };
+  // Preparar datos para las tarjetas de especificaciones
+  const specs = vehicle.specifications || {};
+  const powertrain = specs.powertrain || {};
+  const combustion = specs.combustion || {}; // Campos adicionales de combustión (RPM, etc.)
+  const transmission = specs.transmission || {};
+  const battery = specs.battery || {};
+  const dimensions = specs.dimensions || {};
+  const efficiency = specs.efficiency || {};
+  const performance = specs.performance || {};
+  const safety = specs.safety || {};
+  const adas = specs.adas || {};
+  const infotainment = specs.infotainment || {};
+  const comfort = specs.comfort || {};
+  const lighting = specs.lighting || {};
+  const chassis = specs.chassis || {};
+  const identification = specs.identification || {};
+  const commercial = specs.commercial || {};
+  const offRoad = specs.offRoad || {};
+  const weight = specs.weight || {};
+  const interior = specs.interior || {};
+  
+  const fuelType = (vehicle.fuelType || powertrain.combustible)?.toLowerCase();
+  const isElectric = fuelType?.includes('eléctrico') || fuelType?.includes('electric');
+  const isHybrid = fuelType?.includes('híbrido') || fuelType?.includes('hybrid');
 
   return (
     <div className="min-h-screen relative">
@@ -590,918 +225,488 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
             </div>
           </div>
         </section>
-        
-        {/* Interactive Showcase - inmediatamente debajo del CTA de testdrive en casa */}
-        <section className="mb-20">
-          <div className="max-w-7xl mx-auto">
-            <InteractiveShowcase imageSrc="/images/rav4-removebg-preview.png" vehicle={vehicle} />
-          </div>
-        </section>
 
-        {/* Section 3: Detailed Specifications - Organizadas según campos_seleccionados.md - ORDEN EXACTO */}
+        {/* Section 3: Detailed Specifications - Organized by Sections */}
         <section className="mb-16">
           <div className="max-w-7xl mx-auto">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Especificaciones y Valoraciones
-                </h2>
-              </div>
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                Especificaciones Técnicas
+              </h2>
+              <p className="text-gray-600">Toda la información detallada del vehículo</p>
+            </div>
+            
+            {/* Sección 1: Identificación y Básicos */}
+            <div className="mb-8">
+              <SpecificationCard
+                id="sec-identificacion"
+                title="Identificación"
+                icon="📋"
+                colorScheme={{
+                  bgFrom: "from-blue-50",
+                  bgTo: "to-blue-100",
+                  iconBgFrom: "from-blue-500",
+                  iconBgTo: "to-blue-600",
+                  circleBg: "bg-blue-500/10"
+                }}
+                fields={[
+                  { label: "Año modelo", value: identification.añoModelo },
+                  { label: "Carrocería", value: identification.carrocería },
+                  { label: "Plazas", value: identification.plazas },
+                  { label: "Puertas", value: identification.puertas },
+                  { label: "Versión/Trim", value: identification.versionTrim },
+                ]}
+              />
+            </div>
+
+            {/* Sección 2: Motorización y Tren Motriz */}
+            <div className="mb-8">
+              {isElectric && (
+                <SpecificationCard
+                  id="sec-powertrain"
+                  title="Motorización Eléctrica"
+                  icon="⚡"
+                  colorScheme={{
+                    bgFrom: "from-green-50",
+                    bgTo: "to-emerald-100",
+                    iconBgFrom: "from-green-500",
+                    iconBgTo: "to-emerald-600",
+                    circleBg: "bg-green-500/10"
+                  }}
+                  fields={[
+                    { label: "Potencia Máxima (EV)", value: powertrain.potenciaMaxEV, formatter: (v) => v ? `${v} kW` : undefined },
+                    { label: "Torque Máximo (EV)", value: powertrain.torqueMaxEV, formatter: (v) => v ? `${v} Nm` : undefined },
+                    { label: "Tracción", value: powertrain.traccion },
+                    { label: "Tipo de Transmisión", value: transmission.tipoTransmision },
+                    { label: "Número de marchas", value: transmission.numeroMarchas },
+                    { label: "Capacidad de Batería", value: battery.capacidadBrutaBateria, formatter: (v) => v ? `${v} kWh` : undefined },
+                  ]}
+                />
+              )}
               
-              {/* 1. Identificación */}
-              {(vehicle.specifications?.identification?.marca ||
-                vehicle.specifications?.identification?.modelo ||
-                vehicle.specifications?.identification?.añoModelo !== undefined ||
-                vehicle.specifications?.identification?.carrocería ||
-                vehicle.specifications?.identification?.plazas !== undefined ||
-                vehicle.specifications?.identification?.puertas !== undefined ||
-                vehicle.specifications?.identification?.versionTrim ||
-                vehicle.price !== undefined ||
-                vehicle.status) && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6" id="sec-identificacion">
-                <div className="rounded-2xl shadow-soft p-6 bg-white">
-                  <div className="flex items-center mb-4">
-                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mr-3">
-                      <span className="text-white font-bold text-lg">i</span>
-                    </div>
-                      <h3 className="text-lg font-semibold text-gray-900">Identificación</h3>
-                  </div>
-                  <div className="space-y-2">
-                      {vehicle.specifications?.identification?.añoModelo !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Año modelo:</span>
-                          <span className="font-medium">{vehicle.specifications.identification.añoModelo}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.identification?.carrocería && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Carrocería:</span>
-                          <span className="font-medium">{vehicle.specifications.identification.carrocería}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.identification?.marca && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Marca:</span>
-                          <span className="font-medium">{vehicle.specifications.identification.marca}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.identification?.modelo && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Modelo:</span>
-                          <span className="font-medium">{vehicle.specifications.identification.modelo}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.identification?.plazas !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Plazas:</span>
-                          <span className="font-medium">{vehicle.specifications.identification.plazas}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.identification?.puertas !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Puertas:</span>
-                          <span className="font-medium">{vehicle.specifications.identification.puertas}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.identification?.versionTrim && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Versión/Trim:</span>
-                          <span className="font-medium">{vehicle.specifications.identification.versionTrim}</span>
-                    </div>
-                      )}
-                      {vehicle.price !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Precio:</span>
-                          <span className="font-medium">${vehicle.price?.toLocaleString()}</span>
-                        </div>
-                      )}
-                      {vehicle.status && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Estado:</span>
-                      <span className="font-medium">{vehicle.status}</span>
-                    </div>
-                      )}
-                  </div>
-                </div>
-                </div>
+              {isHybrid && !isElectric && (
+                <SpecificationCard
+                  id="sec-powertrain"
+                  title="Motorización Híbrida"
+                  icon="🔋"
+                  colorScheme={{
+                    bgFrom: "from-emerald-50",
+                    bgTo: "to-teal-100",
+                    iconBgFrom: "from-emerald-500",
+                    iconBgTo: "to-teal-600",
+                    circleBg: "bg-emerald-500/10"
+                  }}
+                  fields={[
+                    { label: "Alimentación", value: powertrain.alimentacion },
+                    { label: "Arquitectura motor térmico", value: powertrain.arquitecturaMotorTermico },
+                    { label: "Ciclo de trabajo", value: powertrain.cicloTrabajo },
+                    { label: "Cilindrada", value: powertrain.cilindrada, formatter: (v) => v ? `${v} L` : undefined },
+                    { label: "Combustible", value: powertrain.combustible },
+                    { label: "Modos de conducción", value: powertrain.modosConduccion },
+                    { label: "Octanaje recomendado", value: powertrain.octanajeRecomendado, formatter: (v) => v ? `${v} RON` : undefined },
+                    { label: "Potencia máx. (motor térmico)", value: powertrain.potenciaMaxMotorTermico, formatter: (v) => v ? `${v} kW` : undefined },
+                    { label: "Potencia máx. (sistema híbrido)", value: powertrain.potenciaMaxSistemaHibrido, formatter: (v) => v ? `${v} kW` : undefined },
+                    { label: "Torque máx. (motor térmico)", value: powertrain.torqueMaxMotorTermico, formatter: (v) => v ? `${v} Nm` : undefined },
+                    { label: "Torque máx. (sistema híbrido)", value: powertrain.torqueMaxSistemaHibrido, formatter: (v) => v ? `${v} Nm` : undefined },
+                    { label: "Tracción", value: powertrain.traccion },
+                    { label: "Sistema Start-Stop", value: powertrain.startStop },
+                    { label: "Launch control", value: powertrain.launchControl },
+                    { label: "Tipo de Transmisión", value: transmission.tipoTransmision },
+                    { label: "Número de marchas", value: transmission.numeroMarchas },
+                    { label: "Modo remolque/arrastre", value: transmission.modoRemolque },
+                    { label: "Paddle shifters", value: transmission.paddleShifters },
+                    { label: "Torque Vectoring", value: transmission.torqueVectoring },
+                    { label: "Tracción inteligente On-Demand", value: transmission.traccionInteligenteOnDemand },
+                    { label: "Capacidad de Batería", value: battery.capacidadBrutaBateria, formatter: (v) => v ? `${v} kWh` : undefined },
+                    { label: "Regeneración (niveles)", value: battery.regeneracionNiveles },
+                  ]}
+                />
               )}
-
-              {/* 2. Motorización y tren motriz */}
-              {(vehicle.specifications?.powertrain || vehicle.specifications?.battery || vehicle.fuelType) && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6" id="sec-powertrain">
-                  {renderEngineSection()}
-                </div>
-              )}
-
-              {/* 3. Transmisión */}
-              {(vehicle.specifications?.transmission?.tipoTransmision || 
-                vehicle.specifications?.transmission?.numeroMarchas !== undefined ||
-                vehicle.specifications?.transmission?.modoRemolque !== undefined ||
-                vehicle.specifications?.transmission?.paddleShifters !== undefined ||
-                vehicle.specifications?.transmission?.torqueVectoring !== undefined ||
-                vehicle.specifications?.transmission?.traccionInteligenteOnDemand !== undefined) && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6" id="sec-transmision">
-                <div className="rounded-2xl shadow-soft p-6 bg-white">
-                  <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-white text-xl">⚙️</span>
-                    </div>
-                      <h3 className="text-lg font-semibold text-gray-900">Transmisión</h3>
-                  </div>
-                  <div className="space-y-2">
-                      {vehicle.specifications?.transmission?.tipoTransmision && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Tipo de transmisión:</span>
-                          <span className="font-medium">{vehicle.specifications.transmission.tipoTransmision}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.transmission?.numeroMarchas !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Número de marchas:</span>
-                          <span className="font-medium">{vehicle.specifications.transmission.numeroMarchas}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.transmission?.modoRemolque !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Modo remolque/arrastre:</span>
-                          <span className="font-medium">{vehicle.specifications.transmission.modoRemolque ? '✓ Sí' : '✗ No'}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.transmission?.paddleShifters !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Paddle shifters:</span>
-                          <span className="font-medium">{vehicle.specifications.transmission.paddleShifters ? '✓ Sí' : '✗ No'}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.transmission?.torqueVectoring !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Torque Vectoring:</span>
-                          <span className="font-medium">{vehicle.specifications.transmission.torqueVectoring ? '✓ Sí' : '✗ No'}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.transmission?.traccionInteligenteOnDemand !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Tracción inteligente On-Demand:</span>
-                          <span className="font-medium">{vehicle.specifications.transmission.traccionInteligenteOnDemand ? '✓ Sí' : '✗ No'}</span>
-                    </div>
-                      )}
-                    </div>
-                    </div>
-                    </div>
-              )}
-
-              {/* 4. Dimensiones y pesos */}
-              {(vehicle.specifications?.dimensions?.length !== undefined ||
-                vehicle.specifications?.dimensions?.width !== undefined ||
-                vehicle.specifications?.dimensions?.height !== undefined ||
-                vehicle.specifications?.dimensions?.curbWeight !== undefined ||
-                vehicle.specifications?.dimensions?.wheelbase !== undefined ||
-                vehicle.specifications?.dimensions?.cargoCapacity !== undefined ||
-                vehicle.specifications?.weight?.payload !== undefined) && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6" id="sec-dimensiones">
-              <div className="rounded-2xl shadow-soft p-6 bg-white">
-                <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-wise rounded-full flex items-center justify-center mr-3">
-                    <span className="text-white text-xl">📏</span>
-                  </div>
-                      <h3 className="text-lg font-semibold text-gray-900">Dimensiones y pesos</h3>
-                </div>
-                <div className="space-y-2">
-                      {vehicle.specifications?.dimensions?.height !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Alto:</span>
-                          <span className="font-medium">{vehicle.specifications.dimensions.height} mm</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.dimensions?.width !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Ancho (sin espejos):</span>
-                          <span className="font-medium">{vehicle.specifications.dimensions.width} mm</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.dimensions?.cargoCapacity !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Capacidad de baúl (máxima):</span>
-                          <span className="font-medium">{vehicle.specifications.dimensions.cargoCapacity} L</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.weight?.payload !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Carga útil (payload):</span>
-                          <span className="font-medium">{vehicle.specifications.weight.payload} kg</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.dimensions?.length !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Largo:</span>
-                          <span className="font-medium">{vehicle.specifications.dimensions.length} mm</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.dimensions?.curbWeight !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Peso en orden de marcha:</span>
-                          <span className="font-medium">{vehicle.specifications.dimensions.curbWeight} kg</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.dimensions?.wheelbase !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Distancia entre ejes:</span>
-                          <span className="font-medium">{vehicle.specifications.dimensions.wheelbase} mm</span>
-                </div>
-                      )}
-              </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 5. Eficiencia y consumo */}
-              {(vehicle.specifications?.efficiency || vehicle.specifications?.battery) && (
-                <div id="sec-consumo">
-                  {renderConsumptionSection()}
-                </div>
-              )}
-
-              {/* 6. Batería y carga */}
-              {(vehicle.specifications?.battery?.capacidadBrutaBateria !== undefined ||
-                vehicle.specifications?.battery?.cargadorOBCAC !== undefined ||
-                vehicle.specifications?.battery?.conduccionOnePedal !== undefined ||
-                vehicle.specifications?.battery?.regeneracionNiveles !== undefined ||
-                vehicle.specifications?.battery?.tiempo0100AC !== undefined ||
-                vehicle.specifications?.battery?.tiempo1080DC !== undefined ||
-                vehicle.specifications?.battery?.highPowerChargingTimes ||
-                vehicle.specifications?.battery?.v2hV2g !== undefined ||
-                vehicle.specifications?.battery?.potenciaV2hV2g !== undefined) && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="rounded-2xl shadow-soft p-6 bg-white">
-                <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-white text-xl">🔋</span>
-                  </div>
-                      <h3 className="text-lg font-semibold text-gray-900">Batería y carga</h3>
-                </div>
-                <div className="space-y-2">
-                      {vehicle.specifications?.battery?.capacidadBrutaBateria !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Capacidad bruta batería:</span>
-                          <span className="font-medium">{vehicle.specifications.battery.capacidadBrutaBateria} kWh</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.battery?.cargadorOBCAC !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Cargador a bordo (OBC) AC:</span>
-                          <span className="font-medium">{vehicle.specifications.battery.cargadorOBCAC} kW</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.battery?.conduccionOnePedal !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Conducción One-Pedal:</span>
-                          <span className="font-medium">{vehicle.specifications.battery.conduccionOnePedal ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.battery?.highPowerChargingTimes && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">High Power Charging times:</span>
-                          <span className="font-medium">{vehicle.specifications.battery.highPowerChargingTimes}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.battery?.regeneracionNiveles !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Regeneración (niveles):</span>
-                          <span className="font-medium">{vehicle.specifications.battery.regeneracionNiveles}</span>
-                </div>
-                      )}
-                      {vehicle.specifications?.battery?.tiempo0100AC !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Tiempo 0-100% (AC):</span>
-                          <span className="font-medium">{vehicle.specifications.battery.tiempo0100AC} h</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.battery?.tiempo1080DC !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Tiempo 10-80% (DC):</span>
-                          <span className="font-medium">{vehicle.specifications.battery.tiempo1080DC} min</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.battery?.v2hV2g !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">V2H/V2G (bidireccional):</span>
-                          <span className="font-medium">{vehicle.specifications.battery.v2hV2g ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.battery?.potenciaV2hV2g !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">V2H/V2G Potencia:</span>
-                          <span className="font-medium">{vehicle.specifications.battery.potenciaV2hV2g} kW</span>
-                  </div>
-                      )}
-                </div>
-              </div>
-                </div>
-              )}
-
-              {/* 7. Chasis, frenos y dirección */}
-              {(vehicle.specifications?.chassis?.groundClearance !== undefined ||
-                vehicle.specifications?.chassis?.suspensionDelantera ||
-                vehicle.specifications?.chassis?.suspensionTrasera ||
-                vehicle.specifications?.chassis?.amortiguacionAdaptativa !== undefined ||
-                vehicle.specifications?.chassis?.materialDiscos ||
-                vehicle.specifications?.chassis?.materialMuelles ||
-                vehicle.specifications?.chassis?.tipoPinzasFreno) && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="rounded-2xl shadow-soft p-6 bg-white">
-                <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-white text-xl">🔧</span>
-                  </div>
-                      <h3 className="text-lg font-semibold text-gray-900">Chasis, frenos y dirección</h3>
-                </div>
-                <div className="space-y-2">
-                      {vehicle.specifications?.chassis?.amortiguacionAdaptativa !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Amortiguación adaptativa:</span>
-                          <span className="font-medium">{vehicle.specifications.chassis.amortiguacionAdaptativa ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.chassis?.materialDiscos && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Material de discos:</span>
-                          <span className="font-medium">{vehicle.specifications.chassis.materialDiscos}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.chassis?.materialMuelles && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Material de muelles:</span>
-                          <span className="font-medium">{vehicle.specifications.chassis.materialMuelles}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.chassis?.suspensionDelantera && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Suspensión delantera:</span>
-                          <span className="font-medium">{vehicle.specifications.chassis.suspensionDelantera}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.chassis?.suspensionTrasera && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Suspensión trasera:</span>
-                          <span className="font-medium">{vehicle.specifications.chassis.suspensionTrasera}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.chassis?.tipoPinzasFreno && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Tipo de pinzas de freno:</span>
-                          <span className="font-medium">{vehicle.specifications.chassis.tipoPinzasFreno}</span>
-                </div>
-                      )}
-                      {vehicle.specifications?.chassis?.groundClearance !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Despeje al suelo:</span>
-                          <span className="font-medium">{vehicle.specifications.chassis.groundClearance} mm</span>
-              </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 8. Prestaciones */}
-              {(vehicle.specifications?.performance?.acceleration0to100 !== undefined ||
-                vehicle.specifications?.performance?.acceleration0to200 !== undefined ||
-                vehicle.specifications?.performance?.acceleration0to60 !== undefined ||
-                vehicle.specifications?.performance?.acceleration50to80 !== undefined ||
-                vehicle.specifications?.performance?.overtaking80to120 !== undefined ||
-                vehicle.specifications?.performance?.maxLateralAcceleration !== undefined ||
-                vehicle.specifications?.performance?.maxLongitudinalAcceleration !== undefined ||
-                vehicle.specifications?.performance?.brakingDistance100to0 !== undefined ||
-                vehicle.specifications?.performance?.maxSpeed !== undefined ||
-                vehicle.specifications?.performance?.powerToWeight !== undefined ||
-                vehicle.specifications?.performance?.quarterMile !== undefined ||
-                vehicle.specifications?.performance?.launchControl !== undefined) && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="rounded-2xl shadow-soft p-6 bg-white">
-                  <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-white text-xl">⚡</span>
-                    </div>
-                      <h3 className="text-lg font-semibold text-gray-900">Prestaciones</h3>
-                  </div>
-                  <div className="space-y-2">
-                      {vehicle.specifications?.performance?.acceleration0to100 !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">0-100 km/h:</span>
-                          <span className="font-medium">{vehicle.specifications.performance.acceleration0to100} s</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.performance?.acceleration0to200 !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">0-200 km/h:</span>
-                          <span className="font-medium">{vehicle.specifications.performance.acceleration0to200} s</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.performance?.acceleration0to60 !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">0-60 mph:</span>
-                          <span className="font-medium">{vehicle.specifications.performance.acceleration0to60} s</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.performance?.quarterMile !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">1/4 de milla (tiempo):</span>
-                          <span className="font-medium">{vehicle.specifications.performance.quarterMile} s</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.performance?.acceleration50to80 !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">50-80 km/h (recuperación):</span>
-                          <span className="font-medium">{vehicle.specifications.performance.acceleration50to80} s</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.performance?.overtaking80to120 !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">80-120 km/h (adelantamiento):</span>
-                          <span className="font-medium">{vehicle.specifications.performance.overtaking80to120} s</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.performance?.maxLateralAcceleration !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Aceleración lateral máxima:</span>
-                          <span className="font-medium">{vehicle.specifications.performance.maxLateralAcceleration} g</span>
-                </div>
-              )}
-                      {vehicle.specifications?.performance?.maxLongitudinalAcceleration !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Aceleración longitudinal máxima:</span>
-                          <span className="font-medium">{vehicle.specifications.performance.maxLongitudinalAcceleration} g</span>
+              
+              {!isElectric && !isHybrid && (() => {
+                // Preparar campos de potencia y torque con unidades correctas
+                const potenciaMaxValue = powertrain.potenciaMaxMotorTermico || combustion.maxPower;
+                const potenciaMaxUnit = powertrain.potenciaMaxMotorTermico ? 'kW' : (combustion.maxPower ? 'HP' : '');
+                const potenciaMax = potenciaMaxValue ? { 
+                  label: "Potencia máx.", 
+                  value: potenciaMaxValue, 
+                  formatter: (v: any) => v ? `${v} ${potenciaMaxUnit}` : undefined 
+                } : null;
+                
+                return (
+                  <SpecificationCard
+                    id="sec-powertrain"
+                    title="Motorización y Transmisión"
+                    icon="🔧"
+                    colorScheme={{
+                      bgFrom: "from-orange-50",
+                      bgTo: "to-red-100",
+                      iconBgFrom: "from-orange-500",
+                      iconBgTo: "to-red-600",
+                      circleBg: "bg-orange-500/10"
+                    }}
+                    fields={[
+                      { label: "Alimentación", value: powertrain.alimentacion },
+                      { label: "Arquitectura motor térmico", value: powertrain.arquitecturaMotorTermico },
+                      { label: "Ciclo de trabajo", value: powertrain.cicloTrabajo },
+                      { label: "Cilindrada", value: powertrain.cilindrada, formatter: (v: any) => v ? `${v} L` : undefined },
+                      { label: "Combustible", value: powertrain.combustible },
+                      { label: "Modos de conducción", value: powertrain.modosConduccion },
+                      { label: "Octanaje recomendado", value: powertrain.octanajeRecomendado, formatter: (v: any) => v ? `${v} RON` : undefined },
+                      potenciaMax,
+                      { label: "Torque máx.", value: powertrain.torqueMaxMotorTermico || combustion.maxTorque, formatter: (v: any) => v ? `${v} Nm` : undefined },
+                      { label: "Límite de RPM", value: combustion.rpmLimit, formatter: (v: any) => v ? `${v} RPM` : undefined },
+                      { label: "Potencia a RPM", value: combustion.powerAtRpm, formatter: (v: any) => v ? `${v} RPM` : undefined },
+                      { label: "Relación de compresión", value: combustion.compressionRatio, formatter: (v: any) => v ? `${v}:1` : undefined },
+                      { label: "Configuración del motor", value: combustion.engineConfiguration },
+                      { label: "Tipo de inducción", value: combustion.inductionType },
+                      { label: "Turbo", value: combustion.turbo },
+                      { label: "Supercargador", value: combustion.supercharger },
+                      { label: "Tracción", value: powertrain.traccion },
+                      { label: "Sistema Start-Stop", value: powertrain.startStop || combustion.startStop },
+                      { label: "Modo ECO", value: combustion.ecoMode },
+                      { label: "Launch control", value: powertrain.launchControl },
+                      { label: "Tipo de Transmisión", value: transmission.tipoTransmision || combustion.transmissionType },
+                      { label: "Número de marchas", value: transmission.numeroMarchas || combustion.gears },
+                      { label: "Modo remolque/arrastre", value: transmission.modoRemolque },
+                      { label: "Paddle shifters", value: transmission.paddleShifters },
+                      { label: "Torque Vectoring", value: transmission.torqueVectoring },
+                      { label: "Tracción inteligente On-Demand", value: transmission.traccionInteligenteOnDemand },
+                      { label: "Estándar de emisiones", value: combustion.emissionStandard },
+                    ].filter((field): field is NonNullable<typeof field> => field !== null)}
+                  />
+                );
+              })()}
             </div>
-                      )}
-                      {vehicle.specifications?.performance?.brakingDistance100to0 !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Frenado 100-0 km/h:</span>
-                          <span className="font-medium">{vehicle.specifications.performance.brakingDistance100to0} m</span>
-          </div>
-                      )}
-                      {vehicle.specifications?.performance?.maxSpeed !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Velocidad máxima:</span>
-                          <span className="font-medium">{vehicle.specifications.performance.maxSpeed} km/h</span>
-                        </div>
-                      )}
-                      {vehicle.specifications?.performance?.powerToWeight !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Relación peso/potencia:</span>
-                          <span className="font-medium">{vehicle.specifications.performance.powerToWeight} HP/ton</span>
-                        </div>
-                      )}
-                      {vehicle.specifications?.performance?.launchControl !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Launch control:</span>
-                          <span className="font-medium">{vehicle.specifications.performance.launchControl ? '✓ Sí' : '✗ No'}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
 
-              {/* 9. Seguridad pasiva y estructural */}
-              {(vehicle.specifications?.safety?.airbags !== undefined ||
-                vehicle.specifications?.safety?.ncapRating !== undefined ||
-                vehicle.specifications?.safety?.adultSafetyScore !== undefined ||
-                vehicle.specifications?.safety?.childSafetyScore !== undefined ||
-                vehicle.specifications?.safety?.assistanceScore !== undefined) && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6" id="sec-bateria">
-              <div className="rounded-2xl shadow-soft p-6 bg-white">
-                <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-white text-xl">🛡️</span>
-                  </div>
-                      <h3 className="text-lg font-semibold text-gray-900">Seguridad pasiva y estructural</h3>
-                </div>
-                <div className="space-y-2">
-                      {vehicle.specifications?.safety?.airbags !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Número total de airbags:</span>
-                          <span className="font-medium">{vehicle.specifications.safety.airbags}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.safety?.ncapRating !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Euro NCAP (estrellas):</span>
-                          <span className="font-medium">{vehicle.specifications.safety.ncapRating} ⭐</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.safety?.adultSafetyScore !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Euro NCAP (Adulto %):</span>
-                          <span className="font-medium">{vehicle.specifications.safety.adultSafetyScore}%</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.safety?.childSafetyScore !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Euro NCAP (Niño %):</span>
-                          <span className="font-medium">{vehicle.specifications.safety.childSafetyScore}%</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.safety?.assistanceScore !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Euro NCAP (Asistencias %):</span>
-                          <span className="font-medium">{vehicle.specifications.safety.assistanceScore}%</span>
-                  </div>
-                      )}
-                  </div>
-                  </div>
-                  </div>
-              )}
-
-              {/* 10. ADAS (Asistencias Activas) */}
-              {(vehicle.specifications?.adas?.acc !== undefined ||
-                vehicle.specifications?.adas?.aeb !== undefined ||
-                vehicle.specifications?.adas?.bsm !== undefined ||
-                vehicle.specifications?.adas?.camara360 !== undefined ||
-                vehicle.specifications?.adas?.farosAdaptativos !== undefined ||
-                vehicle.specifications?.adas?.lka !== undefined ||
-                vehicle.specifications?.adas?.lucesAltasAutomaticas !== undefined ||
-                vehicle.specifications?.adas?.parkAssist !== undefined ||
-                vehicle.specifications?.adas?.sensoresEstacionamientoDelantero !== undefined) && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6" id="sec-chasis">
-              <div className="rounded-2xl shadow-soft p-6 bg-white">
-                    <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-white text-xl">🚗</span>
-                      </div>
-                      <h3 className="text-lg font-semibold text-gray-900">ADAS (Asistencias Activas)</h3>
-                    </div>
-                    <div className="space-y-2">
-                      {vehicle.specifications?.adas?.acc !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">ACC (crucero adaptativo):</span>
-                          <span className="font-medium">{vehicle.specifications.adas.acc ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.adas?.aeb !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">AEB (frenado autónomo):</span>
-                          <span className="font-medium">{vehicle.specifications.adas.aeb ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.adas?.bsm !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">BSM (punto ciego):</span>
-                          <span className="font-medium">{vehicle.specifications.adas.bsm ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.adas?.camara360 !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Cámara 360°:</span>
-                          <span className="font-medium">{vehicle.specifications.adas.camara360 ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.adas?.farosAdaptativos !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Faros adaptativos (ADB):</span>
-                          <span className="font-medium">{vehicle.specifications.adas.farosAdaptativos ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.adas?.lka !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">LKA (asistente carril):</span>
-                          <span className="font-medium">{vehicle.specifications.adas.lka ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.adas?.lucesAltasAutomaticas !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Luces altas automáticas:</span>
-                          <span className="font-medium">{vehicle.specifications.adas.lucesAltasAutomaticas ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.adas?.parkAssist !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Park Assist (autónomo):</span>
-                          <span className="font-medium">{vehicle.specifications.adas.parkAssist ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.adas?.sensoresEstacionamientoDelantero !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Sensores estacionamiento delantero:</span>
-                          <span className="font-medium">{vehicle.specifications.adas.sensoresEstacionamientoDelantero}</span>
-                  </div>
-                      )}
-                </div>
-              </div>
-                </div>
-              )}
-
-              {/* 11. Iluminación y visibilidad */}
-              {(vehicle.specifications?.lighting?.headlightType ||
-                vehicle.specifications?.lighting?.antinieblaDelantero !== undefined ||
-                vehicle.specifications?.lighting?.intermitentesDinamicos !== undefined ||
-                vehicle.specifications?.lighting?.lavafaros !== undefined ||
-                vehicle.specifications?.lighting?.sensorLluvia !== undefined) && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6" id="sec-prestaciones">
-              <div className="rounded-2xl shadow-soft p-6 bg-white">
-                <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-white text-xl">💡</span>
-                  </div>
-                      <h3 className="text-lg font-semibold text-gray-900">Iluminación y visibilidad</h3>
-                  </div>
-                  <div className="space-y-2">
-                      {vehicle.specifications?.lighting?.antinieblaDelantero !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Antiniebla delantero:</span>
-                          <span className="font-medium">{vehicle.specifications.lighting.antinieblaDelantero ? '✓ Sí' : '✗ No'}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.lighting?.headlightType && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Faros (tecnología):</span>
-                          <span className="font-medium">{vehicle.specifications.lighting.headlightType}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.lighting?.intermitentesDinamicos !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Intermitentes dinámicos:</span>
-                          <span className="font-medium">{vehicle.specifications.lighting.intermitentesDinamicos ? '✓ Sí' : '✗ No'}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.lighting?.lavafaros !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Lavafaros:</span>
-                          <span className="font-medium">{vehicle.specifications.lighting.lavafaros ? '✓ Sí' : '✗ No'}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.lighting?.sensorLluvia !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Sensor de lluvia:</span>
-                          <span className="font-medium">{vehicle.specifications.lighting.sensorLluvia ? '✓ Sí' : '✗ No'}</span>
-                    </div>
-                      )}
-                  </div>
-              </div>
-                </div>
-              )}
-
-              {/* 12. Infoentretenimiento y Conectividad */}
-              {(vehicle.specifications?.infotainment?.androidAuto ||
-                vehicle.specifications?.infotainment?.appleCarPlay ||
-                vehicle.specifications?.infotainment?.appRemotaOTA !== undefined ||
-                vehicle.specifications?.infotainment?.audioMarca ||
-                vehicle.specifications?.infotainment?.audioNumeroBocinas !== undefined ||
-                vehicle.specifications?.infotainment?.bluetooth !== undefined ||
-                vehicle.specifications?.infotainment?.cargadorInalambrico !== undefined ||
-                vehicle.specifications?.infotainment?.navegacionIntegrada !== undefined ||
-                vehicle.specifications?.infotainment?.pantallaCentralTamano !== undefined ||
-                vehicle.specifications?.infotainment?.pantallaCuadroTamano !== undefined ||
-                vehicle.specifications?.infotainment?.potenciaAmplificador !== undefined ||
-                vehicle.specifications?.infotainment?.puertosUSBA !== undefined ||
-                vehicle.specifications?.infotainment?.puertosUSBC !== undefined ||
-                vehicle.specifications?.infotainment?.wifiBordo !== undefined) && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6" id="sec-seguridad-adas">
-              <div className="rounded-2xl shadow-soft p-6 bg-white">
-                <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-white text-xl">📱</span>
-                  </div>
-                      <h3 className="text-lg font-semibold text-gray-900">Infoentretenimiento y Conectividad</h3>
-                  </div>
-                  <div className="space-y-2">
-                      {vehicle.specifications?.infotainment?.androidAuto && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Android Auto:</span>
-                          <span className="font-medium">{vehicle.specifications.infotainment.androidAuto}</span>
-                        </div>
-                      )}
-                      {vehicle.specifications?.infotainment?.appleCarPlay && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Apple CarPlay:</span>
-                          <span className="font-medium">{vehicle.specifications.infotainment.appleCarPlay}</span>
-                        </div>
-                      )}
-                      {vehicle.specifications?.infotainment?.appRemotaOTA !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">App remota / OTA:</span>
-                          <span className="font-medium">{vehicle.specifications.infotainment.appRemotaOTA ? '✓ Sí' : '✗ No'}</span>
-                        </div>
-                      )}
-                      {vehicle.specifications?.infotainment?.audioMarca && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Audio (marca):</span>
-                          <span className="font-medium">{vehicle.specifications.infotainment.audioMarca}</span>
-                        </div>
-                      )}
-                      {vehicle.specifications?.infotainment?.audioNumeroBocinas !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Audio (número de bocinas):</span>
-                          <span className="font-medium">{vehicle.specifications.infotainment.audioNumeroBocinas}</span>
-                        </div>
-                      )}
-                      {vehicle.specifications?.infotainment?.bluetooth !== undefined && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Bluetooth:</span>
-                          <span className="font-medium">{vehicle.specifications.infotainment.bluetooth ? '✓ Sí' : '✗ No'}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.infotainment?.cargadorInalambrico !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Cargador inalámbrico:</span>
-                          <span className="font-medium">{vehicle.specifications.infotainment.cargadorInalambrico ? '✓ Sí' : '✗ No'}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.infotainment?.navegacionIntegrada !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Navegación integrada:</span>
-                          <span className="font-medium">{vehicle.specifications.infotainment.navegacionIntegrada ? '✓ Sí' : '✗ No'}</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.infotainment?.pantallaCentralTamano !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Pantalla central (tamaño):</span>
-                          <span className="font-medium">{vehicle.specifications.infotainment.pantallaCentralTamano} in</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.infotainment?.pantallaCuadroTamano !== undefined && (
-                    <div className="flex justify-between">
-                          <span className="text-gray-600">Pantalla de cuadro (tamaño):</span>
-                          <span className="font-medium">{vehicle.specifications.infotainment.pantallaCuadroTamano} in</span>
-                    </div>
-                      )}
-                      {vehicle.specifications?.infotainment?.potenciaAmplificador !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Potencia de amplificador:</span>
-                          <span className="font-medium">{vehicle.specifications.infotainment.potenciaAmplificador} W</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.infotainment?.puertosUSBA !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Puertos USB-A (cantidad):</span>
-                          <span className="font-medium">{vehicle.specifications.infotainment.puertosUSBA}</span>
-              </div>
-                      )}
-                      {vehicle.specifications?.infotainment?.puertosUSBC !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Puertos USB-C (cantidad):</span>
-                          <span className="font-medium">{vehicle.specifications.infotainment.puertosUSBC}</span>
+            {/* Sección 3: Dimensiones y Pesos */}
+            <div className="mb-8">
+              <SpecificationCard
+                id="sec-dimensiones"
+                title="Dimensiones y Pesos"
+                icon="📏"
+                colorScheme={{
+                  bgFrom: "from-amber-50",
+                  bgTo: "to-yellow-100",
+                  iconBgFrom: "from-amber-500",
+                  iconBgTo: "to-yellow-600",
+                  circleBg: "bg-amber-500/10"
+                }}
+                fields={[
+                  { label: "Largo", value: dimensions.length, formatter: (v) => v ? `${v} mm` : undefined },
+                  { label: "Ancho (sin espejos)", value: dimensions.width, formatter: (v) => v ? `${v} mm` : undefined },
+                  { label: "Alto", value: dimensions.height, formatter: (v) => v ? `${v} mm` : undefined },
+                  { label: "Distancia entre ejes", value: dimensions.wheelbase, formatter: (v) => v ? `${v} mm` : undefined },
+                  { label: "Radio de giro", value: dimensions.turningRadius, formatter: (v) => v ? `${v} m` : undefined },
+                  { label: "Peso en orden de marcha", value: dimensions.curbWeight, formatter: (v) => v ? `${v} kg` : undefined },
+                  { label: "Carga útil (payload)", value: weight.payload, formatter: (v) => v ? `${v} kg` : undefined },
+                  { label: "Capacidad de baúl (máxima)", value: dimensions.cargoCapacity, formatter: (v) => v ? `${v} L` : undefined },
+                  { label: "Capacidad de baúl (mínima)", value: dimensions.cargoCapacityMin, formatter: (v) => v ? `${v} L` : undefined },
+                  { label: "Capacidad de techo/barras", value: dimensions.roofCapacity, formatter: (v) => v ? `${v} kg` : undefined },
+                ]}
+              />
             </div>
-                      )}
-                      {vehicle.specifications?.infotainment?.wifiBordo !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Wi-Fi a bordo:</span>
-                          <span className="font-medium">{vehicle.specifications.infotainment.wifiBordo ? '✓ Sí' : '✗ No'}</span>
-          </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
 
-              {/* 13. Interior y confort */}
-              {(vehicle.specifications?.comfort?.ajusteElectricoConductor !== undefined ||
-                vehicle.specifications?.comfort?.ajusteElectricoPasajero !== undefined ||
-                vehicle.specifications?.comfort?.calefaccionAsientos !== undefined ||
-                vehicle.specifications?.comfort?.climatizadorZonas !== undefined ||
-                vehicle.specifications?.comfort?.cristalesAcusticos !== undefined ||
-                vehicle.specifications?.comfort?.iluminacionAmbiental !== undefined ||
-                vehicle.specifications?.comfort?.masajeAsientos !== undefined ||
-                vehicle.specifications?.comfort?.materialAsientos ||
-                vehicle.specifications?.comfort?.memoriaAsientos !== undefined ||
-                vehicle.specifications?.comfort?.parabrisasCalefactable !== undefined ||
-                vehicle.specifications?.comfort?.segundaFilaCorrediza !== undefined ||
-                vehicle.specifications?.comfort?.techoPanoramico !== undefined ||
-                vehicle.specifications?.comfort?.terceraFilaAsientos !== undefined ||
-                vehicle.specifications?.comfort?.tomas12V120V !== undefined ||
-                vehicle.specifications?.comfort?.tomacorrienteEnCaja !== undefined ||
-                vehicle.specifications?.comfort?.ventilacionAsientos !== undefined ||
-                vehicle.specifications?.comfort?.vidriosElectricos !== undefined ||
-                vehicle.specifications?.comfort?.volanteMaterialAjustes ||
-                vehicle.specifications?.comfort?.volanteCalefactable !== undefined) && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="rounded-2xl shadow-soft p-6 bg-white">
-                <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-white text-xl">🛋️</span>
-                  </div>
-                      <h3 className="text-lg font-semibold text-gray-900">Interior y confort</h3>
-                </div>
-                <div className="space-y-2">
-                      {vehicle.specifications?.comfort?.ajusteElectricoConductor !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Ajuste eléctrico conductor (vías):</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.ajusteElectricoConductor}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.comfort?.ajusteElectricoPasajero !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Ajuste eléctrico pasajero (vías):</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.ajusteElectricoPasajero}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.comfort?.calefaccionAsientos !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Calefacción de asientos:</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.calefaccionAsientos ? '✓ Sí' : '✗ No'}</span>
-                </div>
-                      )}
-                      {vehicle.specifications?.comfort?.climatizadorZonas !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Climatizador (zonas):</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.climatizadorZonas}</span>
-              </div>
-                      )}
-                      {vehicle.specifications?.comfort?.cristalesAcusticos !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Cristales acústicos:</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.cristalesAcusticos ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.comfort?.iluminacionAmbiental !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Iluminación ambiental:</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.iluminacionAmbiental ? '✓ Sí' : '✗ No'}</span>
-                </div>
-                      )}
-                      {vehicle.specifications?.comfort?.masajeAsientos !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Masaje en asientos:</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.masajeAsientos ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.comfort?.materialAsientos && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Material de asientos:</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.materialAsientos}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.comfort?.memoriaAsientos !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Memoria de asientos:</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.memoriaAsientos ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.comfort?.parabrisasCalefactable !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Parabrisas calefactable:</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.parabrisasCalefactable ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.comfort?.segundaFilaCorrediza !== undefined && (
-                  <div className="flex justify-between">
-                          <span className="text-gray-600">Segunda fila corrediza:</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.segundaFilaCorrediza ? '✓ Sí' : '✗ No'}</span>
-                  </div>
-                      )}
-                      {vehicle.specifications?.comfort?.techoPanoramico !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Techo panorámico:</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.techoPanoramico ? '✓ Sí' : '✗ No'}</span>
-                </div>
-                      )}
-                      {vehicle.specifications?.comfort?.terceraFilaAsientos !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Tercera fila de asientos:</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.terceraFilaAsientos ? '✓ Sí' : '✗ No'}</span>
-              </div>
-                      )}
-                      {vehicle.specifications?.comfort?.tomas12V120V !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Tomas 12 V/120 V:</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.tomas12V120V}</span>
-                        </div>
-                      )}
-                      {vehicle.specifications?.comfort?.tomacorrienteEnCaja !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Tomacorriente en caja (pick-up):</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.tomacorrienteEnCaja ? '✓ Sí' : '✗ No'}</span>
-                        </div>
-                      )}
-                      {vehicle.specifications?.comfort?.ventilacionAsientos !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Ventilación de asientos:</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.ventilacionAsientos ? '✓ Sí' : '✗ No'}</span>
-                        </div>
-                      )}
-                      {vehicle.specifications?.comfort?.vidriosElectricos !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Vidrios eléctricos (del/tras):</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.vidriosElectricos ? '✓ Sí' : '✗ No'}</span>
-                        </div>
-                      )}
-                      {vehicle.specifications?.comfort?.volanteMaterialAjustes && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Volante (material y ajustes):</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.volanteMaterialAjustes}</span>
-                        </div>
-                      )}
-                      {vehicle.specifications?.comfort?.volanteCalefactable !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Volante calefactable:</span>
-                          <span className="font-medium">{vehicle.specifications.comfort.volanteCalefactable ? '✓ Sí' : '✗ No'}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
+            {/* Sección 4: Consumo y Eficiencia */}
+            <div className="mb-8">
+              <SpecificationCard
+                id="sec-consumo"
+                title="Consumo y Eficiencia"
+                icon={isElectric ? "⚡" : "⛽"}
+                colorScheme={{
+                  bgFrom: "from-teal-50",
+                  bgTo: "to-emerald-100",
+                  iconBgFrom: "from-teal-500",
+                  iconBgTo: "to-emerald-600",
+                  circleBg: "bg-teal-500/10"
+                }}
+                fields={[
+                  { label: "Consumo Ciudad", value: efficiency.consumoCiudad, formatter: (v) => v ? `${v} ${isElectric ? 'kWh/100km' : 'L/100km'}` : undefined },
+                  { label: "Consumo Carretera", value: efficiency.consumoCarretera, formatter: (v) => v ? `${v} ${isElectric ? 'kWh/100km' : 'L/100km'}` : undefined },
+                  { label: "Consumo Mixto", value: efficiency.consumoMixto, formatter: (v) => v ? `${v} ${isElectric ? 'kWh/100km' : 'L/100km'}` : undefined },
+                  { label: "Autonomía oficial", value: efficiency.autonomiaOficial, formatter: (v) => v ? `${v} km` : undefined },
+                  { label: "Capacidad de tanque", value: efficiency.capacidadTanque, formatter: (v) => v ? `${v} L` : undefined },
+                  { label: "MPGe ciudad", value: efficiency.mpgeCiudad, formatter: (v) => v ? `${v} MPGe` : undefined },
+                  { label: "MPGe carretera", value: efficiency.mpgeCarretera, formatter: (v) => v ? `${v} MPGe` : undefined },
+                  { label: "MPGe combinado", value: efficiency.mpgeCombinado, formatter: (v) => v ? `${v} MPGe` : undefined },
+                  { label: "Ahorro a 5 años", value: efficiency.ahorro5Anos, formatter: (v) => v ? `$${new Intl.NumberFormat('es-CO').format(v)}` : undefined },
+                  { label: "Costo de energía por 100 km", value: efficiency.costoEnergia100km, formatter: (v) => v ? `$${new Intl.NumberFormat('es-CO').format(v)}` : undefined },
+                ]}
+              />
             </div>
+
+            {/* Sección 5: Prestaciones */}
+            <div className="mb-8">
+              <SpecificationCard
+                id="sec-prestaciones"
+                title="Prestaciones"
+                icon="⚡"
+                colorScheme={{
+                  bgFrom: "from-rose-50",
+                  bgTo: "to-pink-100",
+                  iconBgFrom: "from-rose-500",
+                  iconBgTo: "to-pink-600",
+                  circleBg: "bg-rose-500/10"
+                }}
+                fields={[
+                  { label: "0-100 km/h", value: performance.acceleration0to100 || performance.acceleration0100, formatter: (v) => v ? `${v} s` : undefined },
+                  { label: "0-200 km/h", value: performance.acceleration0to200, formatter: (v) => v ? `${v} s` : undefined },
+                  { label: "0-60 mph", value: performance.acceleration0to60, formatter: (v) => v ? `${v} s` : undefined },
+                  { label: "1/4 de milla", value: performance.quarterMile, formatter: (v) => v ? `${v} s` : undefined },
+                  { label: "50-80 km/h", value: performance.acceleration50to80, formatter: (v) => v ? `${v} s` : undefined },
+                  { label: "80-120 km/h", value: performance.overtaking80to120, formatter: (v) => v ? `${v} s` : undefined },
+                  { label: "Velocidad máxima", value: performance.topSpeed || performance.maxSpeed, formatter: (v) => v ? `${v} km/h` : undefined },
+                  { label: "Relación peso/potencia", value: performance.powerToWeight, formatter: (v) => v ? `${v} HP/ton` : undefined },
+                  { label: "Aceleración lateral máxima", value: performance.maxLateralAcceleration, formatter: (v) => v ? `${v} g` : undefined },
+                  { label: "Aceleración longitudinal máxima", value: performance.maxLongitudinalAcceleration, formatter: (v) => v ? `${v} g` : undefined },
+                  { label: "Frenado 100-0 km/h", value: performance.brakingDistance100to0, formatter: (v) => v ? `${v} m` : undefined },
+                  { label: "Launch control", value: performance.launchControl },
+                ]}
+              />
+            </div>
+
+            {/* Sección 6: Seguridad */}
+            <div className="mb-8">
+              <SpecificationCard
+                id="sec-seguridad"
+                title="Seguridad"
+                icon="🛡️"
+                colorScheme={{
+                  bgFrom: "from-red-50",
+                  bgTo: "to-orange-100",
+                  iconBgFrom: "from-red-500",
+                  iconBgTo: "to-orange-600",
+                  circleBg: "bg-red-500/10"
+                }}
+                fields={[
+                  { label: "Número total de airbags", value: safety.airbags },
+                  { label: "ABS", value: safety.abs },
+                  { label: "ESP", value: safety.esp },
+                  { label: "Euro NCAP (estrellas)", value: safety.ncapRating, formatter: (v) => v ? `${v} ⭐` : undefined },
+                  { label: "Euro NCAP (Adulto %)", value: safety.adultSafetyScore, formatter: (v) => v ? `${v}%` : undefined },
+                  { label: "Euro NCAP (Niño %)", value: safety.childSafetyScore, formatter: (v) => v ? `${v}%` : undefined },
+                  { label: "Euro NCAP (Peatón %)", value: safety.pedestrianScore, formatter: (v) => v ? `${v}%` : undefined },
+                  { label: "Euro NCAP (Asistencias %)", value: safety.assistanceScore, formatter: (v) => v ? `${v}%` : undefined },
+                  { label: "Latin NCAP (estrellas)", value: safety.latinNCAPRating, formatter: (v) => v ? `${v} ⭐` : undefined },
+                  { label: "Latin NCAP (sub-puntajes %)", value: safety.latinNCAPSubScores },
+                ]}
+              />
+            </div>
+
+            {/* Sección 7: ADAS */}
+            {hasAnyValue(adas) && (
+              <div className="mb-8">
+                <SpecificationCard
+                  id="sec-adas"
+                  title="Sistemas de Asistencia (ADAS)"
+                  icon="🚗"
+                  colorScheme={{
+                    bgFrom: "from-indigo-50",
+                    bgTo: "to-violet-100",
+                    iconBgFrom: "from-indigo-500",
+                    iconBgTo: "to-violet-600",
+                    circleBg: "bg-indigo-500/10"
+                  }}
+                  fields={[
+                    { label: "ACC (crucero adaptativo)", value: adas.acc || adas.adaptiveCruiseControl },
+                    { label: "AEB (frenado autónomo)", value: adas.aeb },
+                    { label: "BSM (punto ciego)", value: adas.bsm || adas.blindSpotMonitoring },
+                    { label: "Cámara 360°", value: adas.camara360 },
+                    { label: "Faros adaptativos (ADB)", value: adas.farosAdaptativos },
+                    { label: "LKA (asistente carril)", value: adas.lka || adas.laneKeepingAssist },
+                    { label: "Luces altas automáticas", value: adas.lucesAltasAutomaticas },
+                    { label: "Park Assist (autónomo)", value: adas.parkAssist },
+                    { label: "Sensores estacionamiento delantero", value: adas.sensoresEstacionamientoDelantero },
+                  ]}
+                />
+              </div>
+            )}
+
+            {/* Sección 8: Batería y Carga (solo para eléctricos/híbridos) */}
+            {(isElectric || isHybrid) && hasAnyValue(battery) && (
+              <div className="mb-8">
+                <SpecificationCard
+                  id="sec-bateria"
+                  title="Batería y Carga"
+                  icon="🔋"
+                  colorScheme={{
+                    bgFrom: "from-green-50",
+                    bgTo: "to-emerald-100",
+                    iconBgFrom: "from-green-500",
+                    iconBgTo: "to-emerald-600",
+                    circleBg: "bg-green-500/10"
+                  }}
+                  fields={[
+                    { label: "Capacidad bruta batería", value: battery.capacidadBrutaBateria, formatter: (v) => v ? `${v} kWh` : undefined },
+                    { label: "Cargador a bordo (OBC) AC", value: battery.cargadorOBCAC, formatter: (v) => v ? `${v} kW` : undefined },
+                    { label: "Conducción One-Pedal", value: battery.conduccionOnePedal },
+                    { label: "High Power Charging times", value: battery.highPowerChargingTimes },
+                    { label: "Regeneración (niveles)", value: battery.regeneracionNiveles },
+                    { label: "Tiempo 0-100% (AC)", value: battery.tiempo0100AC, formatter: (v) => v ? `${v} h` : undefined },
+                    { label: "Tiempo 10-80% (DC)", value: battery.tiempo1080DC, formatter: (v) => v ? `${v} min` : undefined },
+                    { label: "V2H/V2G (bidireccional)", value: battery.v2hV2g },
+                    { label: "V2H/V2G Potencia", value: battery.potenciaV2hV2g, formatter: (v) => v ? `${v} kW` : undefined },
+                  ]}
+                />
+              </div>
+            )}
+
+            {/* Sección 9: Chasis, Frenos y Dirección */}
+            {hasAnyValue(chassis) && (
+              <div className="mb-8">
+                <SpecificationCard
+                  id="sec-chasis"
+                  title="Chasis, Frenos y Dirección"
+                  icon="🔧"
+                  colorScheme={{
+                    bgFrom: "from-gray-50",
+                    bgTo: "to-slate-100",
+                    iconBgFrom: "from-gray-500",
+                    iconBgTo: "to-slate-600",
+                    circleBg: "bg-gray-500/10"
+                  }}
+                  fields={[
+                    { label: "Amortiguación adaptativa", value: chassis.amortiguacionAdaptativa },
+                    { label: "Material de discos", value: chassis.materialDiscos },
+                    { label: "Material de muelles", value: chassis.materialMuelles },
+                    { label: "Suspensión delantera", value: chassis.suspensionDelantera },
+                    { label: "Suspensión trasera", value: chassis.suspensionTrasera },
+                    { label: "Tipo de pinzas de freno", value: chassis.tipoPinzasFreno },
+                    { label: "Despeje al suelo", value: chassis.groundClearance, formatter: (v) => v ? `${v} mm` : undefined },
+                    { label: "Control de descenso", value: offRoad.controlDescenso },
+                    { label: "Control de tracción off-road", value: offRoad.controlTraccionOffRoad },
+                  ]}
+                />
+              </div>
+            )}
+
+            {/* Sección 10: Iluminación */}
+            {hasAnyValue(lighting) && (
+              <div className="mb-8">
+                <SpecificationCard
+                  id="sec-iluminacion"
+                  title="Iluminación y Visibilidad"
+                  icon="💡"
+                  colorScheme={{
+                    bgFrom: "from-yellow-50",
+                    bgTo: "to-amber-100",
+                    iconBgFrom: "from-yellow-500",
+                    iconBgTo: "to-amber-600",
+                    circleBg: "bg-yellow-500/10"
+                  }}
+                  fields={[
+                    { label: "Antiniebla delantero", value: lighting.antinieblaDelantero },
+                    { label: "Faros (tecnología)", value: lighting.headlightType },
+                    { label: "Intermitentes dinámicos", value: lighting.intermitentesDinamicos },
+                    { label: "Lavafaros", value: lighting.lavafaros },
+                    { label: "Sensor de lluvia", value: lighting.sensorLluvia },
+                  ]}
+                />
+              </div>
+            )}
+
+            {/* Sección 11: Conectividad e Infoentretenimiento */}
+            {hasAnyValue(infotainment) && (
+              <div className="mb-8">
+                <SpecificationCard
+                  id="sec-infotainment"
+                  title="Conectividad e Infoentretenimiento"
+                  icon="📱"
+                  colorScheme={{
+                    bgFrom: "from-sky-50",
+                    bgTo: "to-cyan-100",
+                    iconBgFrom: "from-sky-500",
+                    iconBgTo: "to-cyan-600",
+                    circleBg: "bg-sky-500/10"
+                  }}
+                  fields={[
+                    { label: "Pantalla central", value: infotainment.screenSize || infotainment.pantallaCentralTamano, formatter: (v) => v ? `${v}"` : undefined },
+                    { label: "Pantalla de cuadro", value: infotainment.pantallaCuadroTamano, formatter: (v) => v ? `${v} in` : undefined },
+                    { label: "Android Auto", value: infotainment.androidAuto },
+                    { label: "Apple CarPlay", value: infotainment.appleCarplay || infotainment.appleCarPlay },
+                    { label: "Bluetooth", value: infotainment.bluetooth },
+                    { label: "Wi-Fi a bordo", value: infotainment.wifiBordo },
+                    { label: "App remota / OTA", value: infotainment.appRemotaOTA },
+                    { label: "Navegación integrada", value: infotainment.navegacionIntegrada },
+                    { label: "Cargador inalámbrico", value: infotainment.cargadorInalambrico },
+                    { label: "Audio (marca)", value: infotainment.audioMarca },
+                    { label: "Audio (número de bocinas)", value: infotainment.audioNumeroBocinas },
+                    { label: "Potencia de amplificador", value: infotainment.potenciaAmplificador, formatter: (v) => v ? `${v} W` : undefined },
+                    { label: "Puertos USB-A", value: infotainment.puertosUSBA },
+                    { label: "Puertos USB-C", value: infotainment.puertosUSBC },
+                  ]}
+                />
+              </div>
+            )}
+
+            {/* Sección 12: Confort e Interior */}
+            {hasAnyValue(comfort) && (
+              <div className="mb-8">
+                <SpecificationCard
+                  id="sec-confort"
+                  title="Confort e Interior"
+                  icon="🛋️"
+                  colorScheme={{
+                    bgFrom: "from-violet-50",
+                    bgTo: "to-purple-100",
+                    iconBgFrom: "from-violet-500",
+                    iconBgTo: "to-purple-600",
+                    circleBg: "bg-violet-500/10"
+                  }}
+                  fields={[
+                    { label: "Ajuste eléctrico conductor", value: comfort.ajusteElectricoConductor },
+                    { label: "Ajuste eléctrico pasajero", value: comfort.ajusteElectricoPasajero },
+                    { label: "Calefacción de asientos", value: comfort.calefaccionAsientos || comfort.heatedSeats },
+                    { label: "Ventilación de asientos", value: comfort.ventilacionAsientos },
+                    { label: "Masaje en asientos", value: comfort.masajeAsientos },
+                    { label: "Memoria de asientos", value: comfort.memoriaAsientos },
+                    { label: "Material de asientos", value: comfort.materialAsientos },
+                    { label: "Climatizador (zonas)", value: comfort.climatizadorZonas },
+                    { label: "Aire acondicionado", value: comfort.airConditioning },
+                    { label: "Cristales acústicos", value: comfort.cristalesAcusticos },
+                    { label: "Parabrisas calefactable", value: comfort.parabrisasCalefactable },
+                    { label: "Iluminación ambiental", value: comfort.iluminacionAmbiental },
+                    { label: "Techo panorámico", value: comfort.techoPanoramico || comfort.sunroof },
+                    { label: "Segunda fila corrediza", value: comfort.segundaFilaCorrediza },
+                    { label: "Tercera fila de asientos", value: comfort.terceraFilaAsientos },
+                    { label: "Vidrios eléctricos", value: comfort.vidriosElectricos },
+                    { label: "Espejo interior electrocrómico", value: comfort.espejoInteriorElectrocromico },
+                    { label: "Volante (material y ajustes)", value: comfort.volanteMaterialAjustes },
+                    { label: "Volante calefactable", value: comfort.volanteCalefactable },
+                    { label: "Tomas 12 V/120 V", value: comfort.tomas12V120V },
+                    { label: "Tomacorriente en caja", value: comfort.tomacorrienteEnCaja },
+                  ]}
+                />
+              </div>
+            )}
+
+            {/* Sección 13: Información Comercial */}
+            {hasAnyValue(commercial) && (
+              <div className="mb-8">
+                <SpecificationCard
+                  id="sec-comercial"
+                  title="Información Comercial"
+                  icon="💰"
+                  colorScheme={{
+                    bgFrom: "from-amber-50",
+                    bgTo: "to-yellow-100",
+                    iconBgFrom: "from-amber-500",
+                    iconBgTo: "to-yellow-600",
+                    circleBg: "bg-amber-500/10"
+                  }}
+                  fields={[
+                    { label: "Precio de lista", value: commercial.precioLista, formatter: (v) => v && v > 0 ? `$${new Intl.NumberFormat('es-CO').format(v)}` : undefined },
+                    { label: "Garantía vehículo", value: commercial.garantiaVehiculo },
+                    { label: "Garantía batería", value: commercial.garantiaBateria },
+                    { label: "Asistencia en carretera", value: commercial.asistenciaCarretera, formatter: (v) => v && v > 0 ? `${v} años` : undefined },
+                    { label: "Intervalo de mantenimiento", value: commercial.intervaloMantenimiento },
+                    { label: "Costo mantenimiento (3 primeros)", value: commercial.costoMantenimiento3Primeros, formatter: (v) => v && v > 0 ? `$${new Intl.NumberFormat('es-CO').format(v)}` : undefined },
+                    { label: "Financiación (cuota estimada)", value: commercial.financiacionCuotaEstimada, formatter: (v) => v && v > 0 ? `$${new Intl.NumberFormat('es-CO').format(v)}` : undefined },
+                    { label: "Origen (país/planta)", value: commercial.origenPaisPlanta },
+                  ]}
+                />
+              </div>
+            )}
           </div>
         </section>
 

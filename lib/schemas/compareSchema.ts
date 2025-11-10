@@ -8,6 +8,7 @@ export interface CompareField {
   category: string;
   icon?: string;
   description?: string;
+  formatter?: (val: any, fuelType?: string) => string | undefined;
 }
 
 export interface CompareSection {
@@ -15,80 +16,155 @@ export interface CompareSection {
   label: string;
   icon: string;
   fields: CompareField[];
+  conditional?: (fuelType: string) => boolean; // Para mostrar secciones solo para ciertos tipos de combustible
 }
 
 export const COMPARE_SECTIONS: CompareSection[] = [
   {
-    key: 'general',
-    label: 'Información General',
+    key: 'identification',
+    label: 'Identificación',
     icon: '📋',
     fields: [
-      { key: 'brand', label: 'Marca', better: 'boolean', category: 'general' },
-      { key: 'model', label: 'Modelo', better: 'boolean', category: 'general' },
-      { key: 'year', label: 'Año', better: 'higher', category: 'general' },
-      { key: 'price', label: 'Precio', unit: 'COP', better: 'lower', category: 'general' },
-      { key: 'fuelType', label: 'Combustible', better: 'boolean', category: 'general' },
-      { key: 'type', label: 'Tipo', better: 'boolean', category: 'general' },
+      { key: 'year', label: 'Año modelo', better: 'higher', category: 'identification' },
+      { key: 'carroceria', label: 'Carrocería', better: 'boolean', category: 'identification' },
+      { key: 'plazas', label: 'Plazas', better: 'higher', category: 'identification' },
+      { key: 'puertas', label: 'Puertas', better: 'boolean', category: 'identification' },
+      { key: 'versionTrim', label: 'Versión/Trim', better: 'boolean', category: 'identification' },
+    ]
+  },
+  {
+    key: 'powertrain-electric',
+    label: 'Motorización Eléctrica',
+    icon: '⚡',
+    fields: [
+      { key: 'potenciaMaxEV', label: 'Potencia Máxima (EV)', unit: 'kW', better: 'higher', category: 'powertrain' },
+      { key: 'torqueMaxEV', label: 'Torque Máximo (EV)', unit: 'Nm', better: 'higher', category: 'powertrain' },
+      { key: 'traccion', label: 'Tracción', better: 'boolean', category: 'powertrain' },
+      { key: 'tipoTransmision', label: 'Tipo de Transmisión', better: 'boolean', category: 'powertrain' },
+      { key: 'numeroMarchas', label: 'Número de marchas', better: 'boolean', category: 'powertrain' },
+      { key: 'capacidadBrutaBateria', label: 'Capacidad de Batería', unit: 'kWh', better: 'higher', category: 'powertrain' },
+    ],
+    conditional: (fuelType) => fuelType?.toLowerCase().includes('eléctrico') || fuelType?.toLowerCase().includes('electric')
+  },
+  {
+    key: 'powertrain-hybrid',
+    label: 'Motorización Híbrida',
+    icon: '🔋',
+    fields: [
+      { key: 'alimentacion', label: 'Alimentación', better: 'boolean', category: 'powertrain' },
+      { key: 'arquitecturaMotorTermico', label: 'Arquitectura motor térmico', better: 'boolean', category: 'powertrain' },
+      { key: 'cicloTrabajo', label: 'Ciclo de trabajo', better: 'boolean', category: 'powertrain' },
+      { key: 'cilindrada', label: 'Cilindrada', unit: 'L', better: 'higher', category: 'powertrain' },
+      { key: 'combustible', label: 'Combustible', better: 'boolean', category: 'powertrain' },
+      { key: 'modosConduccion', label: 'Modos de conducción', better: 'boolean', category: 'powertrain' },
+      { key: 'octanajeRecomendado', label: 'Octanaje recomendado', unit: 'RON', better: 'boolean', category: 'powertrain' },
+      { key: 'potenciaMaxMotorTermico', label: 'Potencia máx. (motor térmico)', unit: 'kW', better: 'higher', category: 'powertrain' },
+      { key: 'potenciaMaxSistemaHibrido', label: 'Potencia máx. (sistema híbrido)', unit: 'kW', better: 'higher', category: 'powertrain' },
+      { key: 'torqueMaxMotorTermico', label: 'Torque máx. (motor térmico)', unit: 'Nm', better: 'higher', category: 'powertrain' },
+      { key: 'torqueMaxSistemaHibrido', label: 'Torque máx. (sistema híbrido)', unit: 'Nm', better: 'higher', category: 'powertrain' },
+      { key: 'traccion', label: 'Tracción', better: 'boolean', category: 'powertrain' },
+      { key: 'startStop', label: 'Sistema Start-Stop', better: 'boolean', category: 'powertrain' },
+      { key: 'launchControl', label: 'Launch control', better: 'boolean', category: 'powertrain' },
+      { key: 'tipoTransmision', label: 'Tipo de Transmisión', better: 'boolean', category: 'powertrain' },
+      { key: 'numeroMarchas', label: 'Número de marchas', better: 'boolean', category: 'powertrain' },
+      { key: 'modoRemolque', label: 'Modo remolque/arrastre', better: 'boolean', category: 'powertrain' },
+      { key: 'paddleShifters', label: 'Paddle shifters', better: 'boolean', category: 'powertrain' },
+      { key: 'torqueVectoring', label: 'Torque Vectoring', better: 'boolean', category: 'powertrain' },
+      { key: 'traccionInteligenteOnDemand', label: 'Tracción inteligente On-Demand', better: 'boolean', category: 'powertrain' },
+      { key: 'capacidadBrutaBateria', label: 'Capacidad de Batería', unit: 'kWh', better: 'higher', category: 'powertrain' },
+      { key: 'regeneracionNiveles', label: 'Regeneración (niveles)', better: 'higher', category: 'powertrain' },
+    ],
+    conditional: (fuelType) => fuelType?.toLowerCase().includes('híbrido') || fuelType?.toLowerCase().includes('hybrid')
+  },
+  {
+    key: 'powertrain-combustion',
+    label: 'Motorización y Transmisión',
+    icon: '🔧',
+    fields: [
+      { key: 'alimentacion', label: 'Alimentación', better: 'boolean', category: 'powertrain' },
+      { key: 'arquitecturaMotorTermico', label: 'Arquitectura motor térmico', better: 'boolean', category: 'powertrain' },
+      { key: 'cicloTrabajo', label: 'Ciclo de trabajo', better: 'boolean', category: 'powertrain' },
+      { key: 'cilindrada', label: 'Cilindrada', unit: 'L', better: 'higher', category: 'powertrain' },
+      { key: 'combustible', label: 'Combustible', better: 'boolean', category: 'powertrain' },
+      { key: 'modosConduccion', label: 'Modos de conducción', better: 'boolean', category: 'powertrain' },
+      { key: 'octanajeRecomendado', label: 'Octanaje recomendado', unit: 'RON', better: 'boolean', category: 'powertrain' },
+      { key: 'potenciaMaxMotorTermico', label: 'Potencia máx.', unit: 'kW', better: 'higher', category: 'powertrain' },
+      { key: 'torqueMaxMotorTermico', label: 'Torque máx.', unit: 'Nm', better: 'higher', category: 'powertrain' },
+      { key: 'traccion', label: 'Tracción', better: 'boolean', category: 'powertrain' },
+      { key: 'startStop', label: 'Sistema Start-Stop', better: 'boolean', category: 'powertrain' },
+      { key: 'launchControl', label: 'Launch control', better: 'boolean', category: 'powertrain' },
+      { key: 'tipoTransmision', label: 'Tipo de Transmisión', better: 'boolean', category: 'powertrain' },
+      { key: 'numeroMarchas', label: 'Número de marchas', better: 'boolean', category: 'powertrain' },
+      { key: 'modoRemolque', label: 'Modo remolque/arrastre', better: 'boolean', category: 'powertrain' },
+      { key: 'paddleShifters', label: 'Paddle shifters', better: 'boolean', category: 'powertrain' },
+      { key: 'torqueVectoring', label: 'Torque Vectoring', better: 'boolean', category: 'powertrain' },
+      { key: 'traccionInteligenteOnDemand', label: 'Tracción inteligente On-Demand', better: 'boolean', category: 'powertrain' },
+    ],
+    conditional: (fuelType) => {
+      const lower = fuelType?.toLowerCase() || '';
+      return !lower.includes('eléctrico') && !lower.includes('electric') && !lower.includes('híbrido') && !lower.includes('hybrid');
+    }
+  },
+  {
+    key: 'dimensions',
+    label: 'Dimensiones y Pesos',
+    icon: '📏',
+    fields: [
+      { key: 'length', label: 'Largo', unit: 'mm', better: 'boolean', category: 'dimensions' },
+      { key: 'width', label: 'Ancho (sin espejos)', unit: 'mm', better: 'boolean', category: 'dimensions' },
+      { key: 'height', label: 'Alto', unit: 'mm', better: 'boolean', category: 'dimensions' },
+      { key: 'wheelbase', label: 'Distancia entre ejes', unit: 'mm', better: 'boolean', category: 'dimensions' },
+      { key: 'turningRadius', label: 'Radio de giro', unit: 'm', better: 'lower', category: 'dimensions' },
+      { key: 'curbWeight', label: 'Peso en orden de marcha', unit: 'kg', better: 'lower', category: 'dimensions' },
+      { key: 'payload', label: 'Carga útil (payload)', unit: 'kg', better: 'higher', category: 'dimensions' },
+      { key: 'cargoCapacity', label: 'Capacidad de baúl (máxima)', unit: 'L', better: 'higher', category: 'dimensions' },
+      { key: 'cargoCapacityMin', label: 'Capacidad de baúl (mínima)', unit: 'L', better: 'higher', category: 'dimensions' },
+      { key: 'roofCapacity', label: 'Capacidad de techo/barras', unit: 'kg', better: 'higher', category: 'dimensions' },
+    ]
+  },
+  {
+    key: 'efficiency',
+    label: 'Consumo y Eficiencia',
+    icon: '⛽',
+    fields: [
+      { key: 'consumoCiudad', label: 'Consumo Ciudad', unit: 'L/100km', better: 'lower', category: 'efficiency', formatter: (v, fuelType) => {
+        const isElectric = fuelType?.toLowerCase().includes('eléctrico') || fuelType?.toLowerCase().includes('electric');
+        return v ? `${v} ${isElectric ? 'kWh/100km' : 'L/100km'}` : undefined;
+      }},
+      { key: 'consumoCarretera', label: 'Consumo Carretera', unit: 'L/100km', better: 'lower', category: 'efficiency', formatter: (v, fuelType) => {
+        const isElectric = fuelType?.toLowerCase().includes('eléctrico') || fuelType?.toLowerCase().includes('electric');
+        return v ? `${v} ${isElectric ? 'kWh/100km' : 'L/100km'}` : undefined;
+      }},
+      { key: 'consumoMixto', label: 'Consumo Mixto', unit: 'L/100km', better: 'lower', category: 'efficiency', formatter: (v, fuelType) => {
+        const isElectric = fuelType?.toLowerCase().includes('eléctrico') || fuelType?.toLowerCase().includes('electric');
+        return v ? `${v} ${isElectric ? 'kWh/100km' : 'L/100km'}` : undefined;
+      }},
+      { key: 'autonomiaOficial', label: 'Autonomía oficial', unit: 'km', better: 'higher', category: 'efficiency' },
+      { key: 'capacidadTanque', label: 'Capacidad de tanque', unit: 'L', better: 'higher', category: 'efficiency' },
+      { key: 'mpgeCiudad', label: 'MPGe ciudad', unit: 'MPGe', better: 'higher', category: 'efficiency' },
+      { key: 'mpgeCarretera', label: 'MPGe carretera', unit: 'MPGe', better: 'higher', category: 'efficiency' },
+      { key: 'mpgeCombinado', label: 'MPGe combinado', unit: 'MPGe', better: 'higher', category: 'efficiency' },
+      { key: 'ahorro5Anos', label: 'Ahorro a 5 años', unit: 'COP', better: 'higher', category: 'efficiency' },
+      { key: 'costoEnergia100km', label: 'Costo de energía por 100 km', unit: 'COP', better: 'lower', category: 'efficiency' },
     ]
   },
   {
     key: 'performance',
-    label: 'Rendimiento',
-    icon: '🚀',
+    label: 'Prestaciones',
+    icon: '⚡',
     fields: [
-      { key: 'maxPower', label: 'Potencia', unit: 'HP', better: 'higher', category: 'performance' },
-      { key: 'maxTorque', label: 'Par Motor', unit: 'Nm', better: 'higher', category: 'performance' },
       { key: 'acceleration0to100', label: '0-100 km/h', unit: 's', better: 'lower', category: 'performance' },
-      { key: 'maxSpeed', label: 'Velocidad Máx', unit: 'km/h', better: 'higher', category: 'performance' },
-      { key: 'quarterMile', label: '1/4 Milla', unit: 's', better: 'lower', category: 'performance' },
-      { key: 'brakingDistance100to0', label: 'Frenado 100-0', unit: 'm', better: 'lower', category: 'performance' },
-    ]
-  },
-  {
-    key: 'engine',
-    label: 'Motor',
-    icon: '⚙️',
-    fields: [
-      { key: 'displacement', label: 'Cilindrada', unit: 'cc', better: 'higher', category: 'engine' },
-      { key: 'inductionType', label: 'Inducción', better: 'boolean', category: 'engine' },
-      { key: 'compressionRatio', label: 'Compresión', better: 'higher', category: 'engine' },
-      { key: 'gears', label: 'Marchas', better: 'higher', category: 'engine' },
-      { key: 'transmissionType', label: 'Transmisión', better: 'boolean', category: 'engine' },
-      { key: 'fuelTankCapacity', label: 'Tanque', unit: 'L', better: 'higher', category: 'engine' },
-    ]
-  },
-  {
-    key: 'consumption',
-    label: 'Consumo',
-    icon: '⛽',
-    fields: [
-      { key: 'cityConsumption', label: 'Ciudad', unit: 'L/100km', better: 'lower', category: 'consumption' },
-      { key: 'highwayConsumption', label: 'Carretera', unit: 'L/100km', better: 'lower', category: 'consumption' },
-      { key: 'electricRange', label: 'Autonomía Eléctrica', unit: 'km', better: 'higher', category: 'consumption' },
-      { key: 'acChargingTime', label: 'Tiempo Carga AC', unit: 'h', better: 'lower', category: 'consumption' },
-    ]
-  },
-  {
-    key: 'dimensions',
-    label: 'Dimensiones',
-    icon: '📏',
-    fields: [
-      { key: 'length', label: 'Longitud', unit: 'mm', better: 'boolean', category: 'dimensions' },
-      { key: 'width', label: 'Ancho', unit: 'mm', better: 'boolean', category: 'dimensions' },
-      { key: 'height', label: 'Altura', unit: 'mm', better: 'boolean', category: 'dimensions' },
-      { key: 'wheelbase', label: 'Distancia entre Ejes', unit: 'mm', better: 'boolean', category: 'dimensions' },
-      { key: 'curbWeight', label: 'Peso', unit: 'kg', better: 'lower', category: 'dimensions' },
-    ]
-  },
-  {
-    key: 'capacities',
-    label: 'Capacidades',
-    icon: '👥',
-    fields: [
-      { key: 'passengerCapacity', label: 'Pasajeros', better: 'higher', category: 'capacities' },
-      { key: 'cargoCapacity', label: 'Carga', unit: 'L', better: 'higher', category: 'capacities' },
-      { key: 'towingCapacity', label: 'Remolque', unit: 'kg', better: 'higher', category: 'capacities' },
-      { key: 'payload', label: 'Carga Útil', unit: 'kg', better: 'higher', category: 'capacities' },
+      { key: 'acceleration0to200', label: '0-200 km/h', unit: 's', better: 'lower', category: 'performance' },
+      { key: 'acceleration0to60', label: '0-60 mph', unit: 's', better: 'lower', category: 'performance' },
+      { key: 'quarterMile', label: '1/4 de milla', unit: 's', better: 'lower', category: 'performance' },
+      { key: 'acceleration50to80', label: '50-80 km/h', unit: 's', better: 'lower', category: 'performance' },
+      { key: 'overtaking80to120', label: '80-120 km/h', unit: 's', better: 'lower', category: 'performance' },
+      { key: 'maxSpeed', label: 'Velocidad máxima', unit: 'km/h', better: 'higher', category: 'performance' },
+      { key: 'powerToWeight', label: 'Relación peso/potencia', unit: 'HP/ton', better: 'higher', category: 'performance' },
+      { key: 'maxLateralAcceleration', label: 'Aceleración lateral máxima', unit: 'g', better: 'higher', category: 'performance' },
+      { key: 'maxLongitudinalAcceleration', label: 'Aceleración longitudinal máxima', unit: 'g', better: 'higher', category: 'performance' },
+      { key: 'brakingDistance100to0', label: 'Frenado 100-0 km/h', unit: 'm', better: 'lower', category: 'performance' },
+      { key: 'launchControl', label: 'Launch control', better: 'boolean', category: 'performance' },
     ]
   },
   {
@@ -96,36 +172,142 @@ export const COMPARE_SECTIONS: CompareSection[] = [
     label: 'Seguridad',
     icon: '🛡️',
     fields: [
-      { key: 'airbags', label: 'Airbags', better: 'higher', category: 'safety' },
-      { key: 'ncapRating', label: 'Calificación NCAP', better: 'higher', category: 'safety' },
-      { key: 'stabilityControl', label: 'Control Estabilidad', better: 'boolean', category: 'safety' },
-      { key: 'tractionControl', label: 'Control Tracción', better: 'boolean', category: 'safety' },
-      { key: 'autonomousEmergencyBraking', label: 'Frenado Emergencia', better: 'boolean', category: 'safety' },
-      { key: 'laneAssist', label: 'Asistente Carril', better: 'boolean', category: 'safety' },
+      { key: 'airbags', label: 'Número total de airbags', better: 'higher', category: 'safety' },
+      { key: 'abs', label: 'ABS', better: 'boolean', category: 'safety' },
+      { key: 'esp', label: 'ESP', better: 'boolean', category: 'safety' },
+      { key: 'ncapRating', label: 'Euro NCAP (estrellas)', better: 'higher', category: 'safety' },
+      { key: 'adultSafetyScore', label: 'Euro NCAP (Adulto %)', unit: '%', better: 'higher', category: 'safety' },
+      { key: 'childSafetyScore', label: 'Euro NCAP (Niño %)', unit: '%', better: 'higher', category: 'safety' },
+      { key: 'pedestrianScore', label: 'Euro NCAP (Peatón %)', unit: '%', better: 'higher', category: 'safety' },
+      { key: 'assistanceScore', label: 'Euro NCAP (Asistencias %)', unit: '%', better: 'higher', category: 'safety' },
+      { key: 'latinNCAPRating', label: 'Latin NCAP (estrellas)', better: 'higher', category: 'safety' },
+      { key: 'latinNCAPSubScores', label: 'Latin NCAP (sub-puntajes %)', better: 'boolean', category: 'safety' },
+    ]
+  },
+  {
+    key: 'adas',
+    label: 'Sistemas de Asistencia (ADAS)',
+    icon: '🚗',
+    fields: [
+      { key: 'acc', label: 'ACC (crucero adaptativo)', better: 'boolean', category: 'adas' },
+      { key: 'aeb', label: 'AEB (frenado autónomo)', better: 'boolean', category: 'adas' },
+      { key: 'bsm', label: 'BSM (punto ciego)', better: 'boolean', category: 'adas' },
+      { key: 'camara360', label: 'Cámara 360°', better: 'boolean', category: 'adas' },
+      { key: 'farosAdaptativos', label: 'Faros adaptativos (ADB)', better: 'boolean', category: 'adas' },
+      { key: 'lka', label: 'LKA (asistente carril)', better: 'boolean', category: 'adas' },
+      { key: 'lucesAltasAutomaticas', label: 'Luces altas automáticas', better: 'boolean', category: 'adas' },
+      { key: 'parkAssist', label: 'Park Assist (autónomo)', better: 'boolean', category: 'adas' },
+      { key: 'sensoresEstacionamientoDelantero', label: 'Sensores estacionamiento delantero', better: 'higher', category: 'adas' },
+    ]
+  },
+  {
+    key: 'battery',
+    label: 'Batería y Carga',
+    icon: '🔋',
+    fields: [
+      { key: 'capacidadBrutaBateria', label: 'Capacidad bruta batería', unit: 'kWh', better: 'higher', category: 'battery' },
+      { key: 'cargadorOBCAC', label: 'Cargador a bordo (OBC) AC', unit: 'kW', better: 'higher', category: 'battery' },
+      { key: 'conduccionOnePedal', label: 'Conducción One-Pedal', better: 'boolean', category: 'battery' },
+      { key: 'highPowerChargingTimes', label: 'High Power Charging times', better: 'boolean', category: 'battery' },
+      { key: 'regeneracionNiveles', label: 'Regeneración (niveles)', better: 'higher', category: 'battery' },
+      { key: 'tiempo0100AC', label: 'Tiempo 0-100% (AC)', unit: 'h', better: 'lower', category: 'battery' },
+      { key: 'tiempo1080DC', label: 'Tiempo 10-80% (DC)', unit: 'min', better: 'lower', category: 'battery' },
+      { key: 'v2hV2g', label: 'V2H/V2G (bidireccional)', better: 'boolean', category: 'battery' },
+      { key: 'potenciaV2hV2g', label: 'V2H/V2G Potencia', unit: 'kW', better: 'higher', category: 'battery' },
+    ]
+    // NOTA: La lógica condicional de batería se maneja explícitamente en CompareTables.tsx
+    // para asegurar que solo se muestre cuando TODOS los vehículos son eléctricos o híbridos
+  },
+  {
+    key: 'chassis',
+    label: 'Chasis, Frenos y Dirección',
+    icon: '🔧',
+    fields: [
+      { key: 'amortiguacionAdaptativa', label: 'Amortiguación adaptativa', better: 'boolean', category: 'chassis' },
+      { key: 'materialDiscos', label: 'Material de discos', better: 'boolean', category: 'chassis' },
+      { key: 'materialMuelles', label: 'Material de muelles', better: 'boolean', category: 'chassis' },
+      { key: 'suspensionDelantera', label: 'Suspensión delantera', better: 'boolean', category: 'chassis' },
+      { key: 'suspensionTrasera', label: 'Suspensión trasera', better: 'boolean', category: 'chassis' },
+      { key: 'tipoPinzasFreno', label: 'Tipo de pinzas de freno', better: 'boolean', category: 'chassis' },
+      { key: 'groundClearance', label: 'Despeje al suelo', unit: 'mm', better: 'higher', category: 'chassis' },
+      { key: 'controlDescenso', label: 'Control de descenso', better: 'boolean', category: 'chassis' },
+      { key: 'controlTraccionOffRoad', label: 'Control de tracción off-road', better: 'boolean', category: 'chassis' },
+    ]
+  },
+  {
+    key: 'lighting',
+    label: 'Iluminación y Visibilidad',
+    icon: '💡',
+    fields: [
+      { key: 'antinieblaDelantero', label: 'Antiniebla delantero', better: 'boolean', category: 'lighting' },
+      { key: 'headlightType', label: 'Faros (tecnología)', better: 'boolean', category: 'lighting' },
+      { key: 'intermitentesDinamicos', label: 'Intermitentes dinámicos', better: 'boolean', category: 'lighting' },
+      { key: 'lavafaros', label: 'Lavafaros', better: 'boolean', category: 'lighting' },
+      { key: 'sensorLluvia', label: 'Sensor de lluvia', better: 'boolean', category: 'lighting' },
+    ]
+  },
+  {
+    key: 'infotainment',
+    label: 'Conectividad e Infoentretenimiento',
+    icon: '📱',
+    fields: [
+      { key: 'pantallaCentralTamano', label: 'Pantalla central', unit: '"', better: 'higher', category: 'infotainment' },
+      { key: 'pantallaCuadroTamano', label: 'Pantalla de cuadro', unit: 'in', better: 'higher', category: 'infotainment' },
+      { key: 'androidAuto', label: 'Android Auto', better: 'boolean', category: 'infotainment' },
+      { key: 'appleCarPlay', label: 'Apple CarPlay', better: 'boolean', category: 'infotainment' },
+      { key: 'bluetooth', label: 'Bluetooth', better: 'boolean', category: 'infotainment' },
+      { key: 'wifiBordo', label: 'Wi-Fi a bordo', better: 'boolean', category: 'infotainment' },
+      { key: 'appRemotaOTA', label: 'App remota / OTA', better: 'boolean', category: 'infotainment' },
+      { key: 'navegacionIntegrada', label: 'Navegación integrada', better: 'boolean', category: 'infotainment' },
+      { key: 'cargadorInalambrico', label: 'Cargador inalámbrico', better: 'boolean', category: 'infotainment' },
+      { key: 'audioMarca', label: 'Audio (marca)', better: 'boolean', category: 'infotainment' },
+      { key: 'audioNumeroBocinas', label: 'Audio (número de bocinas)', better: 'higher', category: 'infotainment' },
+      { key: 'potenciaAmplificador', label: 'Potencia de amplificador', unit: 'W', better: 'higher', category: 'infotainment' },
+      { key: 'puertosUSBA', label: 'Puertos USB-A', better: 'higher', category: 'infotainment' },
+      { key: 'puertosUSBC', label: 'Puertos USB-C', better: 'higher', category: 'infotainment' },
     ]
   },
   {
     key: 'comfort',
-    label: 'Confort',
-    icon: '🪑',
+    label: 'Confort e Interior',
+    icon: '🛋️',
     fields: [
-      { key: 'airConditioning', label: 'Aire Acondicionado', better: 'boolean', category: 'comfort' },
-      { key: 'automaticClimateControl', label: 'Clima Automático', better: 'boolean', category: 'comfort' },
-      { key: 'heatedSeats', label: 'Asientos Calefactados', better: 'boolean', category: 'comfort' },
-      { key: 'ventilatedSeats', label: 'Asientos Ventilados', better: 'boolean', category: 'comfort' },
-      { key: 'massageSeats', label: 'Asientos Masaje', better: 'boolean', category: 'comfort' },
+      { key: 'ajusteElectricoConductor', label: 'Ajuste eléctrico conductor', better: 'higher', category: 'comfort' },
+      { key: 'ajusteElectricoPasajero', label: 'Ajuste eléctrico pasajero', better: 'higher', category: 'comfort' },
+      { key: 'calefaccionAsientos', label: 'Calefacción de asientos', better: 'boolean', category: 'comfort' },
+      { key: 'ventilacionAsientos', label: 'Ventilación de asientos', better: 'boolean', category: 'comfort' },
+      { key: 'masajeAsientos', label: 'Masaje en asientos', better: 'boolean', category: 'comfort' },
+      { key: 'memoriaAsientos', label: 'Memoria de asientos', better: 'boolean', category: 'comfort' },
+      { key: 'materialAsientos', label: 'Material de asientos', better: 'boolean', category: 'comfort' },
+      { key: 'climatizadorZonas', label: 'Climatizador (zonas)', better: 'higher', category: 'comfort' },
+      { key: 'airConditioning', label: 'Aire acondicionado', better: 'boolean', category: 'comfort' },
+      { key: 'cristalesAcusticos', label: 'Cristales acústicos', better: 'boolean', category: 'comfort' },
+      { key: 'parabrisasCalefactable', label: 'Parabrisas calefactable', better: 'boolean', category: 'comfort' },
+      { key: 'iluminacionAmbiental', label: 'Iluminación ambiental', better: 'boolean', category: 'comfort' },
+      { key: 'techoPanoramico', label: 'Techo panorámico', better: 'boolean', category: 'comfort' },
+      { key: 'segundaFilaCorrediza', label: 'Segunda fila corrediza', better: 'boolean', category: 'comfort' },
+      { key: 'terceraFilaAsientos', label: 'Tercera fila de asientos', better: 'boolean', category: 'comfort' },
+      { key: 'vidriosElectricos', label: 'Vidrios eléctricos', better: 'boolean', category: 'comfort' },
+      { key: 'espejoInteriorElectrocromico', label: 'Espejo interior electrocrómico', better: 'boolean', category: 'comfort' },
+      { key: 'volanteMaterialAjustes', label: 'Volante (material y ajustes)', better: 'boolean', category: 'comfort' },
+      { key: 'volanteCalefactable', label: 'Volante calefactable', better: 'boolean', category: 'comfort' },
+      { key: 'tomas12V120V', label: 'Tomas 12 V/120 V', better: 'higher', category: 'comfort' },
+      { key: 'tomacorrienteEnCaja', label: 'Tomacorriente en caja', better: 'boolean', category: 'comfort' },
     ]
   },
   {
-    key: 'technology',
-    label: 'Tecnología',
-    icon: '📱',
+    key: 'commercial',
+    label: 'Información Comercial',
+    icon: '💰',
     fields: [
-      { key: 'bluetooth', label: 'Bluetooth', better: 'boolean', category: 'technology' },
-      { key: 'touchscreen', label: 'Pantalla Táctil', better: 'boolean', category: 'technology' },
-      { key: 'navigation', label: 'Navegación', better: 'boolean', category: 'technology' },
-      { key: 'smartphoneIntegration', label: 'Integración Smartphone', better: 'boolean', category: 'technology' },
-      { key: 'wirelessCharger', label: 'Cargador Inalámbrico', better: 'boolean', category: 'technology' },
+      { key: 'precioLista', label: 'Precio de lista', unit: 'COP', better: 'lower', category: 'commercial' },
+      { key: 'garantiaVehiculo', label: 'Garantía vehículo', better: 'boolean', category: 'commercial' },
+      { key: 'garantiaBateria', label: 'Garantía batería', better: 'boolean', category: 'commercial' },
+      { key: 'asistenciaCarretera', label: 'Asistencia en carretera', unit: 'años', better: 'higher', category: 'commercial' },
+      { key: 'intervaloMantenimiento', label: 'Intervalo de mantenimiento', better: 'boolean', category: 'commercial' },
+      { key: 'costoMantenimiento3Primeros', label: 'Costo mantenimiento (3 primeros)', unit: 'COP', better: 'lower', category: 'commercial' },
+      { key: 'financiacionCuotaEstimada', label: 'Financiación (cuota estimada)', unit: 'COP', better: 'lower', category: 'commercial' },
+      { key: 'origenPaisPlanta', label: 'Origen (país/planta)', better: 'boolean', category: 'commercial' },
     ]
   },
   {
@@ -223,5 +405,3 @@ export function getWinnerIndex(vehicles: VehicleComparisonData[], field: Compare
   
   return bestIndex;
 }
-
-

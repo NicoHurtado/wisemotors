@@ -11,13 +11,21 @@ export async function POST(request: NextRequest) {
     const validatedData = registerSchema.parse(body);
     
     // Verificar si el usuario ya existe
-    const existingUser = await prisma.user.findUnique({
-      where: { email: validatedData.email }
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: validatedData.email },
+          { username: validatedData.username }
+        ]
+      }
     });
     
     if (existingUser) {
+      const errorMessage = existingUser.email === validatedData.email 
+        ? 'El email ya está registrado' 
+        : 'El nombre de usuario ya está en uso';
       return NextResponse.json(
-        { error: 'El email ya está registrado' },
+        { error: errorMessage },
         { status: 400 }
       );
     }

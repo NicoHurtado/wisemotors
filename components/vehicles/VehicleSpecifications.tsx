@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart, Zap, Car, Clock, BookOpen, MapPin, Play } from 'lucide-react';
+import { Heart, Zap, Car, Clock, BookOpen, MapPin, Play, Gauge, GaugeCircle, Users, Fuel } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
@@ -88,173 +88,465 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
     window.open(url, '_blank');
   };
 
+  // Función para scroll suave a secciones
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const offset = 100; // Offset para el header sticky
+      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <div className="w-full">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Price and Specifications */}
-        <div className="lg:col-span-2">
+        {/* Left Column - Price and Key Info */}
+        <div className="lg:col-span-2 space-y-8">
           {/* Price and Favorite Button */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="text-4xl font-bold text-gray-900">
-              {formatPrice(vehicle.price)}
+          <div className="flex items-center justify-between bg-white rounded-2xl p-6 shadow-soft">
+            <div>
+              <div className="text-sm text-gray-600 mb-1">Precio</div>
+              <div className="text-4xl font-bold text-gray-900">
+                {formatPrice(vehicle.price)}
+              </div>
             </div>
             <button 
               onClick={handleFavoriteClick}
               disabled={favoriteLoading}
-              className="w-12 h-12 bg-white rounded-full shadow-soft flex items-center justify-center hover:bg-gray-50 transition-colors border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-14 h-14 bg-gray-50 rounded-full shadow-sm flex items-center justify-center hover:bg-gray-100 transition-colors border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label={isFavorite(vehicle.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
             >
               <Heart 
-                className={`w-6 h-6 transition-colors ${
+                className={`w-7 h-7 transition-colors ${
                   isFavorite(vehicle.id) ? 'fill-wise text-wise' : 'text-gray-600'
                 }`}
               />
             </button>
           </div>
-          
-          {/* Vehicle Specifications - Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Brand Row */}
-            <div className="flex items-center p-4 bg-white rounded-2xl border border-gray-200">
-              <div className="w-12 h-12 bg-wise/20 rounded-full flex items-center justify-center mr-4">
-                <BookOpen className="w-6 h-6 text-wise" />
-              </div>
-              <div className="flex-1">
-                <div className="text-sm text-gray-600">Marca</div>
-                <div className="text-lg font-semibold text-gray-900">{vehicle.brand || 'N/A'}</div>
-              </div>
-            </div>
-            
-            {/* Vehicle Type Row */}
-            <div className="flex items-center p-4 bg-white rounded-2xl border border-gray-200">
-              <div className="w-12 h-12 bg-wise/20 rounded-full flex items-center justify-center mr-4">
-                <Car className="w-6 h-6 text-wise" />
-              </div>
-              <div className="flex-1">
-                <div className="text-sm text-gray-600">Tipo de vehículo</div>
-                <div className="text-lg font-semibold text-gray-900">{vehicle.vehicleType || vehicle.type || 'N/A'}</div>
-              </div>
-            </div>
-            
-            {/* Year Row */}
-            <div className="flex items-center p-4 bg-white rounded-2xl border border-gray-200">
-              <div className="w-12 h-12 bg-wise/20 rounded-full flex items-center justify-center mr-4">
-                <Clock className="w-6 h-6 text-wise" />
-              </div>
-              <div className="flex-1">
-                <div className="text-sm text-gray-600">Año</div>
-                <div className="text-lg font-semibold text-gray-900">{vehicle.year || 'N/A'}</div>
-              </div>
-            </div>
-            
-            {/* Engine Row */}
-            <div className="flex items-center p-4 bg-white rounded-2xl border border-gray-200">
-              <div className="w-12 h-12 bg-wise/20 rounded-full flex items-center justify-center mr-4">
-                <Zap className="w-6 h-6 text-wise" />
-              </div>
-              <div className="flex-1">
-                <div className="text-sm text-gray-600">Motor</div>
-                <div className="text-lg font-semibold text-gray-900">
-                  {(() => {
-                    // Intentar obtener información del motor desde diferentes fuentes
-                    const powertrain = vehicle.specifications?.powertrain;
-                    const fuelType = vehicle.fuelType || vehicle.specifications?.powertrain?.combustible;
-                    
-                    // Para vehículos eléctricos
-                    if (fuelType?.toLowerCase().includes('eléctrico') || fuelType?.toLowerCase().includes('electric')) {
-                      const batteryCapacity = vehicle.specifications?.battery?.capacidadBrutaBateria || 
-                                             vehicle.specifications?.electric?.batteryCapacity;
-                      return batteryCapacity ? `${batteryCapacity} kWh` : fuelType || 'N/A';
-                    }
-                    
-                    // Para vehículos híbridos
-                    if (fuelType?.toLowerCase().includes('híbrido') || fuelType?.toLowerCase().includes('hybrid')) {
-                      const displacement = powertrain?.cilindrada || 
-                   vehicle.specifications?.hybrid?.displacement || 
-                                          vehicle.specifications?.phev?.displacement;
-                      const systemPower = powertrain?.potenciaMaxSistemaHibrido || 
-                                         powertrain?.potenciaMaxMotorTermico;
-                      if (displacement) {
-                        return `${displacement}L ${systemPower ? `${systemPower}kW` : ''}`.trim();
-                      }
-                      return fuelType || 'N/A';
-                    }
-                    
-                    // Para vehículos de combustión
-                    const displacement = powertrain?.cilindrada || 
-                                        vehicle.specifications?.combustion?.displacement;
-                    const power = powertrain?.potenciaMaxMotorTermico || 
-                                 vehicle.specifications?.combustion?.maxPower;
-                    if (displacement) {
-                      return `${displacement}L ${power ? `${power}kW` : ''}`.trim();
-                    }
-                    
-                    // Fallback: mostrar tipo de combustible
-                    return fuelType || powertrain?.combustible || 'N/A';
-                  })()}
+
+          {/* Key Specifications - Destacadas */}
+          <div className="bg-white rounded-2xl p-6 shadow-soft">
+            <h3 className="text-xl font-bold text-gray-900 mb-6">Especificaciones Principales</h3>
+            <div className="grid grid-cols-1 gap-4">
+              {/* Marca y Modelo */}
+              <div className="flex items-center p-5 bg-gradient-to-r from-wise/5 to-wise/10 rounded-xl border-l-4 border-wise">
+                <div className="w-14 h-14 bg-wise rounded-full flex items-center justify-center mr-4 shadow-md">
+                  <Car className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm text-gray-600 mb-1">Vehículo</div>
+                  <div className="text-2xl font-bold text-gray-900">{vehicle.brand} {vehicle.model}</div>
+                  <div className="text-sm text-gray-600 mt-1">{vehicle.year}</div>
                 </div>
               </div>
-            </div>
 
-            {/* Video Review Button */}
-            {vehicle.reviewVideoUrl && onVideoClick && (
-              <div className="md:col-span-2 flex justify-center">
+              {/* Tipo y Combustible */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                    <BookOpen className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Categoría</div>
+                    <div className="text-base font-semibold text-gray-900">{vehicle.vehicleType || vehicle.type || 'N/A'}</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                    <Zap className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Combustible</div>
+                    <div className="text-base font-semibold text-gray-900">
+                      {vehicle.fuelType || vehicle.specifications?.powertrain?.combustible || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Motor Info */}
+              <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                  <Zap className="w-6 h-6 text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Motor</div>
+                  <div className="text-base font-semibold text-gray-900">
+                    {(() => {
+                      const powertrain = vehicle.specifications?.powertrain;
+                      const fuelType = vehicle.fuelType || vehicle.specifications?.powertrain?.combustible;
+                      
+                      if (fuelType?.toLowerCase().includes('eléctrico') || fuelType?.toLowerCase().includes('electric')) {
+                        const batteryCapacity = vehicle.specifications?.battery?.capacidadBrutaBateria;
+                        return batteryCapacity ? `${batteryCapacity} kWh` : fuelType || 'N/A';
+                      }
+                      
+                      if (fuelType?.toLowerCase().includes('híbrido') || fuelType?.toLowerCase().includes('hybrid')) {
+                        const displacement = powertrain?.cilindrada;
+                        const systemPower = powertrain?.potenciaMaxSistemaHibrido || powertrain?.potenciaMaxMotorTermico;
+                        if (displacement) {
+                          return `${displacement}L ${systemPower ? `- ${systemPower}kW` : ''}`.trim();
+                        }
+                        return fuelType || 'N/A';
+                      }
+                      
+                      const displacement = powertrain?.cilindrada;
+                      const power = powertrain?.potenciaMaxMotorTermico;
+                      if (displacement) {
+                        return `${displacement}L ${power ? `- ${power}kW` : ''}`.trim();
+                      }
+                      
+                      return fuelType || powertrain?.combustible || 'N/A';
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Campos Adicionales - Grid de 2 columnas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Potencia */}
+                {(() => {
+                  const powertrain = vehicle.specifications?.powertrain;
+                  const fuelType = (vehicle.fuelType || powertrain?.combustible)?.toLowerCase();
+                  const isElectric = fuelType?.includes('eléctrico') || fuelType?.includes('electric');
+                  const isHybrid = fuelType?.includes('híbrido') || fuelType?.includes('hybrid');
+                  
+                  let powerValue = null;
+                  if (isElectric) {
+                    powerValue = powertrain?.potenciaMaxEV;
+                  } else if (isHybrid) {
+                    powerValue = powertrain?.potenciaMaxSistemaHibrido || powertrain?.potenciaMaxMotorTermico;
+                  } else {
+                    powerValue = powertrain?.potenciaMaxMotorTermico;
+                  }
+                  
+                  if (!powerValue) return null;
+                  
+                  return (
+                    <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                      <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4">
+                        <Gauge className="w-6 h-6 text-orange-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Potencia</div>
+                        <div className="text-base font-semibold text-gray-900">{powerValue} kW</div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Transmisión */}
+                {(() => {
+                  const transmission = vehicle.specifications?.transmission;
+                  const tipo = transmission?.tipoTransmision;
+                  const marchas = transmission?.numeroMarchas;
+                  
+                  if (!tipo && !marchas) return null;
+                  
+                  let transmissionText = tipo || '';
+                  if (marchas && tipo) {
+                    transmissionText += ` (${marchas}${typeof marchas === 'number' ? ' marchas' : ''})`;
+                  } else if (marchas) {
+                    transmissionText = `${marchas} marchas`;
+                  }
+                  
+                  return (
+                    <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                      <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mr-4">
+                        <GaugeCircle className="w-6 h-6 text-indigo-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Transmisión</div>
+                        <div className="text-base font-semibold text-gray-900">{transmissionText || 'N/A'}</div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Aceleración 0-100 km/h */}
+                {(() => {
+                  const performance = vehicle.specifications?.performance;
+                  const acceleration = performance?.acceleration0to100 || performance?.acceleration0100;
+                  
+                  if (!acceleration) return null;
+                  
+                  return (
+                    <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                      <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                        <Zap className="w-6 h-6 text-red-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Aceleración</div>
+                        <div className="text-base font-semibold text-gray-900">0-100 km/h en {acceleration}s</div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Consumo/Autonomía */}
+                {(() => {
+                  const efficiency = vehicle.specifications?.efficiency;
+                  const fuelType = (vehicle.fuelType || vehicle.specifications?.powertrain?.combustible)?.toLowerCase();
+                  const isElectric = fuelType?.includes('eléctrico') || fuelType?.includes('electric');
+                  
+                  const consumo = efficiency?.consumoMixto;
+                  const autonomia = efficiency?.autonomiaOficial;
+                  
+                  // Para eléctricos, mostrar autonomía; para otros, mostrar consumo
+                  if (isElectric && autonomia) {
+                    return (
+                      <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                        <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mr-4">
+                          <Zap className="w-6 h-6 text-emerald-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Autonomía</div>
+                          <div className="text-base font-semibold text-gray-900">{autonomia} km</div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  if (!isElectric && consumo) {
+                    return (
+                      <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                        <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center mr-4">
+                          <Fuel className="w-6 h-6 text-teal-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Consumo Mixto</div>
+                          <div className="text-base font-semibold text-gray-900">{consumo} L/100km</div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  return null;
+                })()}
+
+                {/* Plazas y Puertas */}
+                {(() => {
+                  const identification = vehicle.specifications?.identification;
+                  const plazas = identification?.plazas;
+                  const puertas = identification?.puertas;
+                  
+                  if (!plazas && !puertas) return null;
+                  
+                  let text = '';
+                  if (plazas && puertas) {
+                    text = `${plazas} plazas • ${puertas} puertas`;
+                  } else if (plazas) {
+                    text = `${plazas} plazas`;
+                  } else if (puertas) {
+                    text = `${puertas} puertas`;
+                  }
+                  
+                  return (
+                    <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                        <Users className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Capacidad</div>
+                        <div className="text-base font-semibold text-gray-900">{text}</div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Tipo de Transmisión: Manual/Automático */}
+                {(() => {
+                  const transmission = vehicle.specifications?.transmission;
+                  const tipo = transmission?.tipoTransmision;
+                  
+                  if (!tipo) return null;
+                  
+                  // Determinar si es manual o automático basado en el tipo
+                  const tipoLower = tipo.toLowerCase();
+                  let tipoTexto = 'N/A';
+                  let iconoColor = 'bg-gray-100';
+                  let iconoTextColor = 'text-gray-600';
+                  
+                  if (tipoLower.includes('manual')) {
+                    tipoTexto = 'Manual';
+                    iconoColor = 'bg-yellow-100';
+                    iconoTextColor = 'text-yellow-600';
+                  } else if (tipoLower.includes('automática') || tipoLower.includes('automatica') || 
+                            tipoLower.includes('automático') || tipoLower.includes('automatico') ||
+                            tipoLower.includes('cvt') || tipoLower.includes('dct') ||
+                            tipoLower.includes('dsg') || tipoLower.includes('tronic') ||
+                            tipoLower.includes('tiptronic') || tipoLower.includes('s tronic')) {
+                    tipoTexto = 'Automático';
+                    iconoColor = 'bg-green-100';
+                    iconoTextColor = 'text-green-600';
+                  } else {
+                    // Si no está claro, mostrar el tipo original
+                    tipoTexto = tipo;
+                  }
+                  
+                  return (
+                    <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                      <div className={`w-12 h-12 ${iconoColor} rounded-full flex items-center justify-center mr-4`}>
+                        <GaugeCircle className={`w-6 h-6 ${iconoTextColor}`} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Tipo</div>
+                        <div className="text-base font-semibold text-gray-900">{tipoTexto}</div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Video Review Button */}
+              {vehicle.reviewVideoUrl && onVideoClick && (
                 <button 
                   onClick={onVideoClick}
-                  className="flex items-center p-3 bg-white rounded-2xl border border-wise/30 hover:border-wise hover:bg-wise/5 transition-all duration-300 group w-fit"
+                  className="flex items-center p-5 bg-gradient-to-r from-wise/10 to-wise/20 rounded-xl border border-wise/30 hover:border-wise hover:shadow-lg transition-all duration-300 group"
                   aria-label="Ver video review"
                 >
-                  <div className="w-10 h-10 bg-wise/20 rounded-full flex items-center justify-center mr-3 group-hover:bg-wise/30 transition-colors">
-                    <Play className="w-5 h-5 text-wise fill-wise" />
+                  <div className="w-14 h-14 bg-wise rounded-full flex items-center justify-center mr-4 group-hover:scale-110 transition-transform shadow-md">
+                    <Play className="w-7 h-7 text-white fill-white" />
                   </div>
-                  <div className="text-left">
-                    <div className="text-base font-semibold text-wise">Video Review</div>
+                  <div className="flex-1 text-left">
+                    <div className="text-lg font-bold text-wise">Video Review</div>
+                    <div className="text-sm text-gray-600">Mira el análisis completo del vehículo</div>
                   </div>
-                  <div className="text-wise opacity-70 group-hover:opacity-100 transition-opacity text-sm ml-3">
-                    Ver ahora →
+                  <div className="text-wise font-semibold group-hover:translate-x-1 transition-transform">
+                    Ver →
                   </div>
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
         
         {/* Right Column - Dealerships */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-2xl shadow-soft p-6 sticky top-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">
-              Disponible en:
-            </h3>
-            <div className="space-y-4">
-              {vehicle.dealerships?.map((dealership: any) => (
-                <div key={dealership.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-wise rounded-full flex items-center justify-center mr-3">
-                      <MapPin className="w-4 h-4 text-white" />
+          <div className="space-y-6 sticky top-8">
+            {/* Dealerships Section */}
+            <div className="bg-white rounded-2xl shadow-soft p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                <MapPin className="w-5 h-5 text-wise mr-2" />
+                Disponible en:
+              </h3>
+              <div className="space-y-3">
+                {vehicle.dealerships?.map((dealership: any) => (
+                  <div key={dealership.id} className="p-4 border border-gray-200 rounded-xl hover:border-wise/50 hover:shadow-md transition-all">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-start flex-1">
+                        <div className="w-10 h-10 bg-wise/10 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                          <MapPin className="w-5 h-5 text-wise" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900 mb-1">{dealership.name}</p>
+                          <p className="text-sm text-gray-600">{dealership.location}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{dealership.name}</p>
-                      <p className="text-sm text-gray-600">{dealership.location}</p>
-                    </div>
+                    <button
+                      className="w-full px-4 py-2 bg-wise text-white rounded-lg hover:bg-wise-dark transition-colors text-sm font-medium shadow-sm hover:shadow-md"
+                      onClick={() => handleContactDealership({ 
+                        name: dealership.name, 
+                        location: dealership.location,
+                        id: dealership.id 
+                      })}
+                    >
+                      Agendar aquí
+                    </button>
                   </div>
-                  <button
-                    className="px-4 py-2 bg-wise text-white rounded-lg hover:bg-wise-dark transition-colors text-sm"
-                    onClick={() => handleContactDealership({ 
-                      name: dealership.name, 
-                      location: dealership.location,
-                      id: dealership.id 
-                    })}
-                  >
-                    Agendar aquí
-                  </button>
-                </div>
-              ))}
-              <button
-                className="w-full px-4 py-2 bg-wise/10 text-wise border border-wise/30 rounded-lg hover:bg-wise/20 transition-colors text-sm"
-                onClick={() => handleContactDealership(undefined)}
-              >
-                Cualquier concesionario
-              </button>
+                ))}
+                <button
+                  className="w-full px-4 py-3 bg-wise/10 text-wise border-2 border-wise/30 rounded-xl hover:bg-wise hover:text-white transition-colors text-sm font-semibold"
+                  onClick={() => handleContactDealership(undefined)}
+                >
+                  📍 Cualquier concesionario
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Navigation - Vertical */}
+            <div className="bg-white rounded-2xl shadow-soft p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Navegación Rápida</h3>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => scrollToSection('sec-identificacion')}
+                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                >
+                  <span className="mr-2">📋</span>
+                  Identificación
+                </button>
+                <button
+                  onClick={() => scrollToSection('sec-powertrain')}
+                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                >
+                  <span className="mr-2">🔧</span>
+                  Motor
+                </button>
+                <button
+                  onClick={() => scrollToSection('sec-consumo')}
+                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                >
+                  <span className="mr-2">⛽</span>
+                  Consumo
+                </button>
+                <button
+                  onClick={() => scrollToSection('sec-dimensiones')}
+                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                >
+                  <span className="mr-2">📏</span>
+                  Dimensiones
+                </button>
+                <button
+                  onClick={() => scrollToSection('sec-prestaciones')}
+                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                >
+                  <span className="mr-2">⚡</span>
+                  Prestaciones
+                </button>
+                <button
+                  onClick={() => scrollToSection('sec-seguridad')}
+                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                >
+                  <span className="mr-2">🛡️</span>
+                  Seguridad
+                </button>
+                <button
+                  onClick={() => scrollToSection('sec-adas')}
+                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                >
+                  <span className="mr-2">🚗</span>
+                  ADAS
+                </button>
+                <button
+                  onClick={() => scrollToSection('sec-infotainment')}
+                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                >
+                  <span className="mr-2">📱</span>
+                  Conectividad
+                </button>
+                <button
+                  onClick={() => scrollToSection('sec-confort')}
+                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                >
+                  <span className="mr-2">🛋️</span>
+                  Confort
+                </button>
+                <button
+                  onClick={() => scrollToSection('sec-comercial')}
+                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                >
+                  <span className="mr-2">💰</span>
+                  Comercial
+                </button>
+              </div>
             </div>
           </div>
         </div>

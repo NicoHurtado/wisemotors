@@ -1,0 +1,46 @@
+[33mcommit 45e18f03f736156f0d9eaca9d2d0fc8f20dd8c0d[m
+Author: saldaf10 <psaldarrif@eafit.edu.co>
+Date:   Mon Sep 8 17:59:26 2025 -0500
+
+    Mejoras en el flujo de los usuarios y cambio de color
+
+[1mdiff --git a/app/api/auth/register/route.ts b/app/api/auth/register/route.ts[m
+[1mindex 609f567..e293247 100644[m
+[1m--- a/app/api/auth/register/route.ts[m
+[1m+++ b/app/api/auth/register/route.ts[m
+[36m@@ -1,7 +1,7 @@[m
+ import { NextRequest, NextResponse } from 'next/server';[m
+ import { prisma } from '@/lib/prisma';[m
+ import { registerSchema } from '@/lib/schemas/auth';[m
+[31m-import { hashPassword } from '@/lib/auth';[m
+[32m+[m[32mimport { hashPassword, generateToken } from '@/lib/auth';[m
+ [m
+ export async function POST(request: NextRequest) {[m
+   try {[m
+[36m@@ -28,19 +28,23 @@[m [mexport async function POST(request: NextRequest) {[m
+     // Crear usuario[m
+     const user = await prisma.user.create({[m
+       data: {[m
+[31m-        name: validatedData.name,[m
+[32m+[m[32m        username: validatedData.username,[m
+         email: validatedData.email,[m
+         password: hashedPassword,[m
+         role: 'user'[m
+       }[m
+     });[m
+     [m
+[31m-    // Retornar usuario sin contraseña[m
+[32m+[m[32m    // Generar token JWT[m
+[32m+[m[32m    const token = generateToken(user.id, user.email, user.role);[m
+[32m+[m[41m    [m
+[32m+[m[32m    // Retornar usuario sin contraseña y token[m
+     const { password, ...userWithoutPassword } = user;[m
+     [m
+     return NextResponse.json({[m
+       message: 'Usuario registrado exitosamente',[m
+[31m-      user: userWithoutPassword[m
+[32m+[m[32m      user: userWithoutPassword,[m
+[32m+[m[32m      token[m
+     }, { status: 201 });[m
+     [m
+   } catch (error: any) {[m
