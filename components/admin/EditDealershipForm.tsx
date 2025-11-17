@@ -30,7 +30,7 @@ export function EditDealershipForm({ dealershipId }: EditDealershipFormProps) {
     address: '',
     phone: '',
     email: '',
-    status: 'active'
+    status: 'Activo'
   });
 
   // Cargar concesionario
@@ -49,7 +49,7 @@ export function EditDealershipForm({ dealershipId }: EditDealershipFormProps) {
             address: data.address || '',
             phone: data.phone || '',
             email: data.email || '',
-            status: data.status || 'active'
+            status: data.status || 'Activo'
           });
         } else {
           alert('Error al cargar el concesionario');
@@ -211,9 +211,9 @@ export function EditDealershipForm({ dealershipId }: EditDealershipFormProps) {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
             required
           >
-            <option value="active">Activo</option>
-            <option value="inactive">Inactivo</option>
-            <option value="pending">Pendiente</option>
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+            <option value="En construcción">En construcción</option>
           </select>
         </div>
       </div>

@@ -13,7 +13,7 @@ export function AddDealershipForm() {
     address: '',
     phone: '',
     email: '',
-    status: 'active'
+    status: 'Activo'
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -141,9 +141,9 @@ export function AddDealershipForm() {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
             required
           >
-            <option value="active">Activo</option>
-            <option value="inactive">Inactivo</option>
-            <option value="pending">Pendiente</option>
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+            <option value="En construcción">En construcción</option>
           </select>
         </div>
       </div>

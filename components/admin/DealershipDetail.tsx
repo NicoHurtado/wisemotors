@@ -94,11 +94,11 @@ export function DealershipDetail({ dealershipId }: DealershipDetailProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active':
+      case 'Activo':
         return 'bg-green-100 text-green-800';
-      case 'inactive':
+      case 'Inactivo':
         return 'bg-red-100 text-red-800';
-      case 'pending':
+      case 'En construcción':
         return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -106,16 +106,7 @@ export function DealershipDetail({ dealershipId }: DealershipDetailProps) {
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'Activo';
-      case 'inactive':
-        return 'Inactivo';
-      case 'pending':
-        return 'Pendiente';
-      default:
-        return status;
-    }
+    return status;
   };
 
   if (loading) {

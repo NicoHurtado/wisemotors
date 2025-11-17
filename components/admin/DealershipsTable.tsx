@@ -159,15 +159,13 @@ export function DealershipsTable() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    dealership.status === 'active' 
+                    dealership.status === 'Activo' 
                       ? 'bg-green-100 text-green-800' 
-                      : dealership.status === 'inactive'
+                      : dealership.status === 'Inactivo'
                       ? 'bg-red-100 text-red-800'
                       : 'bg-yellow-100 text-yellow-800'
                   }`}>
-                    {dealership.status === 'active' ? 'Activo' : 
-                     dealership.status === 'inactive' ? 'Inactivo' : 
-                     dealership.status === 'pending' ? 'Pendiente' : dealership.status}
+                    {dealership.status}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
