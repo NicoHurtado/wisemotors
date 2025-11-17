@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
       specifications: JSON.stringify(vehicleData.specifications)
     };
     
-    // Crear vehículo con transacción
+    // Crear vehículo con transacción (aumentar timeout para imágenes)
     const result = await prisma.$transaction(async (tx) => {
       // 1. Crear el vehículo
       const vehicle = await tx.vehicle.create({
@@ -242,6 +242,9 @@ export async function POST(request: NextRequest) {
       }
       
       return vehicle;
+    }, {
+      timeout: 30000, // 30 segundos para completar la transacción
+      maxWait: 5000   // 5 segundos para esperar que la transacción esté disponible
     });
     
     // Retornar el vehículo creado con sus relaciones

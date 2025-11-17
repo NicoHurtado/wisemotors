@@ -272,8 +272,6 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
         return getValueFromPath('safety.assistanceScore');
       case 'latinNCAPRating':
         return getValueFromPath('safety.latinNCAPRating');
-      case 'latinNCAPSubScores':
-        return getValueFromPath('safety.latinNCAPSubScores');
       
       // ADAS
       case 'acc':

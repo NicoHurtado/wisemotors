@@ -24,8 +24,8 @@ export function WiseMetricsForm({
           </label>
           <input
             type="number"
-            value={specifications.wisemetrics?.drivingFun || 50}
-            onChange={(e) => handleChange('wisemetrics', 'drivingFun', parseInt(e.target.value) || 50)}
+            value={specifications.wisemetrics?.drivingFun || ''}
+            onChange={(e) => handleChange('wisemetrics', 'drivingFun', e.target.value ? parseInt(e.target.value) : '')}
             min="0"
             max="100"
             step="1"
@@ -39,8 +39,8 @@ export function WiseMetricsForm({
           </label>
           <input
             type="number"
-            value={specifications.wisemetrics?.technology || 50}
-            onChange={(e) => handleChange('wisemetrics', 'technology', parseInt(e.target.value) || 50)}
+            value={specifications.wisemetrics?.technology || ''}
+            onChange={(e) => handleChange('wisemetrics', 'technology', e.target.value ? parseInt(e.target.value) : '')}
             min="0"
             max="100"
             step="1"
@@ -54,8 +54,8 @@ export function WiseMetricsForm({
           </label>
           <input
             type="number"
-            value={specifications.wisemetrics?.environmentalImpact || 50}
-            onChange={(e) => handleChange('wisemetrics', 'environmentalImpact', parseInt(e.target.value) || 50)}
+            value={specifications.wisemetrics?.environmentalImpact || ''}
+            onChange={(e) => handleChange('wisemetrics', 'environmentalImpact', e.target.value ? parseInt(e.target.value) : '')}
             min="0"
             max="100"
             step="1"
@@ -69,8 +69,8 @@ export function WiseMetricsForm({
           </label>
           <input
             type="number"
-            value={specifications.wisemetrics?.reliability || 50}
-            onChange={(e) => handleChange('wisemetrics', 'reliability', parseInt(e.target.value) || 50)}
+            value={specifications.wisemetrics?.reliability || ''}
+            onChange={(e) => handleChange('wisemetrics', 'reliability', e.target.value ? parseInt(e.target.value) : '')}
             min="0"
             max="100"
             step="1"
@@ -84,8 +84,8 @@ export function WiseMetricsForm({
           </label>
           <input
             type="number"
-            value={specifications.wisemetrics?.qualityPriceRatio || 50}
-            onChange={(e) => handleChange('wisemetrics', 'qualityPriceRatio', parseInt(e.target.value) || 50)}
+            value={specifications.wisemetrics?.qualityPriceRatio || ''}
+            onChange={(e) => handleChange('wisemetrics', 'qualityPriceRatio', e.target.value ? parseInt(e.target.value) : '')}
             min="0"
             max="100"
             step="1"
@@ -99,8 +99,8 @@ export function WiseMetricsForm({
           </label>
           <input
             type="number"
-            value={specifications.wisemetrics?.comfort || 50}
-            onChange={(e) => handleChange('wisemetrics', 'comfort', parseInt(e.target.value) || 50)}
+            value={specifications.wisemetrics?.comfort || ''}
+            onChange={(e) => handleChange('wisemetrics', 'comfort', e.target.value ? parseInt(e.target.value) : '')}
             min="0"
             max="100"
             step="1"
@@ -114,8 +114,8 @@ export function WiseMetricsForm({
           </label>
           <input
             type="number"
-            value={specifications.wisemetrics?.usability || 50}
-            onChange={(e) => handleChange('wisemetrics', 'usability', parseInt(e.target.value) || 50)}
+            value={specifications.wisemetrics?.usability || ''}
+            onChange={(e) => handleChange('wisemetrics', 'usability', e.target.value ? parseInt(e.target.value) : '')}
             min="0"
             max="100"
             step="1"
@@ -129,8 +129,8 @@ export function WiseMetricsForm({
           </label>
           <input
             type="number"
-            value={specifications.wisemetrics?.efficiency || 50}
-            onChange={(e) => handleChange('wisemetrics', 'efficiency', parseInt(e.target.value) || 50)}
+            value={specifications.wisemetrics?.efficiency || ''}
+            onChange={(e) => handleChange('wisemetrics', 'efficiency', e.target.value ? parseInt(e.target.value) : '')}
             min="0"
             max="100"
             step="1"
@@ -144,8 +144,8 @@ export function WiseMetricsForm({
           </label>
           <input
             type="number"
-            value={specifications.wisemetrics?.prestige || 50}
-            onChange={(e) => handleChange('wisemetrics', 'prestige', parseInt(e.target.value) || 50)}
+            value={specifications.wisemetrics?.prestige || ''}
+            onChange={(e) => handleChange('wisemetrics', 'prestige', e.target.value ? parseInt(e.target.value) : '')}
             min="0"
             max="100"
             step="1"
@@ -160,8 +160,8 @@ export function WiseMetricsForm({
           </label>
           <input
             type="number"
-            value={specifications.wisemetrics?.interiorQuality || 50}
-            onChange={(e) => handleChange('wisemetrics', 'interiorQuality', parseInt(e.target.value) || 50)}
+            value={specifications.wisemetrics?.interiorQuality || ''}
+            onChange={(e) => handleChange('wisemetrics', 'interiorQuality', e.target.value ? parseInt(e.target.value) : '')}
             min="0"
             max="100"
             step="1"

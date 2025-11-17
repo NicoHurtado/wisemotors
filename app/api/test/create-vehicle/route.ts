@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
           lka: true,
           lucesAltasAutomaticas: true,
           parkAssist: true,
-          sensoresEstacionamientoDelantero: 4
+          sensoresEstacionamientoDelantero: true
         },
         lighting: {
           headlightType: 'LED',

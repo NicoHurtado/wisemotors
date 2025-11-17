@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Car, Save, X } from 'lucide-react';
 import { ImageUpload } from './ImageUpload';
+import { WiseMetricsForm } from './WiseMetricsForm';
 
 interface Dealer {
   id: string;
@@ -122,7 +123,6 @@ export function AddVehicleForm() {
     euroNCAPPeaton: '',
     euroNCAPAsistencias: '',
     latinNCAPEstrellas: '',
-    latinNCAPSubPuntajes: '',
     isofixTopTether: false,
 
     // ADAS (asistencias activas)
@@ -134,7 +134,7 @@ export function AddVehicleForm() {
     lka: false,
     lucesAltasAutomaticas: false,
     parkAssist: false,
-    sensoresEstacionamientoDelantero: '',
+    sensoresEstacionamientoDelantero: false,
 
     // Iluminación y visibilidad
     antinieblaDelantero: false,
@@ -198,6 +198,18 @@ export function AddVehicleForm() {
     // Metadatos
     aplicabilidadFlags: '',
     observaciones: '',
+
+    // WiseMetrics
+    wiseMetricsDiversión: '',
+    wiseMetricsTecnología: '',
+    wiseMetricsImpactoAmbiental: '',
+    wiseMetricsFiabilidad: '',
+    wiseMetricsCalidadPrecio: '',
+    wiseMetricsComodidad: '',
+    wiseMetricsUsabilidad: '',
+    wiseMetricsEficiencia: '',
+    wiseMetricsPrestigio: '',
+    wiseMetricsCalidadInterior: '',
   });
 
   // Cargar concesionarios
@@ -231,6 +243,31 @@ export function AddVehicleForm() {
         ? prev.filter(id => id !== dealerId)
         : [...prev, dealerId]
     );
+  };
+
+  const handleSpecificationChange = (section: string, field: string, value: any) => {
+    if (section === 'wisemetrics') {
+      // Mapear los campos de wisemetrics
+      const fieldMap: Record<string, string> = {
+        'drivingFun': 'wiseMetricsDiversión',
+        'technology': 'wiseMetricsTecnología',
+        'environmentalImpact': 'wiseMetricsImpactoAmbiental',
+        'reliability': 'wiseMetricsFiabilidad',
+        'qualityPriceRatio': 'wiseMetricsCalidadPrecio',
+        'comfort': 'wiseMetricsComodidad',
+        'usability': 'wiseMetricsUsabilidad',
+        'efficiency': 'wiseMetricsEficiencia',
+        'prestige': 'wiseMetricsPrestigio',
+        'interiorQuality': 'wiseMetricsCalidadInterior',
+      };
+      const mappedField = fieldMap[field];
+      if (mappedField) {
+        setFormData(prev => ({
+          ...prev,
+          [mappedField]: value
+        }));
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -348,7 +385,6 @@ export function AddVehicleForm() {
           pedestrianScore: formData.euroNCAPPeaton ? parseFloat(formData.euroNCAPPeaton) : undefined,
           assistanceScore: formData.euroNCAPAsistencias ? parseFloat(formData.euroNCAPAsistencias) : undefined,
           latinNCAPRating: formData.latinNCAPEstrellas ? parseInt(formData.latinNCAPEstrellas) : undefined,
-          latinNCAPSubScores: formData.latinNCAPSubPuntajes || undefined,
         },
         adas: {
           acc: formData.acc,
@@ -359,7 +395,7 @@ export function AddVehicleForm() {
           lka: formData.lka,
           lucesAltasAutomaticas: formData.lucesAltasAutomaticas,
           parkAssist: formData.parkAssist,
-          sensoresEstacionamientoDelantero: formData.sensoresEstacionamientoDelantero ? parseInt(formData.sensoresEstacionamientoDelantero) : undefined,
+          sensoresEstacionamientoDelantero: formData.sensoresEstacionamientoDelantero,
         },
         lighting: {
           headlightType: formData.farosTecnologia,
@@ -424,10 +460,27 @@ export function AddVehicleForm() {
           aplicabilidadFlags: formData.aplicabilidadFlags,
           observaciones: formData.observaciones,
         },
+        wisemetrics: {
+          drivingFun: formData.wiseMetricsDiversión ? parseInt(formData.wiseMetricsDiversión.toString()) : undefined,
+          technology: formData.wiseMetricsTecnología ? parseInt(formData.wiseMetricsTecnología.toString()) : undefined,
+          environmentalImpact: formData.wiseMetricsImpactoAmbiental ? parseInt(formData.wiseMetricsImpactoAmbiental.toString()) : undefined,
+          reliability: formData.wiseMetricsFiabilidad ? parseInt(formData.wiseMetricsFiabilidad.toString()) : undefined,
+          qualityPriceRatio: formData.wiseMetricsCalidadPrecio ? parseInt(formData.wiseMetricsCalidadPrecio.toString()) : undefined,
+          comfort: formData.wiseMetricsComodidad ? parseInt(formData.wiseMetricsComodidad.toString()) : undefined,
+          usability: formData.wiseMetricsUsabilidad ? parseInt(formData.wiseMetricsUsabilidad.toString()) : undefined,
+          efficiency: formData.wiseMetricsEficiencia ? parseInt(formData.wiseMetricsEficiencia.toString()) : undefined,
+          prestige: formData.wiseMetricsPrestigio ? parseInt(formData.wiseMetricsPrestigio.toString()) : undefined,
+          interiorQuality: formData.wiseMetricsCalidadInterior ? parseInt(formData.wiseMetricsCalidadInterior.toString()) : undefined,
+        },
       };
 
       // Limpiar especificaciones vacías
-      const cleanSpecifications = (obj: any): any => {
+      const cleanSpecifications = (obj: any, key?: string): any => {
+        // Preservar wisemetrics sin limpieza
+        if (key === 'wisemetrics') {
+          return obj;
+        }
+        
         if (obj === null || obj === undefined) return undefined;
         if (typeof obj === 'string' && obj.trim() === '') return undefined;
         if (typeof obj === 'number' && isNaN(obj)) return undefined;
@@ -437,10 +490,10 @@ export function AddVehicleForm() {
         }
         if (typeof obj === 'object') {
           const cleaned: any = {};
-          for (const [key, value] of Object.entries(obj)) {
-            const cleanedValue = cleanSpecifications(value);
+          for (const [objKey, value] of Object.entries(obj)) {
+            const cleanedValue = cleanSpecifications(value, objKey);
             if (cleanedValue !== undefined && cleanedValue !== null && cleanedValue !== '') {
-              cleaned[key] = cleanedValue;
+              cleaned[objKey] = cleanedValue;
             }
           }
           return Object.keys(cleaned).length > 0 ? cleaned : undefined;
@@ -448,7 +501,15 @@ export function AddVehicleForm() {
         return obj;
       };
 
-      const cleanedSpecs = cleanSpecifications(specifications);
+      let cleanedSpecs = cleanSpecifications(specifications);
+      
+      // Añadir wisemetrics a las especificaciones (asegurar que siempre se incluya)
+      if (specifications.wisemetrics) {
+        if (!cleanedSpecs) {
+          cleanedSpecs = {};
+        }
+        cleanedSpecs.wisemetrics = specifications.wisemetrics;
+      }
 
       // Mapear carrocería a tipo válido
       const mapCarroceriaToType = (carroceria: string): 'Sedán' | 'SUV' | 'Pickup' | 'Deportivo' | 'Wagon' | 'Hatchback' | 'Convertible' => {
@@ -522,11 +583,22 @@ export function AddVehicleForm() {
       } else {
         const errorData = await response.json();
         console.error('Error response:', errorData);
-        alert(`Error: ${errorData.error || 'Error al crear el vehículo'}`);
+        
+        // Mostrar errores de validación detallados
+        if (errorData.details && Array.isArray(errorData.details)) {
+          const errorMessages = errorData.details.map((err: any) => {
+            const path = err.path.join(' > ');
+            return `• ${path}: ${err.message}`;
+          }).join('\n');
+          
+          alert(`❌ Error de validación:\n\n${errorMessages}\n\nRevisa los campos marcados y asegúrate de que todos los valores sean correctos.`);
+        } else {
+          alert(`❌ Error: ${errorData.error || 'Error al crear el vehículo'}\n\nRevisa la consola del navegador para más detalles.`);
+        }
       }
     } catch (error) {
       console.error('Error creating vehicle:', error);
-      alert('Error al crear el vehículo');
+      alert('❌ Error inesperado al crear el vehículo.\n\nRevisa la consola del navegador para más detalles.');
     } finally {
       setLoading(false);
     }
@@ -540,15 +612,36 @@ export function AddVehicleForm() {
     const combustible = formData.combustible;
     const aplicabilidades = Array.isArray(aplicabilidad) ? aplicabilidad : [aplicabilidad];
 
-    // Si no hay carrocería seleccionada, mostrar todos los campos (excepto los que requieren carrocería específica)
+    // Si no hay carrocería seleccionada, verificar solo por combustible
     if (!carroceria) {
       // Si requiere carrocería específica, no mostrar
       const requiereCarroceria = aplicabilidades.some(apl => 
         apl.includes('SUV') || apl.includes('Pick-up') || apl.includes('Deportivo') || apl === '4x4' || apl === 'SUV/4x4'
       );
       if (requiereCarroceria) return false;
-      // Para el resto, mostrar si no requiere combustible específico o si el combustible coincide
-      return true;
+      
+      // Verificar aplicabilidades de combustible
+      return aplicabilidades.some(apl => {
+        if (apl === 'Todos' || apl === '—') return true;
+        if (apl === 'Premium') return true;
+        
+        if (combustible) {
+          if (apl === 'EV' && combustible === 'Eléctrico') return true;
+          if (apl === 'EV/PHEV' && (combustible === 'Eléctrico' || combustible === 'Híbrido Enchufable')) return true;
+          if (apl === 'EV/Premium' && combustible === 'Eléctrico') return true;
+          if (apl === 'ICE/HEV/PHE' && (combustible === 'Gasolina' || combustible === 'Diésel' || combustible === 'GNV' || combustible === 'Etanol' || combustible === 'Híbrido' || combustible === 'Híbrido Enchufable')) return true;
+          if (apl === 'ICE/HEV' && (combustible === 'Gasolina' || combustible === 'Diésel' || combustible === 'GNV' || combustible === 'Etanol' || combustible === 'Híbrido')) return true;
+          if (apl === 'HEV/PHEV' && (combustible === 'Híbrido' || combustible === 'Híbrido Enchufable')) return true;
+          if (apl === 'PHEV' && combustible === 'Híbrido Enchufable') return true;
+        } else {
+          // Si no hay combustible, no mostrar campos que requieren combustible específico
+          if (apl.includes('EV') || apl.includes('ICE') || apl.includes('HEV') || apl.includes('PHE')) {
+            return false;
+          }
+        }
+        
+        return false;
+      });
     }
 
     // Verificar si alguna aplicabilidad coincide
@@ -848,7 +941,6 @@ export function AddVehicleForm() {
           {renderField('euroNCAPPeaton', 'Euro NCAP (Peatón %)', 'number', undefined, '%')}
           {renderField('euroNCAPAsistencias', 'Euro NCAP (Asistencias %)', 'number', undefined, '%')}
           {renderField('latinNCAPEstrellas', 'Latin NCAP (estrellas)', 'number', undefined, '★')}
-          {renderField('latinNCAPSubPuntajes', 'Latin NCAP (sub-puntajes %)', 'text', undefined)}
           {renderField('isofixTopTether', 'ISOFIX y Top Tether', 'checkbox')}
         </div>
           </div>
@@ -868,7 +960,7 @@ export function AddVehicleForm() {
           {renderField('lka', 'LKA (asistente carril)', 'checkbox')}
           {renderField('lucesAltasAutomaticas', 'Luces altas automáticas', 'checkbox')}
           {renderField('parkAssist', 'Park Assist (autónomo)', 'checkbox')}
-          {renderField('sensoresEstacionamientoDelantero', 'Sensores estacionamiento delantero', 'number', undefined)}
+          {renderField('sensoresEstacionamientoDelantero', 'Sensores estacionamiento delantero', 'checkbox')}
         </div>
           </div>
 
@@ -981,6 +1073,31 @@ export function AddVehicleForm() {
           {renderField('aplicabilidadFlags', 'Aplicabilidad (flags)', 'text', undefined)}
           {renderField('observaciones', 'Observaciones', 'textarea', undefined)}
         </div>
+      </div>
+
+      {/* WiseMetrics */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+          <Car className="w-5 h-5 mr-2 text-wise" />
+          WiseMetrics
+        </h2>
+        <WiseMetricsForm
+          specifications={{
+            wisemetrics: {
+              drivingFun: formData.wiseMetricsDiversión || '',
+              technology: formData.wiseMetricsTecnología || '',
+              environmentalImpact: formData.wiseMetricsImpactoAmbiental || '',
+              reliability: formData.wiseMetricsFiabilidad || '',
+              qualityPriceRatio: formData.wiseMetricsCalidadPrecio || '',
+              comfort: formData.wiseMetricsComodidad || '',
+              usability: formData.wiseMetricsUsabilidad || '',
+              efficiency: formData.wiseMetricsEficiencia || '',
+              prestige: formData.wiseMetricsPrestigio || '',
+              interiorQuality: formData.wiseMetricsCalidadInterior || '',
+            }
+          }}
+          onSpecificationChange={handleSpecificationChange}
+        />
       </div>
 
       {/* Concesionarios */}

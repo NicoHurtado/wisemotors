@@ -215,6 +215,9 @@ export async function PUT(
           });
         }
       }
+    }, {
+      timeout: 30000, // 30 segundos para completar la transacción
+      maxWait: 5000   // 5 segundos para esperar que la transacción esté disponible
     });
     
     // Retornar vehículo actualizado

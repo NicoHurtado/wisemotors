@@ -181,7 +181,6 @@ export const COMPARE_SECTIONS: CompareSection[] = [
       { key: 'pedestrianScore', label: 'Euro NCAP (Peatón %)', unit: '%', better: 'higher', category: 'safety' },
       { key: 'assistanceScore', label: 'Euro NCAP (Asistencias %)', unit: '%', better: 'higher', category: 'safety' },
       { key: 'latinNCAPRating', label: 'Latin NCAP (estrellas)', better: 'higher', category: 'safety' },
-      { key: 'latinNCAPSubScores', label: 'Latin NCAP (sub-puntajes %)', better: 'boolean', category: 'safety' },
     ]
   },
   {
@@ -197,7 +196,7 @@ export const COMPARE_SECTIONS: CompareSection[] = [
       { key: 'lka', label: 'LKA (asistente carril)', better: 'boolean', category: 'adas' },
       { key: 'lucesAltasAutomaticas', label: 'Luces altas automáticas', better: 'boolean', category: 'adas' },
       { key: 'parkAssist', label: 'Park Assist (autónomo)', better: 'boolean', category: 'adas' },
-      { key: 'sensoresEstacionamientoDelantero', label: 'Sensores estacionamiento delantero', better: 'higher', category: 'adas' },
+      { key: 'sensoresEstacionamientoDelantero', label: 'Sensores estacionamiento delantero', better: 'boolean', category: 'adas' },
     ]
   },
   {

@@ -28,10 +28,10 @@ export function VehicleMetrics({ metrics }: VehicleMetricsProps) {
     return (
       <div className="bg-white rounded-2xl shadow-soft p-6">
         <div className="flex items-center mb-6">
-          <div className="w-10 h-10 bg-wise/10 rounded-full flex items-center justify-center mr-3">
-            <BarChart3 className="w-5 h-5 text-wise" />
+          <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mr-4 shadow-lg flex-shrink-0">
+            <BarChart3 className="w-8 h-8 text-white" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900">
+          <h3 className="text-2xl font-bold text-gray-900">
             WiseMetrics
           </h3>
         </div>
@@ -117,11 +117,11 @@ export function VehicleMetrics({ metrics }: VehicleMetricsProps) {
   return (
     <div className="bg-white rounded-2xl shadow-soft p-6">
       <div className="flex items-center mb-6">
-        <div className="w-10 h-10 bg-wise/10 rounded-full flex items-center justify-center mr-3">
-          <BarChart3 className="w-5 h-5 text-wise" />
+        <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mr-4 shadow-lg flex-shrink-0">
+          <BarChart3 className="w-8 h-8 text-white" />
         </div>
         <div>
-          <h3 className="text-xl font-semibold text-gray-900">
+          <h3 className="text-2xl font-bold text-gray-900">
             WiseMetrics
           </h3>
           <p className="text-sm text-gray-600 mt-1">

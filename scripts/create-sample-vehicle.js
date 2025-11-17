@@ -197,7 +197,6 @@ function generateSampleVehicle() {
         pedestrianScore: randomFloat(60, 90, 1),
         assistanceScore: randomFloat(60, 95, 1),
         latinNCAPRating: randomChoice([0, 3, 4, 5]),
-        latinNCAPSubScores: randomChoice(['75/80/65', '85/90/75', '90/95/80']),
         brakingSystem: randomChoice([['ABS'], ['ABS', 'EBD'], ['ABS', 'EBD', 'BA']]),
         stabilityControl: randomChoice([true, false]),
         tractionControl: randomChoice([true, false]),
@@ -224,7 +223,7 @@ function generateSampleVehicle() {
         laneKeepingAssist: randomChoice([true, false]),
         lucesAltasAutomaticas: randomChoice([true, false]),
         parkAssist: randomChoice([true, false]),
-        sensoresEstacionamientoDelantero: random(4, 8),
+        sensoresEstacionamientoDelantero: randomChoice([true, false]),
       },
       
       lighting: {

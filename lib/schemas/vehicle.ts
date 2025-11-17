@@ -203,23 +203,33 @@ const phevVehicleSchema = z.object({
 
 // Esquema principal de especificaciones
 const specificationsSchema = z.object({
-  performance: performanceSchema,
-  chassis: chassisSchema,
-  offRoad: offRoadSchema,
-  weight: weightSchema,
-  dimensions: dimensionsSchema,
-  interior: interiorSchema,
-  safety: safetySchema,
-  lighting: lightingSchema,
-  assistance: assistanceSchema,
-  comfort: comfortSchema,
-  technology: technologySchema,
-  wisemetrics: wisemetricsSchema,
+  performance: performanceSchema.optional(),
+  chassis: chassisSchema.optional(),
+  offRoad: offRoadSchema.optional(),
+  weight: weightSchema.optional(),
+  dimensions: dimensionsSchema.optional(),
+  interior: interiorSchema.optional(),
+  safety: safetySchema.optional(),
+  lighting: lightingSchema.optional(),
+  assistance: assistanceSchema.optional(),
+  comfort: comfortSchema.optional(),
+  technology: technologySchema.optional(),
+  wisemetrics: wisemetricsSchema.optional(),
   combustion: combustionEngineSchema.optional(),
   electric: electricVehicleSchema.optional(),
   hybrid: hybridVehicleSchema.optional(),
   phev: phevVehicleSchema.optional(),
-});
+  // Campos adicionales del formulario de AddVehicleForm
+  identification: z.any().optional(),
+  powertrain: z.any().optional(),
+  transmission: z.any().optional(),
+  efficiency: z.any().optional(),
+  battery: z.any().optional(),
+  adas: z.any().optional(),
+  infotainment: z.any().optional(),
+  commercial: z.any().optional(),
+  metadata: z.any().optional(),
+}).passthrough(); // Permitir campos adicionales
 
 // Esquema principal del vehículo
 export const vehicleSchema = z.object({
@@ -237,7 +247,7 @@ export const vehicleSchema = z.object({
   coverImage: z.string().optional(),
   galleryImages: z.array(z.string()).optional(),
   thumbnailIndex: z.number().min(0).optional(),
-  reviewVideoUrl: z.string().url('Debe ser una URL válida').optional(),
+  reviewVideoUrl: z.string().url('Debe ser una URL válida').optional().or(z.literal('')),
 });
 
 // Esquema para actualizaciones parciales - más permisivo

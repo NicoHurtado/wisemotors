@@ -488,7 +488,6 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   { label: "Euro NCAP (Peatón %)", value: safety.pedestrianScore, formatter: (v) => v ? `${v}%` : undefined },
                   { label: "Euro NCAP (Asistencias %)", value: safety.assistanceScore, formatter: (v) => v ? `${v}%` : undefined },
                   { label: "Latin NCAP (estrellas)", value: safety.latinNCAPRating, formatter: (v) => v ? `${v} ⭐` : undefined },
-                  { label: "Latin NCAP (sub-puntajes %)", value: safety.latinNCAPSubScores },
                 ]}
               />
             </div>

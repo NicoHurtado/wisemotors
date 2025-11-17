@@ -124,7 +124,7 @@
 - ✅ `lka` → `formData.lka`
 - ✅ `lucesAltasAutomaticas` → `formData.lucesAltasAutomaticas`
 - ✅ `parkAssist` → `formData.parkAssist`
-- ✅ `sensoresEstacionamientoDelantero` → `formData.sensoresEstacionamientoDelantero` (parseInt)
+- ✅ `sensoresEstacionamientoDelantero` → `formData.sensoresEstacionamientoDelantero` (booleano)
 
 #### 13. Lighting ✅
 - ✅ `headlightType` → `formData.farosTecnologia`
