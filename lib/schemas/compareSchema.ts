@@ -50,10 +50,9 @@ export const COMPARE_SECTIONS: CompareSection[] = [
     fields: [
       { key: 'alimentacion', label: 'Alimentación', better: 'boolean', category: 'powertrain' },
       { key: 'arquitecturaMotorTermico', label: 'Arquitectura motor térmico', better: 'boolean', category: 'powertrain' },
-      { key: 'cicloTrabajo', label: 'Ciclo de trabajo', better: 'boolean', category: 'powertrain' },
       { key: 'cilindrada', label: 'Cilindrada', unit: 'L', better: 'higher', category: 'powertrain' },
       { key: 'combustible', label: 'Combustible', better: 'boolean', category: 'powertrain' },
-      { key: 'modosConduccion', label: 'Modos de conducción', better: 'boolean', category: 'powertrain' },
+      { key: 'modosConduccion', label: 'Modos de conducción', better: 'boolean', category: 'comfort' },
       { key: 'octanajeRecomendado', label: 'Octanaje recomendado', unit: 'RON', better: 'boolean', category: 'powertrain' },
       { key: 'potenciaMaxMotorTermico', label: 'Potencia máx. (motor térmico)', unit: 'kW', better: 'higher', category: 'powertrain' },
       { key: 'potenciaMaxSistemaHibrido', label: 'Potencia máx. (sistema híbrido)', unit: 'kW', better: 'higher', category: 'powertrain' },
@@ -73,10 +72,9 @@ export const COMPARE_SECTIONS: CompareSection[] = [
     fields: [
       { key: 'alimentacion', label: 'Alimentación', better: 'boolean', category: 'powertrain' },
       { key: 'arquitecturaMotorTermico', label: 'Arquitectura motor térmico', better: 'boolean', category: 'powertrain' },
-      { key: 'cicloTrabajo', label: 'Ciclo de trabajo', better: 'boolean', category: 'powertrain' },
       { key: 'cilindrada', label: 'Cilindrada', unit: 'L', better: 'higher', category: 'powertrain' },
       { key: 'combustible', label: 'Combustible', better: 'boolean', category: 'powertrain' },
-      { key: 'modosConduccion', label: 'Modos de conducción', better: 'boolean', category: 'powertrain' },
+      { key: 'modosConduccion', label: 'Modos de conducción', better: 'boolean', category: 'comfort' },
       { key: 'octanajeRecomendado', label: 'Octanaje recomendado', unit: 'RON', better: 'boolean', category: 'powertrain' },
       { key: 'potenciaMaxMotorTermico', label: 'Potencia máx.', unit: 'kW', better: 'higher', category: 'powertrain' },
       { key: 'torqueMaxMotorTermico', label: 'Torque máx.', unit: 'Nm', better: 'higher', category: 'powertrain' },
@@ -104,7 +102,7 @@ export const COMPARE_SECTIONS: CompareSection[] = [
   },
   {
     key: 'dimensions',
-    label: 'Dimensiones y Pesos',
+    label: 'Dimensiones y Capacidades',
     icon: '📏',
     fields: [
       { key: 'length', label: 'Largo', unit: 'mm', better: 'boolean', category: 'dimensions' },
@@ -124,24 +122,14 @@ export const COMPARE_SECTIONS: CompareSection[] = [
     label: 'Consumo y Eficiencia',
     icon: '⛽',
     fields: [
-      { key: 'consumoCiudad', label: 'Consumo Ciudad', unit: 'L/100km', better: 'lower', category: 'efficiency', formatter: (v, fuelType) => {
-        const isElectric = fuelType?.toLowerCase().includes('eléctrico') || fuelType?.toLowerCase().includes('electric');
-        return v ? `${v} ${isElectric ? 'kWh/100km' : 'L/100km'}` : undefined;
-      }},
-      { key: 'consumoCarretera', label: 'Consumo Carretera', unit: 'L/100km', better: 'lower', category: 'efficiency', formatter: (v, fuelType) => {
-        const isElectric = fuelType?.toLowerCase().includes('eléctrico') || fuelType?.toLowerCase().includes('electric');
-        return v ? `${v} ${isElectric ? 'kWh/100km' : 'L/100km'}` : undefined;
-      }},
       { key: 'consumoMixto', label: 'Consumo Mixto', unit: 'L/100km', better: 'lower', category: 'efficiency', formatter: (v, fuelType) => {
         const isElectric = fuelType?.toLowerCase().includes('eléctrico') || fuelType?.toLowerCase().includes('electric');
         return v ? `${v} ${isElectric ? 'kWh/100km' : 'L/100km'}` : undefined;
       }},
       { key: 'autonomiaOficial', label: 'Autonomía oficial', unit: 'km', better: 'higher', category: 'efficiency' },
       { key: 'capacidadTanque', label: 'Capacidad de tanque', unit: 'L', better: 'higher', category: 'efficiency' },
-      { key: 'mpgeCiudad', label: 'MPGe ciudad', unit: 'MPGe', better: 'higher', category: 'efficiency' },
-      { key: 'mpgeCarretera', label: 'MPGe carretera', unit: 'MPGe', better: 'higher', category: 'efficiency' },
-      { key: 'mpgeCombinado', label: 'MPGe combinado', unit: 'MPGe', better: 'higher', category: 'efficiency' },
-      { key: 'ahorro5Anos', label: 'Ahorro a 5 años', unit: 'COP', better: 'higher', category: 'efficiency' },
+      { key: 'mpgeCombinado', label: 'KMGe combinado', unit: 'KMGe', better: 'higher', category: 'efficiency' },
+      { key: 'ahorro5Anos', label: 'Ahorro a 3 años', unit: 'COP', better: 'higher', category: 'efficiency' },
       { key: 'costoEnergia100km', label: 'Costo de energía por 100 km', unit: 'COP', better: 'lower', category: 'efficiency' },
     ]
   },
@@ -159,7 +147,7 @@ export const COMPARE_SECTIONS: CompareSection[] = [
       { key: 'powerToWeight', label: 'Relación peso/potencia', unit: 'HP/ton', better: 'higher', category: 'performance' },
       { key: 'maxLateralAcceleration', label: 'Aceleración lateral máxima', unit: 'g', better: 'higher', category: 'performance' },
       { key: 'maxLongitudinalAcceleration', label: 'Aceleración longitudinal máxima', unit: 'g', better: 'higher', category: 'performance' },
-      { key: 'brakingDistance100to0', label: 'Frenado 100-0 km/h', unit: 'm', better: 'lower', category: 'performance' },
+      { key: 'brakingDistance100to0', label: 'Frenado 160-0 km/h', unit: 'm', better: 'lower', category: 'performance' },
       { key: 'launchControl', label: 'Launch control', better: 'boolean', category: 'performance' },
     ]
   },
@@ -173,7 +161,6 @@ export const COMPARE_SECTIONS: CompareSection[] = [
       { key: 'esp', label: 'ESP', better: 'boolean', category: 'safety' },
       { key: 'ncapRating', label: 'Euro NCAP (estrellas)', better: 'higher', category: 'safety' },
       { key: 'adultSafetyScore', label: 'Euro NCAP (Adulto %)', unit: '%', better: 'higher', category: 'safety' },
-      { key: 'childSafetyScore', label: 'Euro NCAP (Niño %)', unit: '%', better: 'higher', category: 'safety' },
       { key: 'pedestrianScore', label: 'Euro NCAP (Peatón %)', unit: '%', better: 'higher', category: 'safety' },
       { key: 'assistanceScore', label: 'Euro NCAP (Asistencias %)', unit: '%', better: 'higher', category: 'safety' },
       { key: 'latinNCAPRating', label: 'Latin NCAP (estrellas)', better: 'higher', category: 'safety' },
@@ -219,11 +206,10 @@ export const COMPARE_SECTIONS: CompareSection[] = [
     icon: '🔧',
     fields: [
       { key: 'amortiguacionAdaptativa', label: 'Amortiguación adaptativa', better: 'boolean', category: 'chassis' },
-      { key: 'materialDiscos', label: 'Material de discos', better: 'boolean', category: 'chassis' },
-      { key: 'materialMuelles', label: 'Material de muelles', better: 'boolean', category: 'chassis' },
+      { key: 'materialDiscos', label: 'Tipos de freno', better: 'boolean', category: 'chassis' },
       { key: 'suspensionDelantera', label: 'Suspensión delantera', better: 'boolean', category: 'chassis' },
       { key: 'suspensionTrasera', label: 'Suspensión trasera', better: 'boolean', category: 'chassis' },
-      { key: 'tipoPinzasFreno', label: 'Tipo de pinzas de freno', better: 'boolean', category: 'chassis' },
+      { key: 'tipoPinzasFreno', label: 'Tipo de pistones de freno', better: 'boolean', category: 'chassis' },
       { key: 'groundClearance', label: 'Despeje al suelo', unit: 'mm', better: 'higher', category: 'chassis' },
       { key: 'controlDescenso', label: 'Control de descenso', better: 'boolean', category: 'chassis' },
       { key: 'controlTraccionOffRoad', label: 'Control de tracción off-road', better: 'boolean', category: 'chassis' },
@@ -238,7 +224,7 @@ export const COMPARE_SECTIONS: CompareSection[] = [
       { key: 'headlightType', label: 'Faros (tecnología)', better: 'boolean', category: 'lighting' },
       { key: 'intermitentesDinamicos', label: 'Intermitentes dinámicos', better: 'boolean', category: 'lighting' },
       { key: 'lavafaros', label: 'Lavafaros', better: 'boolean', category: 'lighting' },
-      { key: 'sensorLluvia', label: 'Sensor de lluvia', better: 'boolean', category: 'lighting' },
+      { key: 'sensorLluvia', label: 'Sensor de lluvia', better: 'boolean', category: 'comfort' },
     ]
   },
   {
@@ -257,7 +243,7 @@ export const COMPARE_SECTIONS: CompareSection[] = [
       { key: 'cargadorInalambrico', label: 'Cargador inalámbrico', better: 'boolean', category: 'infotainment' },
       { key: 'audioMarca', label: 'Audio (marca)', better: 'boolean', category: 'infotainment' },
       { key: 'audioNumeroBocinas', label: 'Audio (número de bocinas)', better: 'higher', category: 'infotainment' },
-      { key: 'potenciaAmplificador', label: 'Potencia de amplificador', unit: 'W', better: 'higher', category: 'infotainment' },
+      { key: 'potenciaAmplificador', label: 'Potencia de amplificador', better: 'boolean', category: 'infotainment' },
       { key: 'puertosUSBA', label: 'Puertos USB-A', better: 'higher', category: 'infotainment' },
       { key: 'puertosUSBC', label: 'Puertos USB-C', better: 'higher', category: 'infotainment' },
     ]
@@ -282,7 +268,7 @@ export const COMPARE_SECTIONS: CompareSection[] = [
       { key: 'techoPanoramico', label: 'Techo panorámico', better: 'boolean', category: 'comfort' },
       { key: 'segundaFilaCorrediza', label: 'Segunda fila corrediza', better: 'boolean', category: 'comfort' },
       { key: 'terceraFilaAsientos', label: 'Tercera fila de asientos', better: 'boolean', category: 'comfort' },
-      { key: 'vidriosElectricos', label: 'Vidrios eléctricos', better: 'boolean', category: 'comfort' },
+      { key: 'vidriosElectricos', label: 'Vidrios automáticos', better: 'boolean', category: 'comfort' },
       { key: 'espejoInteriorElectrocromico', label: 'Espejo interior electrocrómico', better: 'boolean', category: 'comfort' },
       { key: 'volanteMaterialAjustes', label: 'Volante (material y ajustes)', better: 'boolean', category: 'comfort' },
       { key: 'volanteCalefactable', label: 'Volante calefactable', better: 'boolean', category: 'comfort' },

@@ -126,14 +126,12 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
         return getValueFromPath('powertrain.alimentacion');
       case 'arquitecturaMotorTermico':
         return getValueFromPath('powertrain.arquitecturaMotorTermico');
-      case 'cicloTrabajo':
-        return getValueFromPath('powertrain.cicloTrabajo');
       case 'cilindrada':
         return getValueFromPath('powertrain.cilindrada');
       case 'combustible':
         return getValueFromPath('powertrain.combustible');
       case 'modosConduccion':
-        return getValueFromPath('powertrain.modosConduccion');
+        return getValueFromPath('comfort.modosConduccion') || getValueFromPath('powertrain.modosConduccion');
       case 'octanajeRecomendado':
         return getValueFromPath('powertrain.octanajeRecomendado');
       case 'potenciaMaxMotorTermico':
@@ -208,20 +206,12 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
         return getValueFromPath('dimensions.roofCapacity');
       
       // Eficiencia
-      case 'consumoCiudad':
-        return getValueFromPath('efficiency.consumoCiudad');
-      case 'consumoCarretera':
-        return getValueFromPath('efficiency.consumoCarretera');
       case 'consumoMixto':
         return getValueFromPath('efficiency.consumoMixto');
       case 'autonomiaOficial':
         return getValueFromPath('efficiency.autonomiaOficial');
       case 'capacidadTanque':
         return getValueFromPath('efficiency.capacidadTanque');
-      case 'mpgeCiudad':
-        return getValueFromPath('efficiency.mpgeCiudad');
-      case 'mpgeCarretera':
-        return getValueFromPath('efficiency.mpgeCarretera');
       case 'mpgeCombinado':
         return getValueFromPath('efficiency.mpgeCombinado');
       case 'ahorro5Anos':
@@ -264,8 +254,6 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
         return getValueFromPath('safety.ncapRating');
       case 'adultSafetyScore':
         return getValueFromPath('safety.adultSafetyScore');
-      case 'childSafetyScore':
-        return getValueFromPath('safety.childSafetyScore');
       case 'pedestrianScore':
         return getValueFromPath('safety.pedestrianScore');
       case 'assistanceScore':
@@ -298,8 +286,6 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
         return getValueFromPath('chassis.amortiguacionAdaptativa');
       case 'materialDiscos':
         return getValueFromPath('chassis.materialDiscos');
-      case 'materialMuelles':
-        return getValueFromPath('chassis.materialMuelles');
       case 'suspensionDelantera':
         return getValueFromPath('chassis.suspensionDelantera');
       case 'suspensionTrasera':
@@ -323,7 +309,7 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
       case 'lavafaros':
         return getValueFromPath('lighting.lavafaros');
       case 'sensorLluvia':
-        return getValueFromPath('lighting.sensorLluvia');
+        return getValueFromPath('comfort.sensorLluvia') || getValueFromPath('lighting.sensorLluvia');
       
       // Infotainment
       case 'pantallaCentralTamano':
@@ -495,7 +481,7 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
       // Nota: si el campo tiene formatter, ya se aplicó arriba, así que esto solo aplica si no tiene formatter
       if (!field.formatter && value < 10 && value % 1 !== 0 && 
           (field.unit === 'L' || field.unit === 'kW' || field.unit === 'kWh' || 
-           field.unit === 'm' || field.unit === 'g' || field.unit === 'MPGe' || 
+           field.unit === 'm' || field.unit === 'g' || field.unit === 'KMGe' || 
            field.unit === 'RON' || field.unit === 'Nm')) {
         return `${value.toFixed(1)} ${field.unit}`;
       }

@@ -34,8 +34,8 @@ export function AddVehicleForm() {
     
     // Motorización y tren motriz
     alimentacion: '',
-    cicloTrabajo: '',
     cilindrada: '',
+    numeroCilindros: '',
     combustible: '',
     modosConduccion: '',
     octanajeRecomendado: '',
@@ -59,7 +59,7 @@ export function AddVehicleForm() {
     torqueVectoring: false,
     traccionInteligenteOnDemand: false,
 
-    // Dimensiones y pesos
+    // Dimensiones y capacidades
     largo: '',
     ancho: '',
     alto: '',
@@ -73,8 +73,6 @@ export function AddVehicleForm() {
     despejeSuelo: '',
 
     // Eficiencia y consumo
-    consumoCiudad: '',
-    consumoCarretera: '',
     consumoMixto: '',
     capacidadTanque: '',
     autonomiaOficial: '',
@@ -101,7 +99,6 @@ export function AddVehicleForm() {
     suspensionTrasera: '',
     amortiguacionAdaptativa: false,
     materialDiscos: '',
-    materialMuelles: '',
     tipoPinzasFreno: '',
 
     // Prestaciones
@@ -121,7 +118,6 @@ export function AddVehicleForm() {
     numeroAirbags: '',
     euroNCAPEstrellas: '',
     euroNCAPAdulto: '',
-    euroNCAPNino: '',
     euroNCAPPeaton: '',
     euroNCAPAsistencias: '',
     latinNCAPEstrellas: '',
@@ -156,7 +152,7 @@ export function AddVehicleForm() {
     navegacionIntegrada: false,
     pantallaCentralTamano: '',
     pantallaCuadroTamano: '',
-    potenciaAmplificador: '',
+    potenciaAmplificador: false,
     puertosUSBA: '',
     puertosUSBC: '',
     wifiBordo: false,
@@ -291,10 +287,9 @@ export function AddVehicleForm() {
         },
         powertrain: {
           alimentacion: formData.alimentacion,
-          cicloTrabajo: formData.cicloTrabajo,
           cilindrada: formData.cilindrada ? parseFloat(formData.cilindrada) : undefined,
+          numeroCilindros: formData.numeroCilindros ? parseInt(formData.numeroCilindros) : undefined,
           combustible: formData.combustible,
-          modosConduccion: formData.modosConduccion,
           octanajeRecomendado: formData.octanajeRecomendado ? parseFloat(formData.octanajeRecomendado) : undefined,
           arquitecturaMotorTermico: formData.arquitecturaMotorTermico || undefined,
           potenciaMaxEV: formData.potenciaMaxEV ? parseFloat(formData.potenciaMaxEV) : undefined,
@@ -335,8 +330,6 @@ export function AddVehicleForm() {
           passengerCapacity: formData.plazas ? parseInt(formData.plazas) : undefined,
         },
         efficiency: {
-          consumoCiudad: formData.consumoCiudad ? parseFloat(formData.consumoCiudad) : undefined,
-          consumoCarretera: formData.consumoCarretera ? parseFloat(formData.consumoCarretera) : undefined,
           consumoMixto: formData.consumoMixto ? parseFloat(formData.consumoMixto) : undefined,
           capacidadTanque: formData.capacidadTanque ? parseFloat(formData.capacidadTanque) : undefined,
           autonomiaOficial: formData.autonomiaOficial ? parseFloat(formData.autonomiaOficial) : undefined,
@@ -364,7 +357,6 @@ export function AddVehicleForm() {
           suspensionTrasera: formData.suspensionTrasera,
           amortiguacionAdaptativa: formData.amortiguacionAdaptativa,
           materialDiscos: formData.materialDiscos,
-          materialMuelles: formData.materialMuelles,
           tipoPinzasFreno: formData.tipoPinzasFreno,
         },
         performance: {
@@ -384,7 +376,6 @@ export function AddVehicleForm() {
           airbags: formData.numeroAirbags ? parseInt(formData.numeroAirbags) : undefined,
           ncapRating: formData.euroNCAPEstrellas ? parseInt(formData.euroNCAPEstrellas) : undefined,
           adultSafetyScore: formData.euroNCAPAdulto ? parseFloat(formData.euroNCAPAdulto) : undefined,
-          childSafetyScore: formData.euroNCAPNino ? parseFloat(formData.euroNCAPNino) : undefined,
           pedestrianScore: formData.euroNCAPPeaton ? parseFloat(formData.euroNCAPPeaton) : undefined,
           assistanceScore: formData.euroNCAPAsistencias ? parseFloat(formData.euroNCAPAsistencias) : undefined,
           latinNCAPRating: formData.latinNCAPEstrellas ? parseInt(formData.latinNCAPEstrellas) : undefined,
@@ -405,7 +396,6 @@ export function AddVehicleForm() {
           antinieblaDelantero: formData.antinieblaDelantero,
           intermitentesDinamicos: formData.intermitentesDinamicos,
           lavafaros: formData.lavafaros,
-          sensorLluvia: formData.sensorLluvia,
         },
         infotainment: {
           androidAuto: formData.androidAuto,
@@ -418,7 +408,7 @@ export function AddVehicleForm() {
           navegacionIntegrada: formData.navegacionIntegrada,
           pantallaCentralTamano: formData.pantallaCentralTamano ? parseFloat(formData.pantallaCentralTamano) : undefined,
           pantallaCuadroTamano: formData.pantallaCuadroTamano ? parseFloat(formData.pantallaCuadroTamano) : undefined,
-          potenciaAmplificador: formData.potenciaAmplificador ? parseFloat(formData.potenciaAmplificador) : undefined,
+          potenciaAmplificador: formData.potenciaAmplificador,
           puertosUSBA: formData.puertosUSBA ? parseInt(formData.puertosUSBA) : undefined,
           puertosUSBC: formData.puertosUSBC ? parseInt(formData.puertosUSBC) : undefined,
           wifiBordo: formData.wifiBordo,
@@ -445,6 +435,8 @@ export function AddVehicleForm() {
           volanteCalefactable: formData.volanteCalefactable,
           espejoInteriorElectrocromico: formData.espejoInteriorElectrocromico,
           startStop: formData.startStop,
+          modosConduccion: formData.modosConduccion,
+          sensorLluvia: formData.sensorLluvia,
         },
         offRoad: {
           esOffroad: formData.esOffroad,
@@ -814,10 +806,9 @@ export function AddVehicleForm() {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {renderField('alimentacion', 'Alimentación', 'text', undefined)}
-          {renderField('cicloTrabajo', 'Ciclo de trabajo (Atkinson/Miller)', 'text', undefined, undefined, 'ICE/HEV')}
           {renderField('cilindrada', 'Cilindrada', 'number', undefined, 'L', 'ICE/HEV/PHE')}
+          {renderField('numeroCilindros', 'Número de cilindros', 'number', undefined, undefined, 'ICE/HEV/PHE')}
           {renderField('combustible', 'Combustible', 'select', ['Gasolina', 'Diésel', 'GNV', 'Etanol', 'Eléctrico', 'Híbrido', 'Híbrido Enchufable'], undefined, 'Todos')}
-          {renderField('modosConduccion', 'Modos de conducción', 'text', undefined, undefined, 'Todos')}
           {renderField('octanajeRecomendado', 'Octanaje recomendado', 'number', undefined, 'RON', 'ICE/HEV/PHE')}
           {renderField('arquitecturaMotorTermico', 'Arquitectura motor térmico', 'select', ['En línea', 'V', 'Boxer', 'W'], undefined, 'ICE/HEV/PHE')}
           {renderField('potenciaMaxEV', 'Potencia máx. (EV)', 'number', undefined, 'kW; HP', 'EV')}
@@ -848,11 +839,11 @@ export function AddVehicleForm() {
         </div>
       </div>
 
-      {/* Dimensiones y pesos */}
+      {/* Dimensiones y capacidades */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
-          Dimensiones y Pesos
+          Dimensiones y Capacidades
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {renderField('largo', 'Largo', 'number', undefined, 'mm')}
@@ -878,16 +869,12 @@ export function AddVehicleForm() {
           Eficiencia y Consumo
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {renderField('consumoCiudad', 'Consumo ciudad', 'number', undefined, 'L/100 km; kWh/100 km')}
-          {renderField('consumoCarretera', 'Consumo carretera', 'number', undefined, 'L/100 km; kWh/100 km')}
           {renderField('consumoMixto', 'Consumo mixto', 'number', undefined, 'L/100 km; kWh/100 km')}
           {renderField('capacidadTanque', 'Capacidad de tanque combustible', 'number', undefined, 'L', 'ICE/HEV/PHE')}
           {renderField('autonomiaOficial', 'Autonomía oficial', 'number', undefined, 'km', 'EV/PHEV')}
           {renderField('costoEnergia100km', 'Costo de energía por 100 km', 'number', undefined, 'COP')}
-          {renderField('ahorro5Anos', 'Ahorro a 5 años', 'number', undefined, 'COP')}
-          {renderField('mpgeCiudad', 'MPGe ciudad', 'number', undefined, 'mpge', 'EV/PHEV')}
-          {renderField('mpgeCarretera', 'MPGe carretera', 'number', undefined, 'mpge', 'EV/PHEV')}
-          {renderField('mpgeCombinado', 'MPGe combinado', 'number', undefined, 'mpge', 'EV/PHEV')}
+          {renderField('ahorro5Anos', 'Ahorro a 3 años', 'number', undefined, 'COP')}
+          {renderField('mpgeCombinado', 'KMGe combinado', 'number', undefined, 'kmge', 'EV/PHEV')}
           {renderField('motorAutostop', 'Motor autostop', 'checkbox', undefined, undefined, 'Todos')}
         </div>
       </div>
@@ -921,9 +908,8 @@ export function AddVehicleForm() {
           {renderField('suspensionDelantera', 'Suspensión delantera', 'text', undefined)}
           {renderField('suspensionTrasera', 'Suspensión trasera', 'text', undefined)}
           {renderField('amortiguacionAdaptativa', 'Amortiguación adaptativa', 'checkbox', undefined, undefined, 'Premium')}
-          {renderField('materialDiscos', 'Material de discos', 'text', undefined)}
-          {renderField('materialMuelles', 'Material de muelles', 'text', undefined)}
-          {renderField('tipoPinzasFreno', 'Tipo de pinzas de freno', 'text', undefined)}
+          {renderField('materialDiscos', 'Tipos de freno', 'text', undefined)}
+          {renderField('tipoPinzasFreno', 'Tipo de pistones de freno', 'text', undefined)}
         </div>
           </div>
 
@@ -940,7 +926,7 @@ export function AddVehicleForm() {
           {renderField('aceleracion80120', '80-120 km/h (adelantamiento)', 'number', undefined, 's')}
           {renderField('aceleracionLateralMaxima', 'Aceleración lateral máxima', 'number', undefined, 'g')}
           {renderField('aceleracionLongitudinalMaxima', 'Aceleración longitudinal máxima', 'number', undefined, 'g')}
-          {renderField('frenado1000', 'Frenado 100-0 km/h', 'number', undefined, 'm')}
+          {renderField('frenado1000', 'Frenado 160-0 km/h', 'number', undefined, 'm')}
           {renderField('velocidadMaxima', 'Velocidad máxima', 'number', undefined, 'km/h')}
           {renderField('relacionPesoPotencia', 'Relación peso/potencia', 'number', undefined, 'HP/ton')}
           {renderField('cuartoMilla', '1/4 de milla (tiempo)', 'number', undefined, 's')}
@@ -957,7 +943,6 @@ export function AddVehicleForm() {
           {renderField('numeroAirbags', 'Número total de airbags', 'number', undefined)}
           {renderField('euroNCAPEstrellas', 'Euro NCAP (estrellas)', 'number', undefined, '★')}
           {renderField('euroNCAPAdulto', 'Euro NCAP (Adulto %)', 'number', undefined, '%')}
-          {renderField('euroNCAPNino', 'Euro NCAP (Niño %)', 'number', undefined, '%')}
           {renderField('euroNCAPPeaton', 'Euro NCAP (Peatón %)', 'number', undefined, '%')}
           {renderField('euroNCAPAsistencias', 'Euro NCAP (Asistencias %)', 'number', undefined, '%')}
           {renderField('latinNCAPEstrellas', 'Latin NCAP (estrellas)', 'number', undefined, '★')}
@@ -995,7 +980,6 @@ export function AddVehicleForm() {
           {renderField('farosTecnologia', 'Faros (tecnología)', 'select', ['LED', 'Matriz', 'Láser', 'halógeno'])}
           {renderField('intermitentesDinamicos', 'Intermitentes dinámicos', 'checkbox', undefined, undefined, 'Premium')}
           {renderField('lavafaros', 'Lavafaros', 'checkbox', undefined, undefined, 'Premium')}
-          {renderField('sensorLluvia', 'Sensor de lluvia', 'checkbox')}
         </div>
           </div>
 
@@ -1016,7 +1000,7 @@ export function AddVehicleForm() {
           {renderField('navegacionIntegrada', 'Navegación integrada', 'checkbox', undefined, undefined, 'Premium')}
           {renderField('pantallaCentralTamano', 'Pantalla central (tamaño)', 'number', undefined, 'in')}
           {renderField('pantallaCuadroTamano', 'Pantalla de cuadro (tamaño)', 'number', undefined, 'in')}
-          {renderField('potenciaAmplificador', 'Potencia de amplificador', 'number', undefined, 'W', 'Premium')}
+          {renderField('potenciaAmplificador', 'Potencia de amplificador', 'checkbox', undefined, undefined, 'Premium')}
           {renderField('puertosUSBA', 'Puertos USB-A (cantidad)', 'number', undefined)}
           {renderField('puertosUSBC', 'Puertos USB-C (cantidad)', 'number', undefined)}
           {renderField('wifiBordo', 'Wi-Fi a bordo', 'checkbox', undefined, undefined, 'Premium')}
@@ -1046,11 +1030,13 @@ export function AddVehicleForm() {
           {renderField('tomas12V120V', 'Tomas 12 V/120 V', 'number', undefined, undefined, 'Todos')}
           {renderField('tomacorrienteEnCaja', 'Tomacorriente en caja (pick-up)', 'checkbox', undefined, undefined, 'Pick-up')}
           {renderField('ventilacionAsientos', 'Ventilación de asientos', 'checkbox', undefined, undefined, 'Premium')}
-          {renderField('vidriosElectricos', 'Vidrios eléctricos (del/tras)', 'checkbox', undefined, undefined, 'Todos')}
+          {renderField('vidriosElectricos', 'Vidrios automáticos', 'checkbox', undefined, undefined, 'Todos')}
           {renderField('volanteMaterialAjustes', 'Volante (material y ajustes)', 'text', undefined, undefined, 'Todos')}
           {renderField('volanteCalefactable', 'Volante calefactable', 'checkbox', undefined, undefined, 'Premium')}
           {renderField('espejoInteriorElectrocromico', 'Espejo interior electrocrómico', 'checkbox', undefined, undefined, 'Todos')}
           {renderField('startStop', 'Tecnología Keyless', 'checkbox', undefined, undefined, 'Todos')}
+          {renderField('modosConduccion', 'Modos de conducción', 'text', undefined, undefined, 'Todos')}
+          {renderField('sensorLluvia', 'Sensor de lluvia', 'checkbox')}
         </div>
           </div>
 

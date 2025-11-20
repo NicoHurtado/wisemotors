@@ -344,10 +344,9 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   fields={[
                     { label: "Alimentación", value: powertrain.alimentacion },
                     { label: "Arquitectura motor térmico", value: powertrain.arquitecturaMotorTermico },
-                    { label: "Ciclo de trabajo", value: powertrain.cicloTrabajo },
                     { label: "Cilindrada", value: powertrain.cilindrada, formatter: (v) => v ? `${v} L` : undefined },
+                    { label: "Número de cilindros", value: powertrain.numeroCilindros },
                     { label: "Combustible", value: powertrain.combustible },
-                    { label: "Modos de conducción", value: powertrain.modosConduccion },
                     { label: "Octanaje recomendado", value: powertrain.octanajeRecomendado, formatter: (v) => v ? `${v} RON` : undefined },
                     { label: "Potencia máx. (motor térmico)", value: powertrain.potenciaMaxMotorTermico, formatter: (v) => v ? `${v} kW` : undefined },
                     { label: "Potencia máx. (sistema híbrido)", value: powertrain.potenciaMaxSistemaHibrido, formatter: (v) => v ? `${v} kW` : undefined },
@@ -385,10 +384,9 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     fields={[
                       { label: "Alimentación", value: powertrain.alimentacion },
                       { label: "Arquitectura motor térmico", value: powertrain.arquitecturaMotorTermico },
-                      { label: "Ciclo de trabajo", value: powertrain.cicloTrabajo },
                       { label: "Cilindrada", value: powertrain.cilindrada, formatter: (v: any) => v ? `${v} L` : undefined },
+                      { label: "Número de cilindros", value: powertrain.numeroCilindros },
                       { label: "Combustible", value: powertrain.combustible },
-                      { label: "Modos de conducción", value: powertrain.modosConduccion },
                       { label: "Octanaje recomendado", value: powertrain.octanajeRecomendado, formatter: (v: any) => v ? `${v} RON` : undefined },
                       potenciaMax,
                       { label: "Torque máx.", value: powertrain.torqueMaxMotorTermico || combustion.maxTorque, formatter: (v: any) => v ? `${v} Nm` : undefined },
@@ -438,11 +436,11 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
               </div>
             )}
 
-            {/* Sección 3: Dimensiones y Pesos */}
+            {/* Sección 3: Dimensiones y Capacidades */}
             <div className="mb-8">
               <SpecificationCard
                 id="sec-dimensiones"
-                title="Dimensiones y Pesos"
+                title="Dimensiones y Capacidades"
                 icon="📏"
                 colorScheme={{
                   bgFrom: "from-amber-50",
@@ -482,15 +480,11 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   circleBg: "bg-teal-500/10"
                 }}
                 fields={[
-                  { label: "Consumo Ciudad", value: efficiency.consumoCiudad, formatter: (v) => v ? `${v} ${isElectric ? 'kWh/100km' : 'L/100km'}` : undefined },
-                  { label: "Consumo Carretera", value: efficiency.consumoCarretera, formatter: (v) => v ? `${v} ${isElectric ? 'kWh/100km' : 'L/100km'}` : undefined },
                   { label: "Consumo Mixto", value: efficiency.consumoMixto, formatter: (v) => v ? `${v} ${isElectric ? 'kWh/100km' : 'L/100km'}` : undefined },
                   { label: "Autonomía oficial", value: efficiency.autonomiaOficial, formatter: (v) => v ? `${v} km` : undefined },
                   { label: "Capacidad de tanque", value: efficiency.capacidadTanque, formatter: (v) => v ? `${v} L` : undefined },
-                  { label: "MPGe ciudad", value: efficiency.mpgeCiudad, formatter: (v) => v ? `${v} MPGe` : undefined },
-                  { label: "MPGe carretera", value: efficiency.mpgeCarretera, formatter: (v) => v ? `${v} MPGe` : undefined },
-                  { label: "MPGe combinado", value: efficiency.mpgeCombinado, formatter: (v) => v ? `${v} MPGe` : undefined },
-                  { label: "Ahorro a 5 años", value: efficiency.ahorro5Anos, formatter: (v) => v ? `$${new Intl.NumberFormat('es-CO').format(v)}` : undefined },
+                  { label: "KMGe combinado", value: efficiency.mpgeCombinado, formatter: (v) => v ? `${v} KMGe` : undefined },
+                  { label: "Ahorro a 3 años", value: efficiency.ahorro5Anos, formatter: (v) => v ? `$${new Intl.NumberFormat('es-CO').format(v)}` : undefined },
                   { label: "Costo de energía por 100 km", value: efficiency.costoEnergia100km, formatter: (v) => v ? `$${new Intl.NumberFormat('es-CO').format(v)}` : undefined },
                   { label: "Motor autostop", value: efficiency.motorAutostop },
                 ]}
@@ -520,7 +514,7 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   { label: "Relación peso/potencia", value: performance.powerToWeight, formatter: (v) => v ? `${v} HP/ton` : undefined },
                   { label: "Aceleración lateral máxima", value: performance.maxLateralAcceleration, formatter: (v) => v ? `${v} g` : undefined },
                   { label: "Aceleración longitudinal máxima", value: performance.maxLongitudinalAcceleration, formatter: (v) => v ? `${v} g` : undefined },
-                  { label: "Frenado 100-0 km/h", value: performance.brakingDistance100to0, formatter: (v) => v ? `${v} m` : undefined },
+                  { label: "Frenado 160-0 km/h", value: performance.brakingDistance100to0, formatter: (v) => v ? `${v} m` : undefined },
                   { label: "Launch control", value: performance.launchControl },
                 ]}
               />
@@ -545,7 +539,6 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   { label: "ESP", value: safety.esp },
                   { label: "Euro NCAP (estrellas)", value: safety.ncapRating, formatter: (v) => v ? `${v} ⭐` : undefined },
                   { label: "Euro NCAP (Adulto %)", value: safety.adultSafetyScore, formatter: (v) => v ? `${v}%` : undefined },
-                  { label: "Euro NCAP (Niño %)", value: safety.childSafetyScore, formatter: (v) => v ? `${v}%` : undefined },
                   { label: "Euro NCAP (Peatón %)", value: safety.pedestrianScore, formatter: (v) => v ? `${v}%` : undefined },
                   { label: "Euro NCAP (Asistencias %)", value: safety.assistanceScore, formatter: (v) => v ? `${v}%` : undefined },
                   { label: "Latin NCAP (estrellas)", value: safety.latinNCAPRating, formatter: (v) => v ? `${v} ⭐` : undefined },
@@ -627,11 +620,10 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   }}
                   fields={[
                     { label: "Amortiguación adaptativa", value: chassis.amortiguacionAdaptativa },
-                    { label: "Material de discos", value: chassis.materialDiscos },
-                    { label: "Material de muelles", value: chassis.materialMuelles },
+                    { label: "Tipos de freno", value: chassis.materialDiscos },
                     { label: "Suspensión delantera", value: chassis.suspensionDelantera },
                     { label: "Suspensión trasera", value: chassis.suspensionTrasera },
-                    { label: "Tipo de pinzas de freno", value: chassis.tipoPinzasFreno },
+                    { label: "Tipo de pistones de freno", value: chassis.tipoPinzasFreno },
                     { label: "Despeje al suelo", value: chassis.groundClearance, formatter: (v) => v ? `${v} mm` : undefined },
                     { label: "Control de descenso", value: offRoad.controlDescenso },
                     { label: "Control de tracción off-road", value: offRoad.controlTraccionOffRoad },
@@ -659,7 +651,6 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Faros (tecnología)", value: lighting.headlightType },
                     { label: "Intermitentes dinámicos", value: lighting.intermitentesDinamicos },
                     { label: "Lavafaros", value: lighting.lavafaros },
-                    { label: "Sensor de lluvia", value: lighting.sensorLluvia },
                   ]}
                 />
               </div>
@@ -691,7 +682,7 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Cargador inalámbrico", value: infotainment.cargadorInalambrico },
                     { label: "Audio (marca)", value: infotainment.audioMarca },
                     { label: "Audio (número de bocinas)", value: infotainment.audioNumeroBocinas },
-                    { label: "Potencia de amplificador", value: infotainment.potenciaAmplificador, formatter: (v) => v ? `${v} W` : undefined },
+                    { label: "Potencia de amplificador", value: infotainment.potenciaAmplificador },
                     { label: "Puertos USB-A", value: infotainment.puertosUSBA },
                     { label: "Puertos USB-C", value: infotainment.puertosUSBC },
                   ]}
@@ -729,13 +720,15 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Techo panorámico", value: comfort.techoPanoramico || comfort.sunroof },
                     { label: "Segunda fila corrediza", value: comfort.segundaFilaCorrediza },
                     { label: "Tercera fila de asientos", value: comfort.terceraFilaAsientos },
-                    { label: "Vidrios eléctricos", value: comfort.vidriosElectricos },
+                    { label: "Vidrios automáticos", value: comfort.vidriosElectricos },
                     { label: "Espejo interior electrocrómico", value: comfort.espejoInteriorElectrocromico },
                     { label: "Volante (material y ajustes)", value: comfort.volanteMaterialAjustes },
                     { label: "Volante calefactable", value: comfort.volanteCalefactable },
                     { label: "Tomas 12 V/120 V", value: comfort.tomas12V120V },
                     { label: "Tomacorriente en caja", value: comfort.tomacorrienteEnCaja },
                     { label: "Tecnología Keyless", value: comfort.startStop || powertrain.startStop },
+                    { label: "Modos de conducción", value: comfort.modosConduccion || powertrain.modosConduccion },
+                    { label: "Sensor de lluvia", value: comfort.sensorLluvia || lighting.sensorLluvia },
                   ]}
                 />
               </div>
