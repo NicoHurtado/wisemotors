@@ -144,14 +144,14 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
         return getValueFromPath('powertrain.torqueMaxMotorTermico');
       case 'torqueMaxSistemaHibrido':
         return getValueFromPath('powertrain.torqueMaxSistemaHibrido');
-      case 'traccion':
-        return getValueFromPath('powertrain.traccion');
       case 'startStop':
         return getValueFromPath('powertrain.startStop');
       case 'launchControl':
         return getValueFromPath('powertrain.launchControl') || getValueFromPath('performance.launchControl');
       
       // Transmisión
+      case 'traccion':
+        return getValueFromPath('transmission.traccion') || getValueFromPath('powertrain.traccion');
       case 'tipoTransmision':
         return getValueFromPath('transmission.tipoTransmision');
       case 'numeroMarchas':

@@ -39,9 +39,6 @@ export const COMPARE_SECTIONS: CompareSection[] = [
     fields: [
       { key: 'potenciaMaxEV', label: 'Potencia Máxima (EV)', unit: 'kW', better: 'higher', category: 'powertrain' },
       { key: 'torqueMaxEV', label: 'Torque Máximo (EV)', unit: 'Nm', better: 'higher', category: 'powertrain' },
-      { key: 'traccion', label: 'Tracción', better: 'boolean', category: 'powertrain' },
-      { key: 'tipoTransmision', label: 'Tipo de Transmisión', better: 'boolean', category: 'powertrain' },
-      { key: 'numeroMarchas', label: 'Número de marchas', better: 'boolean', category: 'powertrain' },
       { key: 'capacidadBrutaBateria', label: 'Capacidad de Batería', unit: 'kWh', better: 'higher', category: 'powertrain' },
     ],
     conditional: (fuelType) => fuelType?.toLowerCase().includes('eléctrico') || fuelType?.toLowerCase().includes('electric')
@@ -62,15 +59,8 @@ export const COMPARE_SECTIONS: CompareSection[] = [
       { key: 'potenciaMaxSistemaHibrido', label: 'Potencia máx. (sistema híbrido)', unit: 'kW', better: 'higher', category: 'powertrain' },
       { key: 'torqueMaxMotorTermico', label: 'Torque máx. (motor térmico)', unit: 'Nm', better: 'higher', category: 'powertrain' },
       { key: 'torqueMaxSistemaHibrido', label: 'Torque máx. (sistema híbrido)', unit: 'Nm', better: 'higher', category: 'powertrain' },
-      { key: 'traccion', label: 'Tracción', better: 'boolean', category: 'powertrain' },
       { key: 'startStop', label: 'Sistema Start-Stop', better: 'boolean', category: 'powertrain' },
       { key: 'launchControl', label: 'Launch control', better: 'boolean', category: 'powertrain' },
-      { key: 'tipoTransmision', label: 'Tipo de Transmisión', better: 'boolean', category: 'powertrain' },
-      { key: 'numeroMarchas', label: 'Número de marchas', better: 'boolean', category: 'powertrain' },
-      { key: 'modoRemolque', label: 'Modo remolque/arrastre', better: 'boolean', category: 'powertrain' },
-      { key: 'paddleShifters', label: 'Paddle shifters', better: 'boolean', category: 'powertrain' },
-      { key: 'torqueVectoring', label: 'Torque Vectoring', better: 'boolean', category: 'powertrain' },
-      { key: 'traccionInteligenteOnDemand', label: 'Tracción inteligente On-Demand', better: 'boolean', category: 'powertrain' },
       { key: 'capacidadBrutaBateria', label: 'Capacidad de Batería', unit: 'kWh', better: 'higher', category: 'powertrain' },
       { key: 'regeneracionNiveles', label: 'Regeneración (niveles)', better: 'higher', category: 'powertrain' },
     ],
@@ -78,7 +68,7 @@ export const COMPARE_SECTIONS: CompareSection[] = [
   },
   {
     key: 'powertrain-combustion',
-    label: 'Motorización y Transmisión',
+    label: 'Motorización',
     icon: '🔧',
     fields: [
       { key: 'alimentacion', label: 'Alimentación', better: 'boolean', category: 'powertrain' },
@@ -90,20 +80,27 @@ export const COMPARE_SECTIONS: CompareSection[] = [
       { key: 'octanajeRecomendado', label: 'Octanaje recomendado', unit: 'RON', better: 'boolean', category: 'powertrain' },
       { key: 'potenciaMaxMotorTermico', label: 'Potencia máx.', unit: 'kW', better: 'higher', category: 'powertrain' },
       { key: 'torqueMaxMotorTermico', label: 'Torque máx.', unit: 'Nm', better: 'higher', category: 'powertrain' },
-      { key: 'traccion', label: 'Tracción', better: 'boolean', category: 'powertrain' },
       { key: 'startStop', label: 'Sistema Start-Stop', better: 'boolean', category: 'powertrain' },
       { key: 'launchControl', label: 'Launch control', better: 'boolean', category: 'powertrain' },
-      { key: 'tipoTransmision', label: 'Tipo de Transmisión', better: 'boolean', category: 'powertrain' },
-      { key: 'numeroMarchas', label: 'Número de marchas', better: 'boolean', category: 'powertrain' },
-      { key: 'modoRemolque', label: 'Modo remolque/arrastre', better: 'boolean', category: 'powertrain' },
-      { key: 'paddleShifters', label: 'Paddle shifters', better: 'boolean', category: 'powertrain' },
-      { key: 'torqueVectoring', label: 'Torque Vectoring', better: 'boolean', category: 'powertrain' },
-      { key: 'traccionInteligenteOnDemand', label: 'Tracción inteligente On-Demand', better: 'boolean', category: 'powertrain' },
     ],
     conditional: (fuelType) => {
       const lower = fuelType?.toLowerCase() || '';
       return !lower.includes('eléctrico') && !lower.includes('electric') && !lower.includes('híbrido') && !lower.includes('hybrid');
     }
+  },
+  {
+    key: 'transmission',
+    label: 'Transmisión',
+    icon: '⚙️',
+    fields: [
+      { key: 'traccion', label: 'Tracción', better: 'boolean', category: 'transmission' },
+      { key: 'tipoTransmision', label: 'Tipo de Transmisión', better: 'boolean', category: 'transmission' },
+      { key: 'numeroMarchas', label: 'Número de marchas', better: 'boolean', category: 'transmission' },
+      { key: 'modoRemolque', label: 'Modo remolque/arrastre', better: 'boolean', category: 'transmission' },
+      { key: 'paddleShifters', label: 'Paddle shifters', better: 'boolean', category: 'transmission' },
+      { key: 'torqueVectoring', label: 'Torque Vectoring', better: 'boolean', category: 'transmission' },
+      { key: 'traccionInteligenteOnDemand', label: 'Tracción inteligente On-Demand', better: 'boolean', category: 'transmission' },
+    ]
   },
   {
     key: 'dimensions',
@@ -155,7 +152,6 @@ export const COMPARE_SECTIONS: CompareSection[] = [
     fields: [
       { key: 'acceleration0to100', label: '0-100 km/h', unit: 's', better: 'lower', category: 'performance' },
       { key: 'acceleration0to200', label: '0-200 km/h', unit: 's', better: 'lower', category: 'performance' },
-      { key: 'acceleration0to60', label: '0-60 mph', unit: 's', better: 'lower', category: 'performance' },
       { key: 'quarterMile', label: '1/4 de milla', unit: 's', better: 'lower', category: 'performance' },
       { key: 'acceleration50to80', label: '50-80 km/h', unit: 's', better: 'lower', category: 'performance' },
       { key: 'overtaking80to120', label: '80-120 km/h', unit: 's', better: 'lower', category: 'performance' },

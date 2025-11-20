@@ -142,9 +142,59 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
   const weight = specs.weight || {};
   const interior = specs.interior || {};
   
-  const fuelType = (vehicle.fuelType || powertrain.combustible)?.toLowerCase();
-  const isElectric = fuelType?.includes('eléctrico') || fuelType?.includes('electric');
-  const isHybrid = fuelType?.includes('híbrido') || fuelType?.includes('hybrid');
+  // Obtener fuelType de múltiples fuentes posibles
+  const fuelTypeRaw = vehicle.fuelType || powertrain.combustible || '';
+  const fuelTypeStr = String(fuelTypeRaw || '').trim();
+  const fuelTypeLower = fuelTypeStr.toLowerCase();
+  
+  // Detectar eléctricos
+  const isElectric = fuelTypeLower.includes('eléctrico') || 
+                     fuelTypeLower.includes('electric') ||
+                     fuelTypeStr === 'Eléctrico';
+  
+  // Detectar híbridos: DEBE funcionar para "Híbrido" y "Híbrido Enchufable"
+  // Verificar de todas las formas posibles
+  const isHybrid = fuelTypeLower.includes('híbrido') || 
+                   fuelTypeLower.includes('hybrid') ||
+                   fuelTypeStr === 'Híbrido' ||
+                   fuelTypeStr === 'Híbrido Enchufable' ||
+                   fuelTypeLower === 'híbrido' ||
+                   fuelTypeLower === 'híbrido enchufable';
+  
+  // Debug temporal - remover después de verificar
+  console.log('🔍 DEBUG Batería y Carga:', {
+    fuelTypeRaw,
+    fuelTypeStr,
+    fuelTypeLower,
+    isElectric,
+    isHybrid,
+    shouldShow: isElectric || isHybrid,
+    vehicleFuelType: vehicle.fuelType,
+    powertrainCombustible: powertrain.combustible
+  });
+  
+  // Helper para convertir valores antiguos de transmisión a nuevos
+  const getTipoTransmision = () => {
+    const tipo = transmission.tipoTransmision;
+    if (!tipo) return undefined;
+    if (tipo === 'Manual' || tipo === 'Automático') return tipo;
+    if (tipo === 'MT') return 'Manual';
+    if (['AT', 'CVT', 'DCT', 'AMT'].includes(tipo)) return 'Automático';
+    return tipo;
+  };
+  
+  const getSistemaTransmision = () => {
+    if (transmission.sistemaTransmision) return transmission.sistemaTransmision;
+    const tipo = transmission.tipoTransmision;
+    if (tipo === 'AT') return 'Convertidor de torque';
+    if (tipo === 'DCT') return 'DualClutch';
+    if (tipo === 'CVT') return 'CVT';
+    if (tipo === 'AMT') return 'AMT';
+    return undefined;
+  };
+  
+  const tipoTransmisionNormalizado = getTipoTransmision();
+  const esAutomatico = tipoTransmisionNormalizado === 'Automático';
 
   return (
     <div className="min-h-screen relative">
@@ -252,14 +302,12 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                 fields={[
                   { label: "Año modelo", value: identification.añoModelo },
                   { label: "Carrocería", value: identification.carrocería },
-                  { label: "Plazas", value: identification.plazas },
-                  { label: "Puertas", value: identification.puertas },
                   { label: "Versión/Trim", value: identification.versionTrim },
                 ]}
               />
             </div>
 
-            {/* Sección 2: Motorización y Tren Motriz */}
+            {/* Sección 2: Motorización */}
             <div className="mb-8">
               {isElectric && (
                 <SpecificationCard
@@ -276,9 +324,6 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   fields={[
                     { label: "Potencia Máxima (EV)", value: powertrain.potenciaMaxEV, formatter: (v) => v ? `${v} kW` : undefined },
                     { label: "Torque Máximo (EV)", value: powertrain.torqueMaxEV, formatter: (v) => v ? `${v} Nm` : undefined },
-                    { label: "Tracción", value: powertrain.traccion },
-                    { label: "Tipo de Transmisión", value: transmission.tipoTransmision },
-                    { label: "Número de marchas", value: transmission.numeroMarchas },
                     { label: "Capacidad de Batería", value: battery.capacidadBrutaBateria, formatter: (v) => v ? `${v} kWh` : undefined },
                   ]}
                 />
@@ -308,15 +353,7 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Potencia máx. (sistema híbrido)", value: powertrain.potenciaMaxSistemaHibrido, formatter: (v) => v ? `${v} kW` : undefined },
                     { label: "Torque máx. (motor térmico)", value: powertrain.torqueMaxMotorTermico, formatter: (v) => v ? `${v} Nm` : undefined },
                     { label: "Torque máx. (sistema híbrido)", value: powertrain.torqueMaxSistemaHibrido, formatter: (v) => v ? `${v} Nm` : undefined },
-                    { label: "Tracción", value: powertrain.traccion },
-                    { label: "Sistema Start-Stop", value: powertrain.startStop },
                     { label: "Launch control", value: powertrain.launchControl },
-                    { label: "Tipo de Transmisión", value: transmission.tipoTransmision },
-                    { label: "Número de marchas", value: transmission.numeroMarchas },
-                    { label: "Modo remolque/arrastre", value: transmission.modoRemolque },
-                    { label: "Paddle shifters", value: transmission.paddleShifters },
-                    { label: "Torque Vectoring", value: transmission.torqueVectoring },
-                    { label: "Tracción inteligente On-Demand", value: transmission.traccionInteligenteOnDemand },
                     { label: "Capacidad de Batería", value: battery.capacidadBrutaBateria, formatter: (v) => v ? `${v} kWh` : undefined },
                     { label: "Regeneración (niveles)", value: battery.regeneracionNiveles },
                   ]}
@@ -336,7 +373,7 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                 return (
                   <SpecificationCard
                     id="sec-powertrain"
-                    title="Motorización y Transmisión"
+                    title="Motorización"
                     icon="🔧"
                     colorScheme={{
                       bgFrom: "from-orange-50",
@@ -362,22 +399,44 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                       { label: "Tipo de inducción", value: combustion.inductionType },
                       { label: "Turbo", value: combustion.turbo },
                       { label: "Supercargador", value: combustion.supercharger },
-                      { label: "Tracción", value: powertrain.traccion },
-                      { label: "Sistema Start-Stop", value: powertrain.startStop || combustion.startStop },
                       { label: "Modo ECO", value: combustion.ecoMode },
                       { label: "Launch control", value: powertrain.launchControl },
-                      { label: "Tipo de Transmisión", value: transmission.tipoTransmision || combustion.transmissionType },
-                      { label: "Número de marchas", value: transmission.numeroMarchas || combustion.gears },
-                      { label: "Modo remolque/arrastre", value: transmission.modoRemolque },
-                      { label: "Paddle shifters", value: transmission.paddleShifters },
-                      { label: "Torque Vectoring", value: transmission.torqueVectoring },
-                      { label: "Tracción inteligente On-Demand", value: transmission.traccionInteligenteOnDemand },
                       { label: "Estándar de emisiones", value: combustion.emissionStandard },
                     ].filter((field): field is NonNullable<typeof field> => field !== null)}
                   />
                 );
               })()}
             </div>
+
+            {/* Sección 2b: Transmisión */}
+            {(hasAnyValue(transmission) || powertrain.traccion) && (
+              <div className="mb-8">
+                <SpecificationCard
+                  id="sec-transmission"
+                  title="Transmisión"
+                  icon="⚙️"
+                  colorScheme={{
+                    bgFrom: "from-indigo-50",
+                    bgTo: "to-blue-100",
+                    iconBgFrom: "from-indigo-500",
+                    iconBgTo: "to-blue-600",
+                    circleBg: "bg-indigo-500/10"
+                  }}
+                  fields={[
+                    { label: "Tracción", value: transmission.traccion || powertrain.traccion },
+                    { label: "Tipo de Transmisión", value: tipoTransmisionNormalizado },
+                    { label: "Número de marchas", value: transmission.numeroMarchas },
+                    ...(esAutomatico ? [
+                      { label: "Sistema de Transmisión", value: getSistemaTransmision() },
+                      { label: "Modo remolque/arrastre", value: transmission.modoRemolque },
+                      { label: "Paddle shifters", value: transmission.paddleShifters },
+                      { label: "Torque Vectoring", value: transmission.torqueVectoring },
+                      { label: "Tracción inteligente On-Demand", value: transmission.traccionInteligenteOnDemand },
+                    ] : []),
+                  ]}
+                />
+              </div>
+            )}
 
             {/* Sección 3: Dimensiones y Pesos */}
             <div className="mb-8">
@@ -399,6 +458,8 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   { label: "Distancia entre ejes", value: dimensions.wheelbase, formatter: (v) => v ? `${v} mm` : undefined },
                   { label: "Radio de giro", value: dimensions.turningRadius, formatter: (v) => v ? `${v} m` : undefined },
                   { label: "Peso en orden de marcha", value: dimensions.curbWeight, formatter: (v) => v ? `${v} kg` : undefined },
+                  { label: "Plazas", value: identification.plazas },
+                  { label: "Puertas", value: identification.puertas },
                   { label: "Carga útil (payload)", value: weight.payload, formatter: (v) => v ? `${v} kg` : undefined },
                   { label: "Capacidad de baúl (máxima)", value: dimensions.cargoCapacity, formatter: (v) => v ? `${v} L` : undefined },
                   { label: "Capacidad de baúl (mínima)", value: dimensions.cargoCapacityMin, formatter: (v) => v ? `${v} L` : undefined },
@@ -431,6 +492,7 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   { label: "MPGe combinado", value: efficiency.mpgeCombinado, formatter: (v) => v ? `${v} MPGe` : undefined },
                   { label: "Ahorro a 5 años", value: efficiency.ahorro5Anos, formatter: (v) => v ? `$${new Intl.NumberFormat('es-CO').format(v)}` : undefined },
                   { label: "Costo de energía por 100 km", value: efficiency.costoEnergia100km, formatter: (v) => v ? `$${new Intl.NumberFormat('es-CO').format(v)}` : undefined },
+                  { label: "Motor autostop", value: efficiency.motorAutostop },
                 ]}
               />
             </div>
@@ -451,7 +513,6 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                 fields={[
                   { label: "0-100 km/h", value: performance.acceleration0to100 || performance.acceleration0100, formatter: (v) => v ? `${v} s` : undefined },
                   { label: "0-200 km/h", value: performance.acceleration0to200, formatter: (v) => v ? `${v} s` : undefined },
-                  { label: "0-60 mph", value: performance.acceleration0to60, formatter: (v) => v ? `${v} s` : undefined },
                   { label: "1/4 de milla", value: performance.quarterMile, formatter: (v) => v ? `${v} s` : undefined },
                   { label: "50-80 km/h", value: performance.acceleration50to80, formatter: (v) => v ? `${v} s` : undefined },
                   { label: "80-120 km/h", value: performance.overtaking80to120, formatter: (v) => v ? `${v} s` : undefined },
@@ -522,7 +583,7 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
             )}
 
             {/* Sección 8: Batería y Carga (solo para eléctricos/híbridos) */}
-            {(isElectric || isHybrid) && hasAnyValue(battery) && (
+            {(isElectric || isHybrid) && (
               <div className="mb-8">
                 <SpecificationCard
                   id="sec-bateria"
@@ -674,6 +735,7 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Volante calefactable", value: comfort.volanteCalefactable },
                     { label: "Tomas 12 V/120 V", value: comfort.tomas12V120V },
                     { label: "Tomacorriente en caja", value: comfort.tomacorrienteEnCaja },
+                    { label: "Tecnología Keyless", value: comfort.startStop || powertrain.startStop },
                   ]}
                 />
               </div>

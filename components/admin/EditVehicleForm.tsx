@@ -57,6 +57,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
     // Transmisión
     tipoTransmision: '',
+    sistemaTransmision: '',
     numeroMarchas: '',
     modoRemolque: false,
     paddleShifters: false,
@@ -87,6 +88,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
     mpgeCiudad: '',
     mpgeCarretera: '',
     mpgeCombinado: '',
+    motorAutostop: false,
 
     // Batería y carga
     capacidadBrutaBateria: '',
@@ -187,6 +189,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
     espejoInteriorElectrocromico: false,
 
     // Off-road y 4x4
+    esOffroad: false,
     controlDescenso: false,
     controlTraccionOffRoad: false,
 
@@ -276,12 +279,12 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
             torqueMaxEV: specs.powertrain?.torqueMaxEV?.toString() || '',
             torqueMaxMotorTermico: specs.powertrain?.torqueMaxMotorTermico?.toString() || '',
             torqueMaxSistemaHibrido: specs.powertrain?.torqueMaxSistemaHibrido?.toString() || '',
-            traccion: specs.powertrain?.traccion || '',
-            startStop: specs.powertrain?.startStop || false,
             launchControl: specs.powertrain?.launchControl || false,
 
             // Transmisión
+            traccion: specs.transmission?.traccion || specs.powertrain?.traccion || '',
             tipoTransmision: specs.transmission?.tipoTransmision || '',
+            sistemaTransmision: specs.transmission?.sistemaTransmision || '',
             numeroMarchas: specs.transmission?.numeroMarchas?.toString() || '',
             modoRemolque: specs.transmission?.modoRemolque || false,
             paddleShifters: specs.transmission?.paddleShifters || false,
@@ -312,6 +315,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
             mpgeCiudad: specs.efficiency?.mpgeCiudad?.toString() || '',
             mpgeCarretera: specs.efficiency?.mpgeCarretera?.toString() || '',
             mpgeCombinado: specs.efficiency?.mpgeCombinado?.toString() || '',
+            motorAutostop: specs.efficiency?.motorAutostop || false,
 
             // Batería y carga
             capacidadBrutaBateria: specs.battery?.capacidadBrutaBateria?.toString() || '',
@@ -410,8 +414,10 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
             volanteMaterialAjustes: specs.comfort?.volanteMaterialAjustes || '',
             volanteCalefactable: specs.comfort?.volanteCalefactable || false,
             espejoInteriorElectrocromico: specs.comfort?.espejoInteriorElectrocromico || false,
+            startStop: specs.comfort?.startStop || specs.powertrain?.startStop || false,
 
             // Off-road y 4x4
+            esOffroad: specs.offRoad?.esOffroad || specs.metadata?.esOffroad || false,
             controlDescenso: specs.offRoad?.controlDescenso || false,
             controlTraccionOffRoad: specs.offRoad?.controlTraccionOffRoad || false,
 
@@ -556,17 +562,17 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           torqueMaxEV: formData.torqueMaxEV ? parseFloat(formData.torqueMaxEV) : undefined,
           torqueMaxMotorTermico: formData.torqueMaxMotorTermico ? parseFloat(formData.torqueMaxMotorTermico) : undefined,
           torqueMaxSistemaHibrido: formData.torqueMaxSistemaHibrido ? parseFloat(formData.torqueMaxSistemaHibrido) : undefined,
-          traccion: formData.traccion,
-          startStop: formData.startStop,
           launchControl: formData.launchControl,
         },
         transmission: {
+          traccion: formData.traccion,
           tipoTransmision: formData.tipoTransmision,
+          sistemaTransmision: formData.tipoTransmision === 'Automático' ? formData.sistemaTransmision : undefined,
           numeroMarchas: formData.numeroMarchas ? parseInt(formData.numeroMarchas) : undefined,
-          modoRemolque: formData.modoRemolque,
-          paddleShifters: formData.paddleShifters,
-          torqueVectoring: formData.torqueVectoring,
-          traccionInteligenteOnDemand: formData.traccionInteligenteOnDemand,
+          modoRemolque: formData.tipoTransmision === 'Automático' ? formData.modoRemolque : undefined,
+          paddleShifters: formData.tipoTransmision === 'Automático' ? formData.paddleShifters : undefined,
+          torqueVectoring: formData.tipoTransmision === 'Automático' ? formData.torqueVectoring : undefined,
+          traccionInteligenteOnDemand: formData.tipoTransmision === 'Automático' ? formData.traccionInteligenteOnDemand : undefined,
         },
         dimensions: {
           length: formData.largo ? parseFloat(formData.largo) : undefined,
@@ -598,6 +604,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           mpgeCiudad: formData.mpgeCiudad ? parseFloat(formData.mpgeCiudad) : undefined,
           mpgeCarretera: formData.mpgeCarretera ? parseFloat(formData.mpgeCarretera) : undefined,
           mpgeCombinado: formData.mpgeCombinado ? parseFloat(formData.mpgeCombinado) : undefined,
+          motorAutostop: formData.motorAutostop,
         },
         battery: {
           capacidadBrutaBateria: formData.capacidadBrutaBateria ? parseFloat(formData.capacidadBrutaBateria) : undefined,
@@ -622,7 +629,6 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
         performance: {
           acceleration0to100: formData.aceleracion0100 ? parseFloat(formData.aceleracion0100) : undefined,
           acceleration0to200: formData.aceleracion0200 ? parseFloat(formData.aceleracion0200) : undefined,
-          acceleration0to60: formData.aceleracion060 ? parseFloat(formData.aceleracion060) : undefined,
           acceleration50to80: formData.aceleracion5080 ? parseFloat(formData.aceleracion5080) : undefined,
           overtaking80to120: formData.aceleracion80120 ? parseFloat(formData.aceleracion80120) : undefined,
           maxLateralAcceleration: formData.aceleracionLateralMaxima ? parseFloat(formData.aceleracionLateralMaxima) : undefined,
@@ -697,8 +703,10 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           volanteMaterialAjustes: formData.volanteMaterialAjustes,
           volanteCalefactable: formData.volanteCalefactable,
           espejoInteriorElectrocromico: formData.espejoInteriorElectrocromico,
+          startStop: formData.startStop,
         },
         offRoad: {
+          esOffroad: formData.esOffroad,
           controlDescenso: formData.controlDescenso,
           controlTraccionOffRoad: formData.controlTraccionOffRoad,
         },
@@ -870,11 +878,20 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
     // Si no hay carrocería seleccionada, verificar solo por combustible
     if (!carroceria) {
-      // Si requiere carrocería específica, no mostrar
+      // Si requiere carrocería específica, verificar si es offroad
       const requiereCarroceria = aplicabilidades.some(apl => 
         apl.includes('SUV') || apl.includes('Pick-up') || apl.includes('Deportivo') || apl === '4x4' || apl === 'SUV/4x4'
       );
-      if (requiereCarroceria) return false;
+      // Si requiere carrocería pero el vehículo está marcado como offroad, permitir mostrar campos 4x4
+      if (requiereCarroceria) {
+        const esOffroad = (formData as any).esOffroad;
+        if (esOffroad && (aplicabilidades.includes('4x4') || aplicabilidades.includes('SUV/4x4'))) {
+          // Permitir mostrar si es offroad y la aplicabilidad es 4x4 o SUV/4x4
+          return true;
+        } else {
+          return false;
+        }
+      }
       
       // Verificar aplicabilidades de combustible
       return aplicabilidades.some(apl => {
@@ -912,8 +929,14 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
       if (apl.includes('SUV') && carroceria === 'SUV') return true;
       if (apl.includes('Pick-up') && carroceria === 'Pick-up') return true;
       if (apl.includes('Deportivo') && carroceria === 'Deportivo') return true;
-      if (apl === '4x4' && (carroceria === 'SUV' || carroceria === 'Pick-up')) return true;
-      if (apl === 'SUV/4x4' && carroceria === 'SUV') return true;
+      // Para campos 4x4 y SUV/4x4, también verificar si el vehículo está marcado como offroad
+      const esOffroad = (formData as any).esOffroad;
+      if (apl === '4x4') {
+        if (esOffroad || carroceria === 'SUV' || carroceria === 'Pick-up') return true;
+      }
+      if (apl === 'SUV/4x4') {
+        if (esOffroad || carroceria === 'SUV') return true;
+      }
       if (apl === 'SUV/Deportivo' && (carroceria === 'SUV' || carroceria === 'Deportivo')) return true;
       if (apl === 'Pick-up/SUV' && (carroceria === 'Pick-up' || carroceria === 'SUV')) return true;
       
@@ -1050,17 +1073,15 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           {renderField('modelo', 'Modelo', 'text', undefined)}
           {renderField('añoModelo', 'Año Modelo', 'number', undefined, 'AAAA')}
           {renderField('carrocería', 'Carrocería', 'select', ['Sedán', 'SUV', 'Pick-up', 'Hatchback', 'Wagon', 'Convertible', 'Deportivo'])}
-          {renderField('plazas', 'Plazas', 'number', undefined)}
-          {renderField('puertas', 'Puertas', 'number', undefined)}
           {renderField('versionTrim', 'Versión/Trim', 'text', undefined)}
         </div>
       </div>
 
-      {/* Motorización y tren motriz */}
+      {/* Motorización */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
-          Motorización y Tren Motriz
+          Motorización
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {renderField('alimentacion', 'Alimentación', 'text', undefined)}
@@ -1076,8 +1097,6 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           {renderField('torqueMaxEV', 'Torque máx. (EV)', 'number', undefined, 'Nm', 'EV')}
           {renderField('torqueMaxMotorTermico', 'Torque máx. (motor térmico)', 'number', undefined, 'Nm', 'ICE/HEV/PHE')}
           {renderField('torqueMaxSistemaHibrido', 'Torque máx. (sistema híbrido)', 'number', undefined, 'Nm', 'HEV/PHEV')}
-          {renderField('traccion', 'Tracción', 'select', ['FWD', 'RWD', 'AWD', '4WD'], undefined, 'Todos')}
-          {renderField('startStop', 'Start/Stop', 'checkbox', undefined, undefined, 'ICE/HEV/PHE')}
           {renderField('launchControl', 'Launch control', 'checkbox', undefined, undefined, 'Deportivo')}
         </div>
       </div>
@@ -1089,12 +1108,14 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           Transmisión
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {renderField('tipoTransmision', 'Tipo de transmisión', 'select', ['MT', 'AT', 'CVT', 'DCT'], undefined, 'ICE/HEV/PHE')}
+          {renderField('traccion', 'Tracción', 'select', ['FWD', 'RWD', 'AWD', '4WD'], undefined, 'Todos')}
+          {renderField('tipoTransmision', 'Tipo de transmisión', 'select', ['Manual', 'Automático'], undefined, 'ICE/HEV/PHE')}
           {renderField('numeroMarchas', 'Número de marchas', 'number', undefined, undefined, 'ICE/HEV/PHE')}
-          {renderField('modoRemolque', 'Modo remolque/arrastre', 'checkbox', undefined, undefined, 'Pick-up/SUV')}
-          {renderField('paddleShifters', 'Paddle shifters', 'checkbox', undefined, undefined, 'Deportivo')}
-          {renderField('torqueVectoring', 'Torque Vectoring', 'checkbox', undefined, undefined, 'SUV/Deportivo')}
-          {renderField('traccionInteligenteOnDemand', 'Tracción inteligente On-Demand', 'checkbox', undefined, undefined, 'SUV')}
+          {formData.tipoTransmision === 'Automático' && renderField('sistemaTransmision', 'Sistema de transmisión', 'select', ['Convertidor de torque', 'DualClutch', 'CVT', 'AMT'], undefined, 'ICE/HEV/PHE')}
+          {formData.tipoTransmision === 'Automático' && renderField('modoRemolque', 'Modo remolque/arrastre', 'checkbox', undefined, undefined, 'Pick-up/SUV')}
+          {formData.tipoTransmision === 'Automático' && renderField('paddleShifters', 'Paddle shifters', 'checkbox', undefined, undefined, 'Deportivo')}
+          {formData.tipoTransmision === 'Automático' && renderField('torqueVectoring', 'Torque Vectoring', 'checkbox', undefined, undefined, 'SUV/Deportivo')}
+          {formData.tipoTransmision === 'Automático' && renderField('traccionInteligenteOnDemand', 'Tracción inteligente On-Demand', 'checkbox', undefined, undefined, 'SUV')}
         </div>
       </div>
 
@@ -1111,6 +1132,8 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           {renderField('pesoOrdenMarcha', 'Peso en orden de marcha', 'number', undefined, 'kg')}
           {renderField('distanciaEntreEjes', 'Distancia entre ejes', 'number', undefined, 'mm')}
           {renderField('radioGiro', 'Radio de giro (pared a pared)', 'number', undefined, 'm')}
+          {renderField('plazas', 'Plazas', 'number', undefined)}
+          {renderField('puertas', 'Puertas', 'number', undefined)}
           {renderField('capacidadBaulMaxima', 'Capacidad de baúl (máxima)', 'number', undefined, 'L')}
           {renderField('capacidadBaulMinima', 'Capacidad de baúl (mínima)', 'number', undefined, 'L')}
           {renderField('capacidadTecho', 'Capacidad de techo/barras', 'number', undefined, 'kg', 'SUV')}
@@ -1136,6 +1159,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           {renderField('mpgeCiudad', 'MPGe ciudad', 'number', undefined, 'mpge', 'EV/PHEV')}
           {renderField('mpgeCarretera', 'MPGe carretera', 'number', undefined, 'mpge', 'EV/PHEV')}
           {renderField('mpgeCombinado', 'MPGe combinado', 'number', undefined, 'mpge', 'EV/PHEV')}
+          {renderField('motorAutostop', 'Motor autostop', 'checkbox', undefined, undefined, 'Todos')}
         </div>
       </div>
 
@@ -1182,16 +1206,15 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {renderField('aceleracion0100', '0-100 km/h', 'number', undefined, 's')}
-          {renderField('aceleracion0200', '0-200 km/h', 'number', undefined, 's', 'Deportivo')}
-          {renderField('aceleracion060', '0-60 mph', 'number', undefined, 's')}
-          {renderField('aceleracion5080', '50-80 km/h (recuperación)', 'number', undefined, 's', 'ICE/HEV')}
+          {renderField('aceleracion0200', '0-200 km/h', 'number', undefined, 's')}
+          {renderField('aceleracion5080', '50-80 km/h (recuperación)', 'number', undefined, 's')}
           {renderField('aceleracion80120', '80-120 km/h (adelantamiento)', 'number', undefined, 's')}
-          {renderField('aceleracionLateralMaxima', 'Aceleración lateral máxima', 'number', undefined, 'g', 'Deportivo/SUV')}
-          {renderField('aceleracionLongitudinalMaxima', 'Aceleración longitudinal máxima', 'number', undefined, 'g', 'Deportivo')}
+          {renderField('aceleracionLateralMaxima', 'Aceleración lateral máxima', 'number', undefined, 'g')}
+          {renderField('aceleracionLongitudinalMaxima', 'Aceleración longitudinal máxima', 'number', undefined, 'g')}
           {renderField('frenado1000', 'Frenado 100-0 km/h', 'number', undefined, 'm')}
           {renderField('velocidadMaxima', 'Velocidad máxima', 'number', undefined, 'km/h')}
           {renderField('relacionPesoPotencia', 'Relación peso/potencia', 'number', undefined, 'HP/ton')}
-          {renderField('cuartoMilla', '1/4 de milla (tiempo)', 'number', undefined, 's', 'Deportivo')}
+          {renderField('cuartoMilla', '1/4 de milla (tiempo)', 'number', undefined, 's')}
         </div>
           </div>
 
@@ -1298,6 +1321,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           {renderField('volanteMaterialAjustes', 'Volante (material y ajustes)', 'text', undefined, undefined, 'Todos')}
           {renderField('volanteCalefactable', 'Volante calefactable', 'checkbox', undefined, undefined, 'Premium')}
           {renderField('espejoInteriorElectrocromico', 'Espejo interior electrocrómico', 'checkbox', undefined, undefined, 'Todos')}
+          {renderField('startStop', 'Tecnología Keyless', 'checkbox', undefined, undefined, 'Todos')}
         </div>
           </div>
 
@@ -1308,6 +1332,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           Off-road y 4x4
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {renderField('esOffroad', 'Vehículo Off-road', 'checkbox', undefined, undefined, 'Todos')}
           {renderField('controlDescenso', 'Control de descenso', 'checkbox', undefined, undefined, 'SUV/4x4')}
           {renderField('controlTraccionOffRoad', 'Control de tracción off-road', 'checkbox', undefined, undefined, '4x4')}
         </div>
