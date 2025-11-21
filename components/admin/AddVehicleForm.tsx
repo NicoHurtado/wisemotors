@@ -183,6 +183,14 @@ export function AddVehicleForm() {
     esOffroad: false,
     controlDescenso: false,
     controlTraccionOffRoad: false,
+    cajaTransferenciaLow: '',
+    ganchosArrastre: '',
+    modosTerreno: '',
+    pendienteMaximaSuperable: '',
+    profundidadVadeo: '',
+    anguloAtaque: '',
+    anguloSalida: '',
+    anguloVentral: '',
 
     // Comercial
     precioLista: '',
@@ -442,6 +450,14 @@ export function AddVehicleForm() {
           esOffroad: formData.esOffroad,
           controlDescenso: formData.controlDescenso,
           controlTraccionOffRoad: formData.controlTraccionOffRoad,
+          cajaTransferenciaLow: formData.cajaTransferenciaLow ? parseFloat(formData.cajaTransferenciaLow) : undefined,
+          ganchosArrastre: formData.ganchosArrastre ? parseInt(formData.ganchosArrastre) : undefined,
+          modosTerreno: formData.modosTerreno || undefined,
+          pendienteMaximaSuperable: formData.pendienteMaximaSuperable ? parseFloat(formData.pendienteMaximaSuperable) : undefined,
+          profundidadVadeo: formData.profundidadVadeo ? parseFloat(formData.profundidadVadeo) : undefined,
+          anguloAtaque: formData.anguloAtaque ? parseFloat(formData.anguloAtaque) : undefined,
+          anguloSalida: formData.anguloSalida ? parseFloat(formData.anguloSalida) : undefined,
+          anguloVentral: formData.anguloVentral ? parseFloat(formData.anguloVentral) : undefined,
         },
         commercial: {
           precioLista: formData.precioLista ? parseFloat(formData.precioLista) : undefined,
@@ -886,13 +902,13 @@ export function AddVehicleForm() {
           Batería y Carga
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {renderField('capacidadBrutaBateria', 'Capacidad bruta batería', 'number', undefined, 'kWh', 'EV/PHEV')}
-          {renderField('cargadorOBCAC', 'Cargador a bordo (OBC) AC', 'number', undefined, 'kW', 'EV/PHEV')}
+          {renderField('capacidadBrutaBateria', 'Capacidad bruta batería', 'number', undefined, 'kWh', 'HEV/PHEV')}
+          {renderField('cargadorOBCAC', 'Cargador a bordo (OBC) AC', 'number', undefined, 'kW', 'HEV/PHEV')}
           {renderField('conduccionOnePedal', 'Conducción One-Pedal', 'checkbox', undefined, undefined, 'EV')}
-          {renderField('regeneracionNiveles', 'Regeneración (niveles)', 'number', undefined, undefined, 'EV/PHEV')}
-          {renderField('tiempo0100AC', 'Tiempo 0-100% (AC)', 'number', undefined, 'h', 'EV/PHEV')}
-          {renderField('tiempo1080DC', 'Tiempo 10-80% (DC)', 'number', undefined, 'min', 'EV/PHEV')}
-          {renderField('highPowerChargingTimes', 'High Power Charging times', 'text', undefined, undefined, 'EV/PHEV')}
+          {renderField('regeneracionNiveles', 'Regeneración (niveles)', 'number', undefined, undefined, 'HEV/PHEV')}
+          {renderField('tiempo0100AC', 'Tiempo 0-100% (AC)', 'number', undefined, 'h', 'HEV/PHEV')}
+          {renderField('tiempo1080DC', 'Tiempo 10-80% (DC)', 'number', undefined, 'min', 'HEV/PHEV')}
+          {renderField('highPowerChargingTimes', 'High Power Charging times', 'text', undefined, undefined, 'HEV/PHEV')}
           {renderField('v2hV2g', 'V2H/V2G (bidireccional)', 'checkbox', undefined, undefined, 'EV')}
           {renderField('potenciaV2hV2g', 'V2H/V2G Potencia', 'number', undefined, 'kW', 'EV')}
         </div>
@@ -1050,6 +1066,20 @@ export function AddVehicleForm() {
           {renderField('esOffroad', 'Vehículo Off-road', 'checkbox', undefined, undefined, 'Todos')}
           {renderField('controlDescenso', 'Control de descenso', 'checkbox', undefined, undefined, 'SUV/4x4')}
           {renderField('controlTraccionOffRoad', 'Control de tracción off-road', 'checkbox', undefined, undefined, '4x4')}
+          
+          {/* Campos adicionales que aparecen cuando esOffroad es true */}
+          {formData.esOffroad && (
+            <>
+              {renderField('cajaTransferenciaLow', 'Caja de transferencia (low)', 'number', undefined, 'ratio', '4x4')}
+              {renderField('ganchosArrastre', 'Ganchos de arrastre', 'number', undefined, undefined, '4x4')}
+              {renderField('modosTerreno', 'Modos de terreno', 'text', undefined, undefined, '4x4')}
+              {renderField('pendienteMaximaSuperable', 'Pendiente máxima superable', 'number', undefined, '%', 'SUV/4x4')}
+              {renderField('profundidadVadeo', 'Profundidad de vadeo', 'number', undefined, 'mm', 'SUV/4x4')}
+              {renderField('anguloAtaque', 'Ángulo de ataque', 'number', undefined, '°', 'SUV/4x4')}
+              {renderField('anguloSalida', 'Ángulo de salida', 'number', undefined, '°', 'SUV/4x4')}
+              {renderField('anguloVentral', 'Ángulo ventral (quiebre)', 'number', undefined, '°', 'SUV/4x4')}
+            </>
+          )}
         </div>
           </div>
 

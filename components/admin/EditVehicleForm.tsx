@@ -1153,13 +1153,13 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           Batería y Carga
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {renderField('capacidadBrutaBateria', 'Capacidad bruta batería', 'number', undefined, 'kWh', 'EV/PHEV')}
-          {renderField('cargadorOBCAC', 'Cargador a bordo (OBC) AC', 'number', undefined, 'kW', 'EV/PHEV')}
+          {renderField('capacidadBrutaBateria', 'Capacidad bruta batería', 'number', undefined, 'kWh', 'HEV/PHEV')}
+          {renderField('cargadorOBCAC', 'Cargador a bordo (OBC) AC', 'number', undefined, 'kW', 'HEV/PHEV')}
           {renderField('conduccionOnePedal', 'Conducción One-Pedal', 'checkbox', undefined, undefined, 'EV')}
-          {renderField('regeneracionNiveles', 'Regeneración (niveles)', 'number', undefined, undefined, 'EV/PHEV')}
-          {renderField('tiempo0100AC', 'Tiempo 0-100% (AC)', 'number', undefined, 'h', 'EV/PHEV')}
-          {renderField('tiempo1080DC', 'Tiempo 10-80% (DC)', 'number', undefined, 'min', 'EV/PHEV')}
-          {renderField('highPowerChargingTimes', 'High Power Charging times', 'text', undefined, undefined, 'EV/PHEV')}
+          {renderField('regeneracionNiveles', 'Regeneración (niveles)', 'number', undefined, undefined, 'HEV/PHEV')}
+          {renderField('tiempo0100AC', 'Tiempo 0-100% (AC)', 'number', undefined, 'h', 'HEV/PHEV')}
+          {renderField('tiempo1080DC', 'Tiempo 10-80% (DC)', 'number', undefined, 'min', 'HEV/PHEV')}
+          {renderField('highPowerChargingTimes', 'High Power Charging times', 'text', undefined, undefined, 'HEV/PHEV')}
           {renderField('v2hV2g', 'V2H/V2G (bidireccional)', 'checkbox', undefined, undefined, 'EV')}
           {renderField('potenciaV2hV2g', 'V2H/V2G Potencia', 'number', undefined, 'kW', 'EV')}
         </div>

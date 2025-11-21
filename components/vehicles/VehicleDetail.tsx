@@ -592,12 +592,12 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   fields={[
                     { label: "Capacidad bruta batería", value: battery.capacidadBrutaBateria, formatter: (v) => v ? `${v} kWh` : undefined },
                     { label: "Cargador a bordo (OBC) AC", value: battery.cargadorOBCAC, formatter: (v) => v ? `${v} kW` : undefined },
-                    { label: "Conducción One-Pedal", value: battery.conduccionOnePedal },
-                    { label: "High Power Charging times", value: battery.highPowerChargingTimes },
-                    { label: "Regeneración (niveles)", value: battery.regeneracionNiveles },
+                    { label: "Conducción One-Pedal", value: battery.conduccionOnePedal, formatter: (v) => v === true ? "Sí" : v === false ? "No" : undefined },
+                    { label: "High Power Charging times", value: battery.highPowerChargingTimes, formatter: (v) => v ? String(v) : undefined },
+                    { label: "Regeneración (niveles)", value: battery.regeneracionNiveles, formatter: (v) => v !== undefined && v !== null ? String(v) : undefined },
                     { label: "Tiempo 0-100% (AC)", value: battery.tiempo0100AC, formatter: (v) => v ? `${v} h` : undefined },
                     { label: "Tiempo 10-80% (DC)", value: battery.tiempo1080DC, formatter: (v) => v ? `${v} min` : undefined },
-                    { label: "V2H/V2G (bidireccional)", value: battery.v2hV2g },
+                    { label: "V2H/V2G (bidireccional)", value: battery.v2hV2g, formatter: (v) => v === true ? "Sí" : v === false ? "No" : undefined },
                     { label: "V2H/V2G Potencia", value: battery.potenciaV2hV2g, formatter: (v) => v ? `${v} kW` : undefined },
                   ]}
                 />
@@ -625,14 +625,46 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Suspensión trasera", value: chassis.suspensionTrasera },
                     { label: "Tipo de pistones de freno", value: chassis.tipoPinzasFreno },
                     { label: "Despeje al suelo", value: chassis.groundClearance, formatter: (v) => v ? `${v} mm` : undefined },
-                    { label: "Control de descenso", value: offRoad.controlDescenso },
-                    { label: "Control de tracción off-road", value: offRoad.controlTraccionOffRoad },
                   ]}
                 />
               </div>
             )}
 
-            {/* Sección 10: Iluminación */}
+            {/* Sección 10: Off-road y 4x4 */}
+            {(offRoad.esOffroad || offRoad.controlDescenso || offRoad.controlTraccionOffRoad || 
+              offRoad.cajaTransferenciaLow || offRoad.ganchosArrastre || offRoad.modosTerreno ||
+              offRoad.pendienteMaximaSuperable || offRoad.profundidadVadeo || offRoad.anguloAtaque ||
+              offRoad.anguloSalida || offRoad.anguloVentral) && (
+              <div className="mb-8">
+                <SpecificationCard
+                  id="sec-offroad"
+                  title="Off-road y 4x4"
+                  icon="🏔️"
+                  colorScheme={{
+                    bgFrom: "from-orange-50",
+                    bgTo: "to-amber-100",
+                    iconBgFrom: "from-orange-500",
+                    iconBgTo: "to-amber-600",
+                    circleBg: "bg-orange-500/10"
+                  }}
+                  fields={[
+                    { label: "Vehículo Off-road", value: offRoad.esOffroad },
+                    { label: "Control de descenso", value: offRoad.controlDescenso },
+                    { label: "Control de tracción off-road", value: offRoad.controlTraccionOffRoad },
+                    { label: "Caja de transferencia (low)", value: offRoad.cajaTransferenciaLow, formatter: (v) => v ? `ratio ${v}` : undefined },
+                    { label: "Ganchos de arrastre", value: offRoad.ganchosArrastre, formatter: (v) => v ? `${v} puntos de anclaje` : undefined },
+                    { label: "Modos de terreno", value: offRoad.modosTerreno },
+                    { label: "Pendiente máxima superable", value: offRoad.pendienteMaximaSuperable, formatter: (v) => v ? `${v}%` : undefined },
+                    { label: "Profundidad de vadeo", value: offRoad.profundidadVadeo, formatter: (v) => v ? `${v} mm` : undefined },
+                    { label: "Ángulo de ataque", value: offRoad.anguloAtaque, formatter: (v) => v ? `${v}°` : undefined },
+                    { label: "Ángulo de salida", value: offRoad.anguloSalida, formatter: (v) => v ? `${v}°` : undefined },
+                    { label: "Ángulo ventral (quiebre)", value: offRoad.anguloVentral, formatter: (v) => v ? `${v}°` : undefined },
+                  ]}
+                />
+              </div>
+            )}
+
+            {/* Sección 11: Iluminación */}
             {hasAnyValue(lighting) && (
               <div className="mb-8">
                 <SpecificationCard
@@ -656,7 +688,7 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
               </div>
             )}
 
-            {/* Sección 11: Conectividad e Infoentretenimiento */}
+            {/* Sección 12: Conectividad e Infoentretenimiento */}
             {hasAnyValue(infotainment) && (
               <div className="mb-8">
                 <SpecificationCard
@@ -690,7 +722,7 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
               </div>
             )}
 
-            {/* Sección 12: Confort e Interior */}
+            {/* Sección 13: Confort e Interior */}
             {hasAnyValue(comfort) && (
               <div className="mb-8">
                 <SpecificationCard
