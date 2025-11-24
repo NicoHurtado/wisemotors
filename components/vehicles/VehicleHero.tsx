@@ -41,8 +41,8 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
         {(() => {
           // Para el detalle del vehículo, usar la imagen de portada (cover)
           const coverImage = vehicle.images?.find((img: any) => img.type === 'cover')?.url ||
-                            vehicle.imageUrl;
-          
+            vehicle.imageUrl;
+
           return coverImage ? (
             <Image
               src={coverImage}
@@ -58,10 +58,10 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
             </div>
           );
         })()}
-        
+
         {/* Overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/30 to-transparent" />
-        
+
         {/* Content overlay - Centered */}
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 md:p-8">
           <div className="w-full max-w-4xl mx-auto text-center">
@@ -70,12 +70,12 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
               <Badge variant="wise" className="mb-4 md:mb-6 text-xs sm:text-sm px-4 py-2 md:px-6 md:py-3 text-sm md:text-base">
                 {vehicle.category} • {vehicle.year}
               </Badge>
-              
+
               <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-white mb-4 md:mb-6 leading-tight">
                 {vehicle.brand} {vehicle.model}
               </h1>
             </div>
-            
+
             {/* Rating and Action - Centered */}
             <div className="flex flex-col items-center gap-6 md:gap-8 mb-8 md:mb-12">
               {/* Rating */}
@@ -86,16 +86,16 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
                 </div>
                 <span className="text-gray-300 text-sm md:text-lg">Calificación WiseMotors</span>
               </div>
-              
+
               {/* Explore Button */}
-              <Button 
-                size="lg" 
-                variant="wise" 
+              <Button
+                size="lg"
+                variant="wise"
                 className="text-base md:text-xl px-6 py-4 md:px-10 md:py-6 font-semibold"
                 onClick={() => {
                   const nextSection = document.querySelector('section');
                   if (nextSection) {
-                    nextSection.scrollIntoView({ 
+                    nextSection.scrollIntoView({
                       behavior: 'smooth',
                       block: 'start'
                     });
@@ -105,34 +105,37 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
                 Explorar Vehículo
               </Button>
             </div>
-            
-            {/* Enhanced Scroll Indicator with Animation */}
-            <div className="text-center">
-              <p className="text-gray-300 text-sm md:text-base mb-3 md:mb-4 font-medium">Descubre más</p>
-              <div className="animate-bounce">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto border border-white/30">
-                  <ChevronDown className="w-5 h-5 md:w-6 md:h-6 text-white animate-pulse" />
-                </div>
-              </div>
-              <div className="mt-3 md:mt-4 flex flex-col items-center">
-                <div className="w-px h-12 md:h-16 bg-gradient-to-b from-white/50 to-transparent"></div>
-                <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-white/60 rounded-full animate-ping"></div>
+
+            {/* Simple Scroll Down Arrow */}
+            <div className="absolute bottom-8 left-0 right-0 flex justify-center">
+              <div
+                className="animate-bounce cursor-pointer p-2"
+                onClick={() => {
+                  const nextSection = document.querySelector('section');
+                  if (nextSection) {
+                    nextSection.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start'
+                    });
+                  }
+                }}
+              >
+                <ChevronDown className="w-10 h-10 text-white/80 hover:text-white transition-colors" strokeWidth={2} />
               </div>
             </div>
           </div>
         </div>
-        
+
         {/* Favorite Button */}
-        <button 
+        <button
           onClick={handleFavoriteClick}
           disabled={favoriteLoading}
           className="absolute top-4 right-4 md:top-8 md:right-8 p-3 md:p-4 bg-white/90 backdrop-blur-sm rounded-full shadow-soft hover:bg-white transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label={isFavorite(vehicle.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
         >
-          <Heart 
-            className={`w-5 h-5 md:w-6 md:h-6 transition-colors ${
-              isFavorite(vehicle.id) ? 'fill-wise text-wise' : 'text-gray-600'
-            }`}
+          <Heart
+            className={`w-5 h-5 md:w-6 md:h-6 transition-colors ${isFavorite(vehicle.id) ? 'fill-wise text-wise' : 'text-gray-600'
+              }`}
           />
         </button>
 

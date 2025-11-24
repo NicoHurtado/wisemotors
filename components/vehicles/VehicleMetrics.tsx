@@ -26,12 +26,12 @@ export function VehicleMetrics({ metrics }: VehicleMetricsProps) {
   // Si no hay métricas, mostrar mensaje o componente vacío
   if (!metrics) {
     return (
-      <div className="bg-white rounded-2xl shadow-soft p-6">
+      <div className="bg-gradient-to-br from-wise/5 to-purple-50 rounded-2xl shadow-lg border-2 border-wise/20 p-8">
         <div className="flex items-center mb-6">
-          <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mr-4 shadow-lg flex-shrink-0">
-            <BarChart3 className="w-8 h-8 text-white" />
+          <div className="w-20 h-20 bg-gradient-to-br from-wise to-purple-600 rounded-2xl flex items-center justify-center mr-5 shadow-xl flex-shrink-0">
+            <BarChart3 className="w-10 h-10 text-white" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-900">
+          <h3 className="text-3xl font-bold text-gray-900">
             WiseMetrics
           </h3>
         </div>
@@ -80,48 +80,49 @@ export function VehicleMetrics({ metrics }: VehicleMetricsProps) {
     // Escala de 100 para todas las métricas
     const maxValue = 100;
     const displayValue = value;
+    const percentage = (value / maxValue) * 100;
     const explanation = metricExplanations[key as keyof typeof metricExplanations];
-    
+
     return (
-      <div key={key} className="flex items-center justify-between py-2 relative group">
-        <span 
-          className="text-gray-700 cursor-help relative transition-colors duration-200 hover:text-wise hover:font-medium" 
-          onMouseEnter={() => setHoveredMetric(key)}
-          onMouseLeave={() => setHoveredMetric(null)}
-        >
-          {label}
-          {hoveredMetric === key && (
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-lg z-50">
-              <div className="relative">
-                {explanation}
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+      <div key={key} className="py-4 relative group">
+        <div className="flex items-center justify-between mb-3">
+          <span
+            className="text-gray-800 font-medium text-base cursor-help relative transition-colors duration-200 hover:text-wise"
+            onMouseEnter={() => setHoveredMetric(key)}
+            onMouseLeave={() => setHoveredMetric(null)}
+          >
+            {label}
+            {hoveredMetric === key && (
+              <div className="absolute bottom-full left-0 mb-2 w-80 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl z-50">
+                <div className="relative">
+                  {explanation}
+                  <div className="absolute top-full left-8 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                </div>
               </div>
-            </div>
-          )}
-        </span>
-        <div className="flex items-center space-x-3">
-          <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-wise rounded-full transition-all duration-300"
-              style={{ width: `${(value / maxValue) * 100}%` }}
-            />
-          </div>
-          <span className="text-sm font-medium text-gray-900 min-w-[3rem]">
+            )}
+          </span>
+          <span className="text-lg font-bold text-wise">
             {displayValue}/{maxValue}
           </span>
+        </div>
+        <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+          <div
+            className="h-full bg-gradient-to-r from-wise to-purple-600 rounded-full transition-all duration-500 ease-out shadow-sm"
+            style={{ width: `${percentage}%` }}
+          />
         </div>
       </div>
     );
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-soft p-6">
-      <div className="flex items-center mb-6">
-        <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mr-4 shadow-lg flex-shrink-0">
-          <BarChart3 className="w-8 h-8 text-white" />
+    <div className="bg-gradient-to-br from-wise/5 to-purple-50 rounded-2xl shadow-lg border-2 border-wise/20 p-8 hover:shadow-xl transition-shadow duration-300">
+      <div className="flex items-center mb-8">
+        <div className="w-20 h-20 bg-gradient-to-br from-wise to-purple-600 rounded-2xl flex items-center justify-center mr-5 shadow-xl flex-shrink-0">
+          <BarChart3 className="w-10 h-10 text-white" />
         </div>
         <div>
-          <h3 className="text-2xl font-bold text-gray-900">
+          <h3 className="text-3xl font-bold text-gray-900">
             WiseMetrics
           </h3>
           <p className="text-sm text-gray-600 mt-1">
@@ -133,25 +134,25 @@ export function VehicleMetrics({ metrics }: VehicleMetricsProps) {
           </div>
         </div>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
         {/* Left Column */}
-        <div className="space-y-1">
-          {leftColumnMetrics.map(({ key, label }) => 
+        <div className="space-y-2">
+          {leftColumnMetrics.map(({ key, label }) =>
             renderMetric(key as keyof WiseMetrics, label)
           )}
         </div>
-        
+
         {/* Right Column */}
-        <div className="space-y-1">
-          {rightColumnMetrics.map(({ key, label }) => 
+        <div className="space-y-2">
+          {rightColumnMetrics.map(({ key, label }) =>
             renderMetric(key as keyof WiseMetrics, label)
           )}
         </div>
       </div>
 
       {/* Footer */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
+      <div className="mt-8 pt-6 border-t border-wise/20">
         <div className="flex items-center justify-center">
           <div className="text-sm text-gray-500">
             Categorías WiseStats: Deportividad, Elegancia

@@ -1,11 +1,100 @@
 'use client';
 
-import { Heart, Zap, Car, Clock, BookOpen, MapPin, Play, Gauge, GaugeCircle, Users, Fuel } from 'lucide-react';
+import {
+  Heart,
+  Zap,
+  Car,
+  Clock,
+  BookOpen,
+  MapPin,
+  Play,
+  Gauge,
+  GaugeCircle,
+  Users,
+  Fuel,
+  FileText,
+  Wrench,
+  Ruler,
+  Shield,
+  Smartphone,
+  Armchair,
+  DollarSign,
+  BarChart3,
+  Sparkles
+} from 'lucide-react';
+import { Liquid } from '@/components/ui/liquid-button';
 import { formatPrice } from '@/lib/utils';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useWhatsAppLeads } from '@/hooks/useWhatsAppLeads';
+import { useState } from 'react';
+
+// Colores morados con intensidad media para el efecto líquido de WiseMetrics
+const WISE_COLORS = {
+  color1: '#FFFFFF',     // Blanco puro
+  color2: '#C4B5FD',     // purple-300
+  color3: '#DDD6FE',     // purple-200
+  color4: '#FEFCFF',     // Casi blanco con tinte morado
+  color5: '#F9F7FF',     // Blanco con tinte morado
+  color6: '#D8B4FE',     // purple-300
+  color7: '#A78BFA',     // purple-400
+  color8: '#8B5CF6',     // purple-500
+  color9: '#A78BFA',     // purple-400
+  color10: '#C4B5FD',    // purple-300
+  color11: '#A78BFA',    // purple-400
+  color12: '#DDD6FE',    // purple-200
+  color13: '#C4B5FD',    // purple-300
+  color14: '#D8B4FE',    // purple-300
+  color15: '#DDD6FE',    // purple-200
+  color16: '#A78BFA',    // purple-400
+  color17: '#C4B5FD',    // purple-300
+};
+
+// Componente especial para el botón de WiseMetrics
+function WiseMetricsButton({ onClick }: { onClick: () => void }) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="relative w-full h-12 group mb-2"
+    >
+      {/* Efecto de blur de fondo */}
+      <div className="absolute w-full h-full top-0 left-0 filter blur-[8px] opacity-60">
+        <span className="absolute inset-0 rounded-lg bg-purple-200"></span>
+        <div className="relative w-full h-full overflow-hidden rounded-lg">
+          <Liquid isHovered={isHovered} colors={WISE_COLORS} />
+        </div>
+      </div>
+
+      {/* Contenedor principal del botón */}
+      <div className="relative w-full h-full overflow-hidden rounded-lg">
+        <span className="absolute inset-0 rounded-lg bg-white"></span>
+        <Liquid isHovered={isHovered} colors={WISE_COLORS} />
+
+        {/* Overlays para el efecto de brillo */}
+        {[1, 2, 3].map((i) => (
+          <span
+            key={i}
+            className={`absolute inset-0 rounded-lg border-2 border-transparent bg-gradient-to-b from-transparent to-white mix-blend-overlay filter ${i === 1 ? 'blur-[2px]' : i === 2 ? 'blur-[3px]' : 'blur-[4px]'}`}
+          ></span>
+        ))}
+
+        {/* Contenido del botón */}
+        <div className="absolute inset-0 flex items-center px-4 text-left">
+          <BarChart3 className="w-5 h-5 mr-2 text-wise group-hover:text-purple-600 transition-colors" />
+          <span className="text-sm font-semibold text-gray-900 group-hover:text-purple-600 transition-colors flex-1">
+            WiseMetrics
+          </span>
+          <Sparkles className="w-4 h-4 text-purple-500 animate-pulse" />
+        </div>
+      </div>
+    </button>
+  );
+}
 
 interface VehicleSpecificationsProps {
   vehicle: any;
@@ -52,11 +141,11 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
   const handleContactDealership = async (dealership?: { name: string; location?: string; id?: string }) => {
     const name = getEffectiveUserName();
     if (!name) return; // user cancelled
-    
+
     const vehicleLabel = `${vehicle.brand || ''} ${vehicle.model || ''}`.trim();
     let message = '';
     let source = 'website';
-    
+
     if (dealership) {
       const locationSuffix = dealership.location ? ` (${dealership.location})` : '';
       message = `Hola, me interesa el vehículo ${vehicleLabel}. Mi nombre es ${name} y quiero atención en el concesionario ${dealership.name}${locationSuffix}.`;
@@ -116,16 +205,15 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                 {formatPrice(vehicle.price)}
               </div>
             </div>
-            <button 
+            <button
               onClick={handleFavoriteClick}
               disabled={favoriteLoading}
               className="w-14 h-14 bg-gray-50 rounded-full shadow-sm flex items-center justify-center hover:bg-gray-100 transition-colors border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label={isFavorite(vehicle.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
             >
-              <Heart 
-                className={`w-7 h-7 transition-colors ${
-                  isFavorite(vehicle.id) ? 'fill-wise text-wise' : 'text-gray-600'
-                }`}
+              <Heart
+                className={`w-7 h-7 transition-colors ${isFavorite(vehicle.id) ? 'fill-wise text-wise' : 'text-gray-600'
+                  }`}
               />
             </button>
           </div>
@@ -134,16 +222,10 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
           <div className="bg-white rounded-2xl p-6 shadow-soft">
             <h3 className="text-xl font-bold text-gray-900 mb-6">Especificaciones Principales</h3>
             <div className="grid grid-cols-1 gap-4">
-              {/* Marca y Modelo */}
-              <div className="flex items-center p-5 bg-gradient-to-r from-wise/5 to-wise/10 rounded-xl border-l-4 border-wise">
-                <div className="w-14 h-14 bg-wise rounded-full flex items-center justify-center mr-4 shadow-md">
-                  <Car className="w-7 h-7 text-white" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm text-gray-600 mb-1">Vehículo</div>
-                  <div className="text-2xl font-bold text-gray-900">{vehicle.brand} {vehicle.model}</div>
-                  <div className="text-sm text-gray-600 mt-1">{vehicle.year}</div>
-                </div>
+              {/* Marca y Modelo - Simplificado */}
+              <div className="p-5 bg-white rounded-xl border border-gray-200">
+                <div className="text-2xl font-bold text-gray-900">{vehicle.brand} {vehicle.model}</div>
+                <div className="text-base text-gray-600 mt-1">{vehicle.year}</div>
               </div>
 
               {/* Tipo y Combustible */}
@@ -157,7 +239,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                     <div className="text-base font-semibold text-gray-900">{vehicle.vehicleType || vehicle.type || 'N/A'}</div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
                     <Zap className="w-6 h-6 text-green-600" />
@@ -182,12 +264,12 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                     {(() => {
                       const powertrain = vehicle.specifications?.powertrain;
                       const fuelType = vehicle.fuelType || vehicle.specifications?.powertrain?.combustible;
-                      
+
                       if (fuelType?.toLowerCase().includes('eléctrico') || fuelType?.toLowerCase().includes('electric')) {
                         const batteryCapacity = vehicle.specifications?.battery?.capacidadBrutaBateria;
                         return batteryCapacity ? `${batteryCapacity} kWh` : fuelType || 'N/A';
                       }
-                      
+
                       if (fuelType?.toLowerCase().includes('híbrido') || fuelType?.toLowerCase().includes('hybrid')) {
                         const displacement = powertrain?.cilindrada;
                         const systemPower = powertrain?.potenciaMaxSistemaHibrido || powertrain?.potenciaMaxMotorTermico;
@@ -196,13 +278,13 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                         }
                         return fuelType || 'N/A';
                       }
-                      
+
                       const displacement = powertrain?.cilindrada;
                       const power = powertrain?.potenciaMaxMotorTermico;
                       if (displacement) {
                         return `${displacement}L ${power ? `- ${power}kW` : ''}`.trim();
                       }
-                      
+
                       return fuelType || powertrain?.combustible || 'N/A';
                     })()}
                   </div>
@@ -217,7 +299,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   const fuelType = (vehicle.fuelType || powertrain?.combustible)?.toLowerCase();
                   const isElectric = fuelType?.includes('eléctrico') || fuelType?.includes('electric');
                   const isHybrid = fuelType?.includes('híbrido') || fuelType?.includes('hybrid');
-                  
+
                   let powerValue = null;
                   if (isElectric) {
                     powerValue = powertrain?.potenciaMaxEV;
@@ -226,9 +308,9 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   } else {
                     powerValue = powertrain?.potenciaMaxMotorTermico;
                   }
-                  
+
                   if (!powerValue) return null;
-                  
+
                   return (
                     <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
                       <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4">
@@ -247,16 +329,16 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   const transmission = vehicle.specifications?.transmission;
                   const tipo = transmission?.tipoTransmision;
                   const marchas = transmission?.numeroMarchas;
-                  
+
                   if (!tipo && !marchas) return null;
-                  
+
                   let transmissionText = tipo || '';
                   if (marchas && tipo) {
                     transmissionText += ` (${marchas}${typeof marchas === 'number' ? ' marchas' : ''})`;
                   } else if (marchas) {
                     transmissionText = `${marchas} marchas`;
                   }
-                  
+
                   return (
                     <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
                       <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mr-4">
@@ -274,9 +356,9 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                 {(() => {
                   const performance = vehicle.specifications?.performance;
                   const acceleration = performance?.acceleration0to100 || performance?.acceleration0100;
-                  
+
                   if (!acceleration) return null;
-                  
+
                   return (
                     <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
                       <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
@@ -295,10 +377,10 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   const efficiency = vehicle.specifications?.efficiency;
                   const fuelType = (vehicle.fuelType || vehicle.specifications?.powertrain?.combustible)?.toLowerCase();
                   const isElectric = fuelType?.includes('eléctrico') || fuelType?.includes('electric');
-                  
+
                   const consumo = efficiency?.consumoMixto;
                   const autonomia = efficiency?.autonomiaOficial;
-                  
+
                   // Para eléctricos, mostrar autonomía; para otros, mostrar consumo
                   if (isElectric && autonomia) {
                     return (
@@ -313,7 +395,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                       </div>
                     );
                   }
-                  
+
                   if (!isElectric && consumo) {
                     return (
                       <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
@@ -327,7 +409,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                       </div>
                     );
                   }
-                  
+
                   return null;
                 })()}
 
@@ -336,9 +418,9 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   const identification = vehicle.specifications?.identification;
                   const plazas = identification?.plazas;
                   const puertas = identification?.puertas;
-                  
+
                   if (!plazas && !puertas) return null;
-                  
+
                   let text = '';
                   if (plazas && puertas) {
                     text = `${plazas} plazas • ${puertas} puertas`;
@@ -347,7 +429,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   } else if (puertas) {
                     text = `${puertas} puertas`;
                   }
-                  
+
                   return (
                     <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
                       <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
@@ -365,24 +447,24 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                 {(() => {
                   const transmission = vehicle.specifications?.transmission;
                   const tipo = transmission?.tipoTransmision;
-                  
+
                   if (!tipo) return null;
-                  
+
                   // Determinar si es manual o automático basado en el tipo
                   const tipoLower = tipo.toLowerCase();
                   let tipoTexto = 'N/A';
                   let iconoColor = 'bg-gray-100';
                   let iconoTextColor = 'text-gray-600';
-                  
+
                   if (tipoLower.includes('manual')) {
                     tipoTexto = 'Manual';
                     iconoColor = 'bg-yellow-100';
                     iconoTextColor = 'text-yellow-600';
-                  } else if (tipoLower.includes('automática') || tipoLower.includes('automatica') || 
-                            tipoLower.includes('automático') || tipoLower.includes('automatico') ||
-                            tipoLower.includes('cvt') || tipoLower.includes('dct') ||
-                            tipoLower.includes('dsg') || tipoLower.includes('tronic') ||
-                            tipoLower.includes('tiptronic') || tipoLower.includes('s tronic')) {
+                  } else if (tipoLower.includes('automática') || tipoLower.includes('automatica') ||
+                    tipoLower.includes('automático') || tipoLower.includes('automatico') ||
+                    tipoLower.includes('cvt') || tipoLower.includes('dct') ||
+                    tipoLower.includes('dsg') || tipoLower.includes('tronic') ||
+                    tipoLower.includes('tiptronic') || tipoLower.includes('s tronic')) {
                     tipoTexto = 'Automático';
                     iconoColor = 'bg-green-100';
                     iconoTextColor = 'text-green-600';
@@ -390,7 +472,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                     // Si no está claro, mostrar el tipo original
                     tipoTexto = tipo;
                   }
-                  
+
                   return (
                     <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
                       <div className={`w-12 h-12 ${iconoColor} rounded-full flex items-center justify-center mr-4`}>
@@ -407,7 +489,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
 
               {/* Video Review Button */}
               {vehicle.reviewVideoUrl && onVideoClick && (
-                <button 
+                <button
                   onClick={onVideoClick}
                   className="flex items-center p-5 bg-gradient-to-r from-wise/10 to-wise/20 rounded-xl border border-wise/30 hover:border-wise hover:shadow-lg transition-all duration-300 group"
                   aria-label="Ver video review"
@@ -427,7 +509,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
             </div>
           </div>
         </div>
-        
+
         {/* Right Column - Dealerships */}
         <div className="lg:col-span-1">
           <div className="space-y-6 sticky top-8">
@@ -453,10 +535,10 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                     </div>
                     <button
                       className="w-full px-4 py-2 bg-wise text-white rounded-lg hover:bg-wise-dark transition-colors text-sm font-medium shadow-sm hover:shadow-md"
-                      onClick={() => handleContactDealership({ 
-                        name: dealership.name, 
+                      onClick={() => handleContactDealership({
+                        name: dealership.name,
                         location: dealership.location,
-                        id: dealership.id 
+                        id: dealership.id
                       })}
                     >
                       Agendar aquí
@@ -464,10 +546,11 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   </div>
                 ))}
                 <button
-                  className="w-full px-4 py-3 bg-wise/10 text-wise border-2 border-wise/30 rounded-xl hover:bg-wise hover:text-white transition-colors text-sm font-semibold"
+                  className="w-full px-4 py-3 bg-white text-gray-700 border border-gray-200 rounded-xl hover:border-wise hover:text-wise transition-colors text-sm font-semibold flex items-center"
                   onClick={() => handleContactDealership(undefined)}
                 >
-                  📍 Cualquier concesionario
+                  <MapPin className="w-4 h-4 mr-2" />
+                  Cualquier concesionario
                 </button>
               </div>
             </div>
@@ -476,74 +559,100 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
             <div className="bg-white rounded-2xl shadow-soft p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Navegación Rápida</h3>
               <div className="flex flex-col gap-2">
+                {/* WiseMetrics - Botón Especial con Animación */}
+                <WiseMetricsButton onClick={() => {
+                  // Buscar el componente WiseMetrics y hacer scroll
+                  const wisemetricsSection = document.querySelector('h3')?.textContent?.includes('WiseMetrics')
+                    ? document.querySelector('h3')
+                    : null;
+
+                  if (wisemetricsSection) {
+                    wisemetricsSection.closest('div')?.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start'
+                    });
+                  } else {
+                    // Alternativa: buscar por el título "Especificaciones Técnicas" y subir un poco
+                    const especificacionesTitle = Array.from(document.querySelectorAll('h2')).find(
+                      h2 => h2.textContent?.includes('Especificaciones Técnicas')
+                    );
+                    if (especificacionesTitle) {
+                      const parent = especificacionesTitle.parentElement?.parentElement;
+                      if (parent) {
+                        parent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }
+                  }
+                }} />
+
                 <button
                   onClick={() => scrollToSection('sec-identificacion')}
-                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
                 >
-                  <span className="mr-2">📋</span>
+                  <FileText className="w-4 h-4 mr-2" />
                   Identificación
                 </button>
                 <button
                   onClick={() => scrollToSection('sec-powertrain')}
-                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
                 >
-                  <span className="mr-2">🔧</span>
+                  <Wrench className="w-4 h-4 mr-2" />
                   Motor
                 </button>
                 <button
                   onClick={() => scrollToSection('sec-consumo')}
-                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
                 >
-                  <span className="mr-2">⛽</span>
+                  <Fuel className="w-4 h-4 mr-2" />
                   Consumo
                 </button>
                 <button
                   onClick={() => scrollToSection('sec-dimensiones')}
-                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
                 >
-                  <span className="mr-2">📏</span>
+                  <Ruler className="w-4 h-4 mr-2" />
                   Dimensiones
                 </button>
                 <button
                   onClick={() => scrollToSection('sec-prestaciones')}
-                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
                 >
-                  <span className="mr-2">⚡</span>
+                  <Gauge className="w-4 h-4 mr-2" />
                   Prestaciones
                 </button>
                 <button
                   onClick={() => scrollToSection('sec-seguridad')}
-                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
                 >
-                  <span className="mr-2">🛡️</span>
+                  <Shield className="w-4 h-4 mr-2" />
                   Seguridad
                 </button>
                 <button
                   onClick={() => scrollToSection('sec-adas')}
-                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
                 >
-                  <span className="mr-2">🚗</span>
+                  <Car className="w-4 h-4 mr-2" />
                   ADAS
                 </button>
                 <button
                   onClick={() => scrollToSection('sec-infotainment')}
-                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
                 >
-                  <span className="mr-2">📱</span>
+                  <Smartphone className="w-4 h-4 mr-2" />
                   Conectividad
                 </button>
                 <button
                   onClick={() => scrollToSection('sec-confort')}
-                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
                 >
-                  <span className="mr-2">🛋️</span>
+                  <Armchair className="w-4 h-4 mr-2" />
                   Confort
                 </button>
                 <button
                   onClick={() => scrollToSection('sec-comercial')}
-                  className="w-full px-4 py-2.5 bg-wise/10 text-wise rounded-lg hover:bg-wise hover:text-white transition-colors text-sm font-medium text-left flex items-center"
+                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
                 >
-                  <span className="mr-2">💰</span>
+                  <DollarSign className="w-4 h-4 mr-2" />
                   Comercial
                 </button>
               </div>
