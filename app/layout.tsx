@@ -12,6 +12,10 @@ export const metadata: Metadata = {
   title: 'WiseMotors - Encuentra tu vehículo ideal',
   description: 'Describe lo que quieres con tus palabras y te encontramos las mejores opciones en segundos. Impulsado por inteligencia artificial.',
   keywords: 'vehículos, carros, motos, búsqueda inteligente, WiseMotors',
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+  },
 }
 
 export default function RootLayout({

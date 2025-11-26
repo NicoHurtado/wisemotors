@@ -42,7 +42,7 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
   return (
     <div className="relative bg-gray-900">
       {/* Hero Image */}
-      <div className="relative h-screen overflow-hidden">
+      <div className="relative h-[50vh] sm:h-[60vh] md:h-[70vh] lg:h-screen overflow-hidden bg-gray-800">
         {(() => {
           // Para el detalle del vehículo, usar la imagen de portada (cover)
           const coverImage = vehicle.images?.find((img: any) => img.type === 'cover')?.url ||
@@ -53,9 +53,12 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
               src={coverImage}
               alt={`${vehicle.brand} ${vehicle.model}`}
               fill
-              className="object-cover"
+              className="object-contain sm:object-contain md:object-cover"
               priority
               sizes="100vw"
+              style={{
+                objectPosition: 'center center'
+              }}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gray-800">
@@ -64,39 +67,39 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
           );
         })()}
 
-        {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/30 to-transparent" />
+        {/* Overlay gradient - Más fuerte en móvil para mejor legibilidad */}
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/95 via-gray-900/50 to-gray-900/20 sm:from-gray-900/90 sm:via-gray-900/30 sm:to-transparent" />
 
         {/* Content overlay - Centered */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 md:p-8">
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
           <div className="w-full max-w-4xl mx-auto text-center">
             {/* Badge and Title */}
-            <div className="mb-8">
-              <Badge variant="wise" className="mb-4 md:mb-6 text-xs sm:text-sm px-4 py-2 md:px-6 md:py-3 text-sm md:text-base">
+            <div className="mb-4 sm:mb-6 md:mb-8">
+              <Badge variant="wise" className="mb-3 sm:mb-4 md:mb-6 text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 md:px-6 md:py-3">
                 {vehicle.category} • {vehicle.year}
               </Badge>
 
-              <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-white mb-4 md:mb-6 leading-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-3 sm:mb-4 md:mb-6 leading-tight px-2">
                 {vehicle.brand} {vehicle.model}
               </h1>
             </div>
 
             {/* Rating and Action - Centered */}
-            <div className="flex flex-col items-center gap-6 md:gap-8 mb-8 md:mb-12">
+            <div className="flex flex-col items-center gap-4 sm:gap-6 md:gap-8 mb-6 sm:mb-8 md:mb-12">
               {/* Rating */}
-              <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3 text-white text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-3 text-white text-center sm:text-left">
                 <div className="flex items-center">
-                  <Star className="w-6 h-6 md:w-8 md:h-8 text-yellow-400 fill-current" />
-                  <span className="ml-2 md:ml-3 text-2xl md:text-3xl font-bold">{vehicle.rating}</span>
+                  <Star className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-yellow-400 fill-current" />
+                  <span className="ml-2 sm:ml-3 text-xl sm:text-2xl md:text-3xl font-bold">{vehicle.rating}</span>
                 </div>
-                <span className="text-gray-300 text-sm md:text-lg">Calificación WiseMotors</span>
+                <span className="text-gray-300 text-xs sm:text-sm md:text-lg">Calificación WiseMotors</span>
               </div>
 
               {/* Explore Button */}
               <Button
                 size="lg"
                 variant="wise"
-                className="text-base md:text-xl px-6 py-4 md:px-10 md:py-6 font-semibold"
+                className="text-sm sm:text-base md:text-xl px-5 py-3 sm:px-6 sm:py-4 md:px-10 md:py-6 font-semibold w-full sm:w-auto"
                 onClick={() => {
                   const nextSection = document.querySelector('section');
                   if (nextSection) {
@@ -111,8 +114,8 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
               </Button>
             </div>
 
-            {/* Simple Scroll Down Arrow */}
-            <div className="absolute bottom-8 left-0 right-0 flex justify-center">
+            {/* Simple Scroll Down Arrow - Oculto en móvil muy pequeño */}
+            <div className="hidden sm:flex absolute bottom-4 sm:bottom-8 left-0 right-0 justify-center">
               <div
                 className="animate-bounce cursor-pointer p-2"
                 onClick={() => {
@@ -125,7 +128,7 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
                   }
                 }}
               >
-                <ChevronDown className="w-10 h-10 text-white/80 hover:text-white transition-colors" strokeWidth={2} />
+                <ChevronDown className="w-8 h-8 sm:w-10 sm:h-10 text-white/80 hover:text-white transition-colors" strokeWidth={2} />
               </div>
             </div>
           </div>
@@ -135,11 +138,11 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
         <button
           onClick={handleFavoriteClick}
           disabled={favoriteLoading}
-          className="absolute top-4 right-4 md:top-8 md:right-8 p-3 md:p-4 bg-white/90 backdrop-blur-sm rounded-full shadow-soft hover:bg-white transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 md:top-8 md:right-8 p-2.5 sm:p-3 md:p-4 bg-white/90 backdrop-blur-sm rounded-full shadow-soft hover:bg-white transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed z-10"
           aria-label={isFavorite(vehicle.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
         >
           <Heart
-            className={`w-5 h-5 md:w-6 md:h-6 transition-colors ${isFavorite(vehicle.id) ? 'fill-wise text-wise' : 'text-gray-600'
+            className={`w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 transition-colors ${isFavorite(vehicle.id) ? 'fill-wise text-wise' : 'text-gray-600'
               }`}
           />
         </button>
