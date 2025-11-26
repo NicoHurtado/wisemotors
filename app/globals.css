@@ -2,6 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Animación de brillo metálico para tarjetas de especificaciones */
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(200%) translateY(200%) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+.shine-overlay {
+  will-change: transform, opacity;
+}
+
+.highlight-animation {
+  animation: pulse-glow 2s ease-in-out;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 4px 6px -1px rgba(136, 28, 183, 0.2), 0 2px 4px -1px rgba(136, 28, 183, 0.1);
+  }
+  50% {
+    box-shadow: 0 10px 25px -5px rgba(136, 28, 183, 0.5), 0 8px 10px -6px rgba(136, 28, 183, 0.4);
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

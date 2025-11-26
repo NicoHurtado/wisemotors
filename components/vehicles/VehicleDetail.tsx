@@ -62,6 +62,8 @@ interface SpecificationCardProps {
 
 // Componente reutilizable para tarjetas de especificaciones - Diseño simplificado con pin
 function SpecificationCard({ title, icon: Icon, colorScheme, fields, id, defaultExpanded = false, isPinned, onPin }: SpecificationCardProps) {
+  const [isHighlighted, setIsHighlighted] = useState(false);
+
   // Filtrar campos que tienen valores válidos y procesar formatters
   type ProcessedField = {
     label: string;
@@ -98,6 +100,28 @@ function SpecificationCard({ title, icon: Icon, colorScheme, fields, id, default
   // Si no hay campos válidos, no renderizar la tarjeta
   if (validFields.length === 0) return null;
 
+  // Escuchar eventos de highlight
+  useEffect(() => {
+    if (!id) return;
+
+    const handleHighlight = (event: CustomEvent) => {
+      console.log('Highlight event received:', event.detail.sectionId, 'Current card id:', id);
+      if (event.detail.sectionId === id) {
+        console.log('Match! Highlighting card:', id);
+        setIsHighlighted(true);
+        // Remover la clase después de la animación
+        setTimeout(() => {
+          setIsHighlighted(false);
+        }, 2000); // Duración de la animación
+      }
+    };
+
+    window.addEventListener('highlightSpecCard', handleHighlight as EventListener);
+    return () => {
+      window.removeEventListener('highlightSpecCard', handleHighlight as EventListener);
+    };
+  }, [id]);
+
   const handlePinClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onPin) {
@@ -105,24 +129,104 @@ function SpecificationCard({ title, icon: Icon, colorScheme, fields, id, default
     }
   };
 
+  // Todos los colores en morado WiseMotors (color wise: #881cb7)
+  const wiseColor = '#881cb7'; // Color principal wise
+  const wiseColorLight = '#a855f7'; // wise.light
+  const wiseColorDark = '#6b21a8'; // wise.dark
+  const purpleColors = {
+    border: wiseColor,
+    borderLight: wiseColorLight,
+    borderDark: wiseColorDark,
+    bgLight: 'rgba(136, 28, 183, 0.05)', // wise con 5% opacidad
+    bgDark: 'rgba(136, 28, 183, 0.1)', // wise con 10% opacidad
+    iconGradient: `linear-gradient(135deg, ${wiseColor} 0%, ${wiseColorDark} 100%)`,
+    shadow: `0 4px 6px -1px rgba(136, 28, 183, 0.2), 0 2px 4px -1px rgba(136, 28, 183, 0.1)`,
+    shadowHover: `0 10px 15px -3px rgba(136, 28, 183, 0.3), 0 4px 6px -2px rgba(136, 28, 183, 0.2)`,
+  };
+
   return (
     <div
       id={id}
-      className={`w-full bg-white rounded-xl border ${isPinned ? 'border-wise shadow-md' : 'border-gray-200 shadow-sm hover:shadow-md'} transition-shadow duration-200 mb-4 break-inside-avoid`}
+      className={`w-full bg-white rounded-xl border-2 ${isPinned ? 'border-wise' : ''} transition-all duration-200 mb-4 break-inside-avoid relative overflow-hidden group ${isHighlighted ? 'highlight-animation' : ''}`}
+      style={{ 
+        borderColor: isPinned ? '#8B5CF6' : purpleColors.border,
+        borderLeftWidth: '6px',
+        boxShadow: isPinned 
+          ? purpleColors.shadowHover 
+          : purpleColors.shadow,
+      }}
+      onMouseEnter={(e) => {
+        if (!isPinned) {
+          e.currentTarget.style.boxShadow = purpleColors.shadowHover;
+          e.currentTarget.style.borderColor = purpleColors.borderDark;
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isPinned) {
+          e.currentTarget.style.boxShadow = purpleColors.shadow;
+          e.currentTarget.style.borderColor = purpleColors.border;
+        }
+      }}
     >
-      <div className="p-5">
+      {/* Efecto de brillo sutil (metalizado) */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{ 
+          background: `linear-gradient(135deg, ${purpleColors.bgLight} 0%, ${purpleColors.bgDark} 50%, ${purpleColors.bgLight} 100%)`
+        }}
+      ></div>
+      
+      {/* Borde interno con gradiente para efecto metalizado */}
+      <div 
+        className="absolute inset-0 rounded-xl pointer-events-none"
+        style={{
+          background: `linear-gradient(135deg, rgba(136, 28, 183, 0.05) 0%, transparent 50%, rgba(136, 28, 183, 0.03) 100%)`,
+          border: '1px solid rgba(136, 28, 183, 0.1)',
+        }}
+      ></div>
+
+      {/* Animación de brillo metálico en morado */}
+      {isHighlighted && (
+        <div 
+          className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl"
+          style={{ zIndex: 20 }}
+        >
+          <div
+            className="shine-overlay"
+            style={{
+              position: 'absolute',
+              top: '-50%',
+              left: '-50%',
+              width: '200%',
+              height: '200%',
+              background: `linear-gradient(45deg, transparent 30%, rgba(136, 28, 183, 0.6) 50%, transparent 70%)`,
+              animation: 'shine 2s ease-in-out',
+            }}
+          ></div>
+        </div>
+      )}
+      
+      <div className="p-5 relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center flex-1">
-            <div className={`w-12 h-12 rounded-lg flex items-center justify-center mr-3 flex-shrink-0 bg-wise/10`}>
-              <Icon className="text-wise" strokeWidth={2} size={24} />
+          <div className="flex items-center flex-1 gap-3">
+            <div 
+              className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md"
+              style={{ 
+                background: purpleColors.iconGradient,
+                boxShadow: '0 2px 8px rgba(136, 28, 183, 0.3)'
+              }}
+            >
+              <Icon className="text-white" strokeWidth={2} size={24} />
             </div>
-            <h3 className={`text-base font-semibold ${isPinned ? 'text-wise' : 'text-gray-900'}`}>{title}</h3>
-            {isPinned && (
-              <span className="ml-2 px-2 py-0.5 bg-wise/10 text-wise text-xs font-medium rounded">
-                Fijada
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              <h3 className={`text-base font-semibold ${isPinned ? 'text-wise' : 'text-gray-900'}`}>{title}</h3>
+              {isPinned && (
+                <span className="px-2 py-0.5 bg-wise/10 text-wise text-xs font-medium rounded">
+                  Fijada
+                </span>
+              )}
+            </div>
           </div>
           {onPin && (
             <button

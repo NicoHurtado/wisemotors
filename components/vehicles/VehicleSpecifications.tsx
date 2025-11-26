@@ -185,6 +185,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
 
   // Función para scroll suave a secciones
   const scrollToSection = (sectionId: string) => {
+    console.log('scrollToSection called with:', sectionId);
     const element = document.getElementById(sectionId);
     if (element) {
       const offset = 100; // Offset para el header sticky
@@ -195,6 +196,21 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
         top: offsetPosition,
         behavior: 'smooth'
       });
+
+      // Disparar evento personalizado inmediatamente y después del scroll
+      window.dispatchEvent(new CustomEvent('highlightSpecCard', { 
+        detail: { sectionId } 
+      }));
+      
+      // También disparar después del scroll para asegurar que funcione
+      setTimeout(() => {
+        console.log('Dispatching highlight event for:', sectionId);
+        window.dispatchEvent(new CustomEvent('highlightSpecCard', { 
+          detail: { sectionId } 
+        }));
+      }, 800); // Esperar a que el scroll termine
+    } else {
+      console.error('Element not found:', sectionId);
     }
   };
 
@@ -287,7 +303,10 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
               </div>
 
               {/* Motor Info */}
-              <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+              <button
+                onClick={() => scrollToSection('sec-powertrain')}
+                className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise hover:shadow-md transition-all cursor-pointer w-full text-left"
+              >
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
                   <Zap className="w-6 h-6 text-purple-600" />
                 </div>
@@ -322,7 +341,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                     })()}
                   </div>
                 </div>
-              </div>
+              </button>
 
               {/* Campos Adicionales - Grid de 2 columnas */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -345,7 +364,10 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   if (!powerValue) return null;
 
                   return (
-                    <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                    <button
+                      onClick={() => scrollToSection('sec-powertrain')}
+                      className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise hover:shadow-md transition-all cursor-pointer w-full text-left"
+                    >
                       <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4">
                         <Gauge className="w-6 h-6 text-orange-600" />
                       </div>
@@ -353,7 +375,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                         <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Potencia</div>
                         <div className="text-base font-semibold text-gray-900">{powerValue} kW</div>
                       </div>
-                    </div>
+                    </button>
                   );
                 })()}
 
@@ -373,7 +395,10 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   }
 
                   return (
-                    <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                    <button
+                      onClick={() => scrollToSection('sec-transmission')}
+                      className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise hover:shadow-md transition-all cursor-pointer w-full text-left"
+                    >
                       <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mr-4">
                         <GaugeCircle className="w-6 h-6 text-indigo-600" />
                       </div>
@@ -381,7 +406,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                         <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Transmisión</div>
                         <div className="text-base font-semibold text-gray-900">{transmissionText || 'N/A'}</div>
                       </div>
-                    </div>
+                    </button>
                   );
                 })()}
 
@@ -393,7 +418,10 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   if (!acceleration) return null;
 
                   return (
-                    <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                    <button
+                      onClick={() => scrollToSection('sec-prestaciones')}
+                      className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise hover:shadow-md transition-all cursor-pointer w-full text-left"
+                    >
                       <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
                         <Zap className="w-6 h-6 text-red-600" />
                       </div>
@@ -401,7 +429,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                         <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Aceleración</div>
                         <div className="text-base font-semibold text-gray-900">0-100 km/h en {acceleration}s</div>
                       </div>
-                    </div>
+                    </button>
                   );
                 })()}
 
@@ -417,7 +445,10 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   // Para eléctricos, mostrar autonomía; para otros, mostrar consumo
                   if (isElectric && autonomia) {
                     return (
-                      <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                      <button
+                        onClick={() => scrollToSection('sec-consumo')}
+                        className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise hover:shadow-md transition-all cursor-pointer w-full text-left"
+                      >
                         <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mr-4">
                           <Zap className="w-6 h-6 text-emerald-600" />
                         </div>
@@ -425,13 +456,16 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                           <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Autonomía</div>
                           <div className="text-base font-semibold text-gray-900">{autonomia} km</div>
                         </div>
-                      </div>
+                      </button>
                     );
                   }
 
                   if (!isElectric && consumo) {
                     return (
-                      <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                      <button
+                        onClick={() => scrollToSection('sec-consumo')}
+                        className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise hover:shadow-md transition-all cursor-pointer w-full text-left"
+                      >
                         <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center mr-4">
                           <Fuel className="w-6 h-6 text-teal-600" />
                         </div>
@@ -439,7 +473,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                           <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Consumo Mixto</div>
                           <div className="text-base font-semibold text-gray-900">{consumo} L/100km</div>
                         </div>
-                      </div>
+                      </button>
                     );
                   }
 
@@ -464,7 +498,10 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   }
 
                   return (
-                    <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                    <button
+                      onClick={() => scrollToSection('sec-dimensiones')}
+                      className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise hover:shadow-md transition-all cursor-pointer w-full text-left"
+                    >
                       <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
                         <Users className="w-6 h-6 text-blue-600" />
                       </div>
@@ -472,7 +509,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                         <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Capacidad</div>
                         <div className="text-base font-semibold text-gray-900">{text}</div>
                       </div>
-                    </div>
+                    </button>
                   );
                 })()}
 
@@ -507,7 +544,10 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   }
 
                   return (
-                    <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
+                    <button
+                      onClick={() => scrollToSection('sec-transmission')}
+                      className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise hover:shadow-md transition-all cursor-pointer w-full text-left"
+                    >
                       <div className={`w-12 h-12 ${iconoColor} rounded-full flex items-center justify-center mr-4`}>
                         <GaugeCircle className={`w-6 h-6 ${iconoTextColor}`} />
                       </div>
@@ -515,7 +555,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                         <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Tipo</div>
                         <div className="text-base font-semibold text-gray-900">{tipoTexto}</div>
                       </div>
-                    </div>
+                    </button>
                   );
                 })()}
               </div>
