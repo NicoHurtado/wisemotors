@@ -27,10 +27,15 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
     }
 
     try {
+      console.log('VehicleHero: Toggling favorite for vehicle:', vehicle.id);
+      console.log('VehicleHero: User:', user);
+      console.log('VehicleHero: Token exists:', !!localStorage.getItem('token'));
       await toggleFavorite(vehicle.id);
+      console.log('VehicleHero: Favorite toggled successfully');
     } catch (error) {
-      console.error('Error toggling favorite:', error);
-      // Aquí podrías mostrar un toast de error
+      console.error('VehicleHero: Error toggling favorite:', error);
+      // Mostrar error al usuario
+      alert(error instanceof Error ? error.message : 'Error al agregar/quitar de favoritos');
     }
   };
 

@@ -42,15 +42,24 @@ export async function GET(request: NextRequest) {
 // POST /api/favorites - Añadir vehículo a favoritos
 export async function POST(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    const authHeader = request.headers.get('authorization');
+    console.log('Favorites API POST: Authorization header:', authHeader ? 'Present' : 'Missing');
+    
+    const token = authHeader?.replace('Bearer ', '');
     if (!token) {
+      console.error('Favorites API POST: No token provided');
       return NextResponse.json({ error: 'Token requerido' }, { status: 401 });
     }
 
+    console.log('Favorites API POST: Token length:', token.length);
     const decoded = await verifyToken(token);
     if (!decoded) {
+      console.error('Favorites API POST: Token verification failed');
+      console.error('Favorites API POST: JWT_SECRET exists:', !!process.env.JWT_SECRET);
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
+    
+    console.log('Favorites API POST: Token decoded successfully, userId:', decoded.userId);
 
     const { vehicleId } = await request.json();
     if (!vehicleId) {
@@ -108,15 +117,24 @@ export async function POST(request: NextRequest) {
 // DELETE /api/favorites - Quitar vehículo de favoritos
 export async function DELETE(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    const authHeader = request.headers.get('authorization');
+    console.log('Favorites API DELETE: Authorization header:', authHeader ? 'Present' : 'Missing');
+    
+    const token = authHeader?.replace('Bearer ', '');
     if (!token) {
+      console.error('Favorites API DELETE: No token provided');
       return NextResponse.json({ error: 'Token requerido' }, { status: 401 });
     }
 
+    console.log('Favorites API DELETE: Token length:', token.length);
     const decoded = await verifyToken(token);
     if (!decoded) {
+      console.error('Favorites API DELETE: Token verification failed');
+      console.error('Favorites API DELETE: JWT_SECRET exists:', !!process.env.JWT_SECRET);
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
+    
+    console.log('Favorites API DELETE: Token decoded successfully, userId:', decoded.userId);
 
     const { vehicleId } = await request.json();
     if (!vehicleId) {

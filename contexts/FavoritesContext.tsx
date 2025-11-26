@@ -126,9 +126,16 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       console.log('FavoritesContext: Add response status:', response.status);
 
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          const errorText = await response.text();
+          console.error('FavoritesContext: Add error response (not JSON):', errorText);
+          throw new Error(`Error ${response.status}: ${errorText || 'Error al añadir a favoritos'}`);
+        }
         console.error('FavoritesContext: Add error response:', errorData);
-        throw new Error(errorData.error || 'Error al añadir a favoritos');
+        throw new Error(errorData.error || `Error ${response.status}: Error al añadir a favoritos`);
       }
 
       const result = await response.json();
@@ -182,9 +189,16 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       console.log('FavoritesContext: Remove response status:', response.status);
 
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          const errorText = await response.text();
+          console.error('FavoritesContext: Remove error response (not JSON):', errorText);
+          throw new Error(`Error ${response.status}: ${errorText || 'Error al quitar de favoritos'}`);
+        }
         console.error('FavoritesContext: Remove error response:', errorData);
-        throw new Error(errorData.error || 'Error al quitar de favoritos');
+        throw new Error(errorData.error || `Error ${response.status}: Error al quitar de favoritos`);
       }
 
       const result = await response.json();
@@ -210,7 +224,12 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   // Toggle favorito
   const toggleFavorite = useCallback(async (vehicleId: string) => {
     try {
+      const token = getToken();
       console.log('FavoritesContext: Toggling favorite for vehicle:', vehicleId);
+      console.log('FavoritesContext: User:', user?.id);
+      console.log('FavoritesContext: Token exists:', !!token);
+      console.log('FavoritesContext: Current favorites:', favorites.map(f => f.id));
+      
       if (isFavorite(vehicleId)) {
         console.log('FavoritesContext: Vehicle is favorite, removing...');
         await removeFromFavorites(vehicleId);
@@ -220,9 +239,16 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (err) {
       console.error('FavoritesContext: Error toggling favorite:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      console.error('FavoritesContext: Error details:', {
+        message: errorMessage,
+        vehicleId,
+        user: user?.id,
+        hasToken: !!getToken()
+      });
       throw err;
     }
-  }, [isFavorite, addToFavorites, removeFromFavorites]);
+  }, [isFavorite, addToFavorites, removeFromFavorites, user, getToken, favorites]);
 
   // Cargar favoritos al montar el componente
   useEffect(() => {
