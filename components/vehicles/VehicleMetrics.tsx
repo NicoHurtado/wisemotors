@@ -63,10 +63,10 @@ export function VehicleMetrics({ metrics }: VehicleMetricsProps) {
     { key: 'environmentalImpact', label: 'Impacto Ambiental' },
     { key: 'reliability', label: 'Fiabilidad' },
     { key: 'qualityPriceRatio', label: 'Relación Calidad-Precio' },
-    { key: 'comfort', label: 'Comodidad' },
   ];
 
   const rightColumnMetrics = [
+    { key: 'comfort', label: 'Comodidad' },
     { key: 'usability', label: 'Usabilidad' },
     { key: 'efficiency', label: 'Eficiencia' },
     { key: 'prestige', label: 'Prestigio' },
@@ -148,15 +148,6 @@ export function VehicleMetrics({ metrics }: VehicleMetricsProps) {
           {rightColumnMetrics.map(({ key, label }) =>
             renderMetric(key as keyof WiseMetrics, label)
           )}
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="mt-8 pt-6 border-t border-wise/20">
-        <div className="flex items-center justify-center">
-          <div className="text-sm text-gray-500">
-            Categorías WiseStats: Deportividad, Elegancia
-          </div>
         </div>
       </div>
     </div>

@@ -3,14 +3,13 @@
 import { useState, useEffect } from 'react';
 import { VehicleHero } from './VehicleHero';
 import { VehicleSpecifications } from './VehicleSpecifications';
-import { VehicleCategories } from './VehicleCategories';
 import { VehicleMetrics } from './VehicleMetrics';
 import { VehicleGallery } from './VehicleGallery';
 import { SimilarVehicles } from './SimilarVehicles';
 import { ScrollToTop } from '@/components/ui/ScrollToTop';
 import { VideoModal } from '@/components/ui/VideoModal';
 import { useWhatsAppLeads } from '@/hooks/useWhatsAppLeads';
-import { GradientButton } from '@/components/ui/gradient-button';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   ChevronDown,
@@ -63,15 +62,6 @@ interface SpecificationCardProps {
 
 // Componente reutilizable para tarjetas de especificaciones - Diseño simplificado con pin
 function SpecificationCard({ title, icon: Icon, colorScheme, fields, id, defaultExpanded = false, isPinned, onPin }: SpecificationCardProps) {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded || isPinned);
-
-  // Mantener expandido si está fijado
-  useEffect(() => {
-    if (isPinned) {
-      setIsExpanded(true);
-    }
-  }, [isPinned]);
-
   // Filtrar campos que tienen valores válidos y procesar formatters
   type ProcessedField = {
     label: string;
@@ -108,23 +98,6 @@ function SpecificationCard({ title, icon: Icon, colorScheme, fields, id, default
   // Si no hay campos válidos, no renderizar la tarjeta
   if (validFields.length === 0) return null;
 
-  // Determinar clases de grid según cantidad de campos (usando clases estáticas de Tailwind)
-  const getGridClasses = () => {
-    if (validFields.length <= 4) {
-      return "grid-cols-2";
-    } else if (validFields.length <= 8) {
-      return "grid-cols-2 md:grid-cols-3";
-    } else {
-      return "grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
-    }
-  };
-
-  const handleCardClick = (e: React.MouseEvent) => {
-    // No colapsar si está fijado
-    if (isPinned) return;
-    setIsExpanded(!isExpanded);
-  };
-
   const handlePinClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onPin) {
@@ -135,62 +108,44 @@ function SpecificationCard({ title, icon: Icon, colorScheme, fields, id, default
   return (
     <div
       id={id}
-      className={`w-full bg-white rounded-xl border ${isPinned ? 'border-wise shadow-md' : 'border-gray-200 shadow-sm hover:shadow-md'} transition-shadow duration-200 ${!isPinned ? 'cursor-pointer' : ''}`}
-      onClick={handleCardClick}
+      className={`w-full bg-white rounded-xl border ${isPinned ? 'border-wise shadow-md' : 'border-gray-200 shadow-sm hover:shadow-md'} transition-shadow duration-200 mb-4 break-inside-avoid`}
     >
-      <div className="p-6">
+      <div className="p-5">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center flex-1">
-            <div className="w-10 h-10 flex items-center justify-center mr-3 flex-shrink-0">
-              <Icon className={isPinned ? 'text-wise' : 'text-gray-700'} strokeWidth={2} />
+            <div className={`w-12 h-12 rounded-lg flex items-center justify-center mr-3 flex-shrink-0 bg-wise/10`}>
+              <Icon className="text-wise" strokeWidth={2} size={24} />
             </div>
-            <h3 className={`text-lg font-semibold ${isPinned ? 'text-wise' : 'text-gray-900'}`}>{title}</h3>
+            <h3 className={`text-base font-semibold ${isPinned ? 'text-wise' : 'text-gray-900'}`}>{title}</h3>
             {isPinned && (
               <span className="ml-2 px-2 py-0.5 bg-wise/10 text-wise text-xs font-medium rounded">
                 Fijada
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 ml-4">
-            {/* Pin button - solo visible cuando está expandido */}
-            {isExpanded && onPin && (
-              <button
-                onClick={handlePinClick}
-                className={`p-1.5 rounded-lg transition-colors ${isPinned
-                  ? 'bg-wise text-white hover:bg-wise-dark'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                title={isPinned ? 'Desfijar' : 'Fijar'}
-              >
-                <Pin className="w-4 h-4" fill={isPinned ? 'currentColor' : 'none'} />
-              </button>
-            )}
-            {/* Chevron - solo si no está fijado */}
-            {!isPinned && (
-              <div className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : 'rotate-0'}`}>
-                <ChevronDown className="w-5 h-5 text-gray-600" strokeWidth={2} />
-              </div>
-            )}
-          </div>
+          {onPin && (
+            <button
+              onClick={handlePinClick}
+              className={`p-1.5 rounded-lg transition-colors ${isPinned
+                ? 'bg-wise text-white hover:bg-wise-dark'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              title={isPinned ? 'Desfijar' : 'Fijar'}
+            >
+              <Pin className="w-4 h-4" fill={isPinned ? 'currentColor' : 'none'} />
+            </button>
+          )}
         </div>
 
-        {/* Collapsible Content */}
-        <div
-          className="overflow-hidden transition-all duration-300 ease-in-out"
-          style={{
-            maxHeight: isExpanded ? `${Math.ceil(validFields.length / 4) * 70 + 50}px` : '0px',
-            opacity: isExpanded ? 1 : 0,
-          }}
-        >
-          <div className={`grid ${getGridClasses()} gap-x-6 gap-y-4 pt-4 border-t border-gray-200`}>
-            {validFields.map((field, index) => (
-              <div key={index} className="flex flex-col">
-                <span className="text-gray-600 text-sm mb-1 font-medium">{field.label}</span>
-                <span className="font-semibold text-gray-900 text-base">{field.displayValue}</span>
-              </div>
-            ))}
-          </div>
+        {/* Content - Always visible, vertical layout */}
+        <div className="space-y-3 pt-3 border-t border-gray-200">
+          {validFields.map((field, index) => (
+            <div key={index} className="flex flex-col">
+              <span className="text-gray-600 text-xs mb-1 font-medium">{field.label}</span>
+              <span className="font-semibold text-gray-900 text-sm">{field.displayValue}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -320,6 +275,13 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
         onVideoClick={() => setIsVideoModalOpen(true)}
       />
 
+      {/* Gallery Section - Just below Hero */}
+      <section className="w-full px-4 py-8 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <VehicleGallery vehicle={vehicle} />
+        </div>
+      </section>
+
       {/* Main Content */}
       <div className="w-full px-4 py-8">
 
@@ -333,20 +295,13 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
           </div>
         </section>
 
-
-        {/* Section 2: Gallery and Categories (Full Width) */}
+        {/* Section 2: Home Delivery Button */}
         <section className="mb-16">
           <div className="max-w-7xl mx-auto">
             <div className="space-y-12">
-              {/* Gallery */}
-              <VehicleGallery vehicle={vehicle} />
-
-              {/* Categories */}
-              <VehicleCategories categories={vehicle.categories} />
-
-              {/* Home Delivery Button */}
+              {/* Test Drive Button */}
               <div className="flex justify-center">
-                <GradientButton
+                <Button
                   onClick={async () => {
                     const getEffectiveUserName = (): string | null => {
                       if (user?.username) return user.username;
@@ -360,7 +315,7 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     if (!name) return; // user cancelled
 
                     const vehicleLabel = `${vehicle.brand || ''} ${vehicle.model || ''}`.trim();
-                    const message = `Hola, me interesa el vehículo ${vehicleLabel}. Mi nombre es ${name} y quiero hacer el testdrive desde mi casa.`;
+                    const message = `Hola, me interesa el vehículo ${vehicleLabel}. Mi nombre es ${name} y quiero agendar un testdrive.`;
 
                     // Crear el lead en la base de datos
                     try {
@@ -383,10 +338,12 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     const url = `https://wa.me/573103818615?text=${encoded}`;
                     window.open(url, '_blank');
                   }}
-                  className="shadow-soft"
+                  variant="wise"
+                  size="lg"
+                  className="px-8 py-6 text-lg font-semibold shadow-soft"
                 >
-                  Haz el testdrive desde tu casa
-                </GradientButton>
+                  Agendar testdrive
+                </Button>
               </div>
             </div>
           </div>
@@ -408,43 +365,33 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
               <p className="text-gray-600">Toda la información detallada del vehículo</p>
             </div>
 
-            {/* Tarjetas Fijadas - Mostrar al inicio */}
-            {pinnedCards.size > 0 && (
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-wise mb-4 flex items-center">
-                  <Pin className="w-5 h-5 mr-2" />
-                  Especificaciones Fijadas
-                </h3>
-                <div className="space-y-4">
-                  {/* Identificación - Fijada */}
-                  {pinnedCards.has('sec-identificacion') && (
-                    <SpecificationCard
-                      id="sec-identificacion-pinned"
-                      title="Identificación"
-                      icon={FileText}
-                      colorScheme={{
-                        bgFrom: "from-blue-50",
-                        bgTo: "to-blue-100",
-                        iconBgFrom: "from-blue-500",
-                        iconBgTo: "to-blue-600",
-                        circleBg: "bg-blue-500/10"
-                      }}
-                      fields={[
-                        { label: "Año modelo", value: identification.añoModelo },
-                        { label: "Carrocería", value: identification.carrocería },
-                        { label: "Versión/Trim", value: identification.versionTrim },
-                      ]}
-                      isPinned={true}
-                      onPin={() => togglePin('sec-identificacion')}
-                    />
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Mosaico de Especificaciones Técnicas */}
+            <div className="columns-1 md:columns-3 gap-4">
+              {/* Tarjetas Fijadas primero */}
+              {pinnedCards.has('sec-identificacion') && (
+                <SpecificationCard
+                  id="sec-identificacion-pinned"
+                  title="Identificación"
+                  icon={FileText}
+                  colorScheme={{
+                    bgFrom: "from-blue-50",
+                    bgTo: "to-blue-100",
+                    iconBgFrom: "from-blue-500",
+                    iconBgTo: "to-blue-600",
+                    circleBg: "bg-blue-500/10"
+                  }}
+                  fields={[
+                    { label: "Año modelo", value: identification.añoModelo },
+                    { label: "Carrocería", value: identification.carrocería },
+                    { label: "Versión/Trim", value: identification.versionTrim },
+                  ]}
+                  isPinned={true}
+                  onPin={() => togglePin('sec-identificacion')}
+                />
+              )}
 
-            {/* Sección 1: Identificación y Básicos */}
-            {!pinnedCards.has('sec-identificacion') && (
-              <div className="mb-8">
+              {/* Sección 1: Identificación y Básicos */}
+              {!pinnedCards.has('sec-identificacion') && (
                 <SpecificationCard
                   id="sec-identificacion"
                   title="Identificación"
@@ -464,11 +411,9 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   isPinned={false}
                   onPin={() => togglePin('sec-identificacion')}
                 />
-              </div>
-            )}
+              )}
 
-            {/* Sección 2: Motorización */}
-            <div className="mb-8">
+              {/* Sección 2: Motorización */}
               {isElectric && (
                 <SpecificationCard
                   id="sec-powertrain"
@@ -564,11 +509,9 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   />
                 );
               })()}
-            </div>
 
-            {/* Sección 2b: Transmisión */}
-            {(hasAnyValue(transmission) || powertrain.traccion) && (
-              <div className="mb-8">
+              {/* Sección 2b: Transmisión */}
+              {(hasAnyValue(transmission) || powertrain.traccion) && (
                 <SpecificationCard
                   id="sec-transmission"
                   title="Transmisión"
@@ -593,11 +536,9 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     ] : []),
                   ]}
                 />
-              </div>
-            )}
+              )}
 
-            {/* Sección 3: Dimensiones y Capacidades */}
-            <div className="mb-8">
+              {/* Sección 3: Dimensiones y Capacidades */}
               <SpecificationCard
                 id="sec-dimensiones"
                 title="Dimensiones y Capacidades"
@@ -624,10 +565,8 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   { label: "Capacidad de techo/barras", value: dimensions.roofCapacity, formatter: (v) => v ? `${v} kg` : undefined },
                 ]}
               />
-            </div>
 
-            {/* Sección 4: Consumo y Eficiencia */}
-            <div className="mb-8">
+              {/* Sección 4: Consumo y Eficiencia */}
               <SpecificationCard
                 id="sec-consumo"
                 title="Consumo y Eficiencia"
@@ -649,10 +588,8 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   { label: "Motor autostop", value: efficiency.motorAutostop },
                 ]}
               />
-            </div>
 
-            {/* Sección 5: Prestaciones */}
-            <div className="mb-8">
+              {/* Sección 5: Prestaciones */}
               <SpecificationCard
                 id="sec-prestaciones"
                 title="Prestaciones"
@@ -678,10 +615,8 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   { label: "Launch control", value: performance.launchControl },
                 ]}
               />
-            </div>
 
-            {/* Sección 6: Seguridad */}
-            <div className="mb-8">
+              {/* Sección 6: Seguridad */}
               <SpecificationCard
                 id="sec-seguridad"
                 title="Seguridad"
@@ -704,11 +639,9 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                   { label: "Latin NCAP (estrellas)", value: safety.latinNCAPRating, formatter: (v) => v ? `${v} ⭐` : undefined },
                 ]}
               />
-            </div>
 
-            {/* Sección 7: ADAS */}
-            {hasAnyValue(adas) && (
-              <div className="mb-8">
+              {/* Sección 7: ADAS */}
+              {hasAnyValue(adas) && (
                 <SpecificationCard
                   id="sec-adas"
                   title="Sistemas de Asistencia (ADAS)"
@@ -732,12 +665,10 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Sensores estacionamiento delantero", value: adas.sensoresEstacionamientoDelantero },
                   ]}
                 />
-              </div>
-            )}
+              )}
 
-            {/* Sección 8: Batería y Carga (solo para eléctricos/híbridos) */}
-            {(isElectric || isHybrid) && (
-              <div className="mb-8">
+              {/* Sección 8: Batería y Carga (solo para eléctricos/híbridos) */}
+              {(isElectric || isHybrid) && (
                 <SpecificationCard
                   id="sec-bateria"
                   title="Batería y Carga"
@@ -761,12 +692,10 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "V2H/V2G Potencia", value: battery.potenciaV2hV2g, formatter: (v) => v ? `${v} kW` : undefined },
                   ]}
                 />
-              </div>
-            )}
+              )}
 
-            {/* Sección 9: Chasis, Frenos y Dirección */}
-            {hasAnyValue(chassis) && (
-              <div className="mb-8">
+              {/* Sección 9: Chasis, Frenos y Dirección */}
+              {hasAnyValue(chassis) && (
                 <SpecificationCard
                   id="sec-chasis"
                   title="Chasis, Frenos y Dirección"
@@ -787,15 +716,13 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Despeje al suelo", value: chassis.groundClearance, formatter: (v) => v ? `${v} mm` : undefined },
                   ]}
                 />
-              </div>
-            )}
+              )}
 
-            {/* Sección 10: Off-road y 4x4 */}
-            {(offRoad.esOffroad || offRoad.controlDescenso || offRoad.controlTraccionOffRoad ||
-              offRoad.cajaTransferenciaLow || offRoad.ganchosArrastre || offRoad.modosTerreno ||
-              offRoad.pendienteMaximaSuperable || offRoad.profundidadVadeo || offRoad.anguloAtaque ||
-              offRoad.anguloSalida || offRoad.anguloVentral) && (
-                <div className="mb-8">
+              {/* Sección 10: Off-road y 4x4 */}
+              {(offRoad.esOffroad || offRoad.controlDescenso || offRoad.controlTraccionOffRoad ||
+                offRoad.cajaTransferenciaLow || offRoad.ganchosArrastre || offRoad.modosTerreno ||
+                offRoad.pendienteMaximaSuperable || offRoad.profundidadVadeo || offRoad.anguloAtaque ||
+                offRoad.anguloSalida || offRoad.anguloVentral) && (
                   <SpecificationCard
                     id="sec-offroad"
                     title="Off-road y 4x4"
@@ -821,12 +748,10 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                       { label: "Ángulo ventral (quiebre)", value: offRoad.anguloVentral, formatter: (v) => v ? `${v}°` : undefined },
                     ]}
                   />
-                </div>
-              )}
+                )}
 
-            {/* Sección 11: Iluminación */}
-            {hasAnyValue(lighting) && (
-              <div className="mb-8">
+              {/* Sección 11: Iluminación */}
+              {hasAnyValue(lighting) && (
                 <SpecificationCard
                   id="sec-iluminacion"
                   title="Iluminación y Visibilidad"
@@ -845,12 +770,10 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Lavafaros", value: lighting.lavafaros },
                   ]}
                 />
-              </div>
-            )}
+              )}
 
-            {/* Sección 12: Conectividad e Infoentretenimiento */}
-            {hasAnyValue(infotainment) && (
-              <div className="mb-8">
+              {/* Sección 12: Conectividad e Infoentretenimiento */}
+              {hasAnyValue(infotainment) && (
                 <SpecificationCard
                   id="sec-infotainment"
                   title="Conectividad e Infoentretenimiento"
@@ -879,12 +802,10 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Puertos USB-C", value: infotainment.puertosUSBC },
                   ]}
                 />
-              </div>
-            )}
+              )}
 
-            {/* Sección 13: Confort e Interior */}
-            {hasAnyValue(comfort) && (
-              <div className="mb-8">
+              {/* Sección 13: Confort e Interior */}
+              {hasAnyValue(comfort) && (
                 <SpecificationCard
                   id="sec-confort"
                   title="Confort e Interior"
@@ -923,12 +844,10 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Sensor de lluvia", value: comfort.sensorLluvia || lighting.sensorLluvia },
                   ]}
                 />
-              </div>
-            )}
+              )}
 
-            {/* Sección 13: Información Comercial */}
-            {hasAnyValue(commercial) && (
-              <div className="mb-8">
+              {/* Sección 13: Información Comercial */}
+              {hasAnyValue(commercial) && (
                 <SpecificationCard
                   id="sec-comercial"
                   title="Información Comercial"
@@ -951,8 +870,8 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Origen (país/planta)", value: commercial.origenPaisPlanta },
                   ]}
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </section>
 

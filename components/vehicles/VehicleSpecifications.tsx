@@ -20,7 +20,9 @@ import {
   Armchair,
   DollarSign,
   BarChart3,
-  Sparkles
+  Sparkles,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Liquid } from '@/components/ui/liquid-button';
 import { formatPrice } from '@/lib/utils';
@@ -28,7 +30,7 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useWhatsAppLeads } from '@/hooks/useWhatsAppLeads';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // Colores morados con intensidad media para el efecto líquido de WiseMetrics
 const WISE_COLORS = {
@@ -106,6 +108,10 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
   const { user } = useAuth();
   const { isFavorite, toggleFavorite, loading: favoriteLoading } = useFavorites();
   const { createLead } = useWhatsAppLeads();
+  
+  // Estado para el carrusel de concesionarios
+  const [currentDealershipIndex, setCurrentDealershipIndex] = useState(0);
+  const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleFavoriteClick = async () => {
     if (!user) {
@@ -192,41 +198,68 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
     }
   };
 
+  // Auto-play para el carrusel de concesionarios
+  const dealerships = vehicle.dealerships || [];
+  const totalDealerships = dealerships.length;
+
+  useEffect(() => {
+    if (totalDealerships > 1) {
+      autoPlayRef.current = setInterval(() => {
+        setCurrentDealershipIndex((prev) => (prev + 1) % totalDealerships);
+      }, 5000); // Cambiar cada 5 segundos
+
+      return () => {
+        if (autoPlayRef.current) {
+          clearInterval(autoPlayRef.current);
+        }
+      };
+    }
+  }, [totalDealerships]);
+
+  const nextDealership = () => {
+    setCurrentDealershipIndex((prev) => (prev + 1) % totalDealerships);
+    // Reiniciar auto-play al hacer clic manual
+    if (autoPlayRef.current) {
+      clearInterval(autoPlayRef.current);
+    }
+    autoPlayRef.current = setInterval(() => {
+      setCurrentDealershipIndex((prev) => (prev + 1) % totalDealerships);
+    }, 5000);
+  };
+
+  const prevDealership = () => {
+    setCurrentDealershipIndex((prev) => (prev - 1 + totalDealerships) % totalDealerships);
+    // Reiniciar auto-play al hacer clic manual
+    if (autoPlayRef.current) {
+      clearInterval(autoPlayRef.current);
+    }
+    autoPlayRef.current = setInterval(() => {
+      setCurrentDealershipIndex((prev) => (prev + 1) % totalDealerships);
+    }, 5000);
+  };
+
   return (
     <div className="w-full">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Price and Key Info */}
+        {/* Left Column - Key Info */}
         <div className="lg:col-span-2 space-y-8">
-          {/* Price and Favorite Button */}
-          <div className="flex items-center justify-between bg-white rounded-2xl p-6 shadow-soft">
-            <div>
-              <div className="text-sm text-gray-600 mb-1">Precio</div>
-              <div className="text-4xl font-bold text-gray-900">
-                {formatPrice(vehicle.price)}
-              </div>
-            </div>
-            <button
-              onClick={handleFavoriteClick}
-              disabled={favoriteLoading}
-              className="w-14 h-14 bg-gray-50 rounded-full shadow-sm flex items-center justify-center hover:bg-gray-100 transition-colors border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label={isFavorite(vehicle.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-            >
-              <Heart
-                className={`w-7 h-7 transition-colors ${isFavorite(vehicle.id) ? 'fill-wise text-wise' : 'text-gray-600'
-                  }`}
-              />
-            </button>
-          </div>
-
           {/* Key Specifications - Destacadas */}
           <div className="bg-white rounded-2xl p-6 shadow-soft">
             <h3 className="text-xl font-bold text-gray-900 mb-6">Especificaciones Principales</h3>
             <div className="grid grid-cols-1 gap-4">
-              {/* Marca y Modelo - Simplificado */}
-              <div className="p-5 bg-white rounded-xl border border-gray-200">
-                <div className="text-2xl font-bold text-gray-900">{vehicle.brand} {vehicle.model}</div>
-                <div className="text-base text-gray-600 mt-1">{vehicle.year}</div>
-              </div>
+
+              {/* Precio */}
+              {vehicle.price && (
+                <div className="flex items-center p-4 bg-gradient-to-r from-wise/10 to-wise/20 rounded-xl border border-wise/30">
+                  <div className="w-12 h-12 bg-wise rounded-full flex items-center justify-center mr-4">
+                    <DollarSign className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Precio</div>
+                    <div className="text-2xl font-bold text-gray-900">{formatPrice(vehicle.price)}</div>
+                  </div>
+                </div>
+              )}
 
               {/* Tipo y Combustible */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -513,148 +546,134 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
         {/* Right Column - Dealerships */}
         <div className="lg:col-span-1">
           <div className="space-y-6 sticky top-8">
-            {/* Dealerships Section */}
+            {/* Dealerships Section - Carrusel */}
             <div className="bg-white rounded-2xl shadow-soft p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
                 <MapPin className="w-5 h-5 text-wise mr-2" />
                 Disponible en:
               </h3>
-              <div className="space-y-3">
-                {vehicle.dealerships?.map((dealership: any) => (
-                  <div key={dealership.id} className="p-4 border border-gray-200 rounded-xl hover:border-wise/50 hover:shadow-md transition-all">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-start flex-1">
-                        <div className="w-10 h-10 bg-wise/10 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
-                          <MapPin className="w-5 h-5 text-wise" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 mb-1">{dealership.name}</p>
-                          <p className="text-sm text-gray-600">{dealership.location}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      className="w-full px-4 py-2 bg-wise text-white rounded-lg hover:bg-wise-dark transition-colors text-sm font-medium shadow-sm hover:shadow-md"
-                      onClick={() => handleContactDealership({
-                        name: dealership.name,
-                        location: dealership.location,
-                        id: dealership.id
-                      })}
+              
+              {totalDealerships > 0 ? (
+                <div className="relative">
+                  {/* Carrusel Container */}
+                  <div className="relative overflow-hidden min-h-[180px]">
+                    <div 
+                      className="flex transition-transform duration-500 ease-in-out"
+                      style={{ transform: `translateX(-${currentDealershipIndex * 100}%)` }}
                     >
-                      Agendar aquí
-                    </button>
+                      {dealerships.map((dealership: any) => (
+                        <div 
+                          key={dealership.id} 
+                          className="w-full flex-shrink-0 p-4 border border-gray-200 rounded-xl hover:border-wise/50 hover:shadow-md transition-all min-h-[180px] flex flex-col justify-between"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-start flex-1">
+                              <div className="w-10 h-10 bg-wise/10 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                <MapPin className="w-5 h-5 text-wise" />
+                              </div>
+                              <div>
+                                <p className="font-semibold text-gray-900 mb-1">{dealership.name}</p>
+                                <p className="text-sm text-gray-600">{dealership.location}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            className="w-full px-4 py-2 bg-wise text-white rounded-lg hover:bg-wise-dark transition-colors text-sm font-medium shadow-sm hover:shadow-md"
+                            onClick={() => handleContactDealership({
+                              name: dealership.name,
+                              location: dealership.location,
+                              id: dealership.id
+                            })}
+                          >
+                            Agendar aquí
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-                <button
-                  className="w-full px-4 py-3 bg-white text-gray-700 border border-gray-200 rounded-xl hover:border-wise hover:text-wise transition-colors text-sm font-semibold flex items-center"
-                  onClick={() => handleContactDealership(undefined)}
-                >
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Cualquier concesionario
-                </button>
-              </div>
+
+                  {/* Controles de navegación */}
+                  {totalDealerships > 1 && (
+                    <>
+                      <button
+                        onClick={prevDealership}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white border border-gray-200 rounded-full p-2 shadow-md hover:shadow-lg transition-all z-10"
+                        aria-label="Concesionario anterior"
+                      >
+                        <ChevronLeft className="w-5 h-5 text-gray-700" />
+                      </button>
+                      <button
+                        onClick={nextDealership}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white border border-gray-200 rounded-full p-2 shadow-md hover:shadow-lg transition-all z-10"
+                        aria-label="Siguiente concesionario"
+                      >
+                        <ChevronRight className="w-5 h-5 text-gray-700" />
+                      </button>
+                      
+                      {/* Indicadores de puntos */}
+                      <div className="flex justify-center mt-4 gap-2">
+                        {dealerships.map((_: any, index: number) => (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              setCurrentDealershipIndex(index);
+                              // Reiniciar auto-play
+                              if (autoPlayRef.current) {
+                                clearInterval(autoPlayRef.current);
+                              }
+                              autoPlayRef.current = setInterval(() => {
+                                setCurrentDealershipIndex((prev) => (prev + 1) % totalDealerships);
+                              }, 5000);
+                            }}
+                            className={`h-2 rounded-full transition-all ${
+                              index === currentDealershipIndex
+                                ? 'bg-wise w-8'
+                                : 'bg-gray-300 w-2 hover:bg-gray-400'
+                            }`}
+                            aria-label={`Ir al concesionario ${index + 1}`}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="p-4 border border-gray-200 rounded-xl">
+                  <p className="text-gray-600 text-sm">No hay concesionarios disponibles</p>
+                </div>
+              )}
+
+              {/* Botón "Cualquier concesionario" */}
+              <button
+                className="w-full mt-4 px-4 py-3 bg-white text-gray-700 border border-gray-200 rounded-xl hover:border-wise hover:text-wise transition-colors text-sm font-semibold flex items-center"
+                onClick={() => handleContactDealership(undefined)}
+              >
+                <MapPin className="w-4 h-4 mr-2" />
+                Cualquier concesionario
+              </button>
             </div>
 
-            {/* Quick Navigation - Vertical */}
+            {/* Quick Navigation - Vertical - Comentado para vista minimalista */}
+
+            {/* Categories WiseMotors Section */}
             <div className="bg-white rounded-2xl shadow-soft p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Navegación Rápida</h3>
-              <div className="flex flex-col gap-2">
-                {/* WiseMetrics - Botón Especial con Animación */}
-                <WiseMetricsButton onClick={() => {
-                  // Buscar el componente WiseMetrics y hacer scroll
-                  const wisemetricsSection = document.querySelector('h3')?.textContent?.includes('WiseMetrics')
-                    ? document.querySelector('h3')
-                    : null;
-
-                  if (wisemetricsSection) {
-                    wisemetricsSection.closest('div')?.scrollIntoView({
-                      behavior: 'smooth',
-                      block: 'start'
-                    });
-                  } else {
-                    // Alternativa: buscar por el título "Especificaciones Técnicas" y subir un poco
-                    const especificacionesTitle = Array.from(document.querySelectorAll('h2')).find(
-                      h2 => h2.textContent?.includes('Especificaciones Técnicas')
-                    );
-                    if (especificacionesTitle) {
-                      const parent = especificacionesTitle.parentElement?.parentElement;
-                      if (parent) {
-                        parent.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
-                    }
-                  }
-                }} />
-
-                <button
-                  onClick={() => scrollToSection('sec-identificacion')}
-                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Identificación
-                </button>
-                <button
-                  onClick={() => scrollToSection('sec-powertrain')}
-                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
-                >
-                  <Wrench className="w-4 h-4 mr-2" />
-                  Motor
-                </button>
-                <button
-                  onClick={() => scrollToSection('sec-consumo')}
-                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
-                >
-                  <Fuel className="w-4 h-4 mr-2" />
-                  Consumo
-                </button>
-                <button
-                  onClick={() => scrollToSection('sec-dimensiones')}
-                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
-                >
-                  <Ruler className="w-4 h-4 mr-2" />
-                  Dimensiones
-                </button>
-                <button
-                  onClick={() => scrollToSection('sec-prestaciones')}
-                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
-                >
-                  <Gauge className="w-4 h-4 mr-2" />
-                  Prestaciones
-                </button>
-                <button
-                  onClick={() => scrollToSection('sec-seguridad')}
-                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
-                >
-                  <Shield className="w-4 h-4 mr-2" />
-                  Seguridad
-                </button>
-                <button
-                  onClick={() => scrollToSection('sec-adas')}
-                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
-                >
-                  <Car className="w-4 h-4 mr-2" />
-                  ADAS
-                </button>
-                <button
-                  onClick={() => scrollToSection('sec-infotainment')}
-                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
-                >
-                  <Smartphone className="w-4 h-4 mr-2" />
-                  Conectividad
-                </button>
-                <button
-                  onClick={() => scrollToSection('sec-confort')}
-                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
-                >
-                  <Armchair className="w-4 h-4 mr-2" />
-                  Confort
-                </button>
-                <button
-                  onClick={() => scrollToSection('sec-comercial')}
-                  className="w-full px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:border-wise hover:text-wise transition-colors text-sm font-medium text-left flex items-center"
-                >
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Comercial
-                </button>
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                <Sparkles className="w-5 h-5 text-wise mr-2" />
+                Categorías WiseMotors
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {vehicle.categories && vehicle.categories.length > 0 ? (
+                  vehicle.categories.map((category: any) => (
+                    <span
+                      key={category.id}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-wise/10 text-wise border border-wise/20 hover:bg-wise/20 transition-colors"
+                    >
+                      {category.label}
+                    </span>
+                  ))
+                ) : (
+                  <p className="text-gray-600 text-sm">No hay categorías disponibles</p>
+                )}
               </div>
             </div>
           </div>

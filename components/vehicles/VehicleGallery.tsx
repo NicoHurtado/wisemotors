@@ -49,8 +49,6 @@ export function VehicleGallery({ images, coverImage, vehicle, className = '' }: 
     <>
       {/* Galería Carrusel Infinito */}
       <div className={`relative ${className}`}>
-        <h3 className="text-xl font-semibold text-center mb-4">Galería</h3>
-        
         {allImages.length > 0 ? (
           <div className="relative h-64 bg-gray-100 rounded-lg overflow-hidden">
             {/* Carrusel infinito */}
