@@ -31,7 +31,7 @@ export function AddVehicleForm() {
     plazas: '',
     puertas: '',
     versionTrim: '',
-    
+
     // Motorización y tren motriz
     alimentacion: '',
     cilindrada: '',
@@ -147,7 +147,7 @@ export function AddVehicleForm() {
     appRemotaOTA: false,
     audioMarca: '',
     audioNumeroBocinas: '',
-        bluetooth: false,
+    bluetooth: false,
     cargadorInalambrico: false,
     navegacionIntegrada: false,
     pantallaCentralTamano: '',
@@ -245,8 +245,8 @@ export function AddVehicleForm() {
   };
 
   const toggleDealer = (dealerId: string) => {
-    setSelectedDealers(prev => 
-      prev.includes(dealerId) 
+    setSelectedDealers(prev =>
+      prev.includes(dealerId)
         ? prev.filter(id => id !== dealerId)
         : [...prev, dealerId]
     );
@@ -341,7 +341,7 @@ export function AddVehicleForm() {
           consumoMixto: formData.consumoMixto ? parseFloat(formData.consumoMixto) : undefined,
           capacidadTanque: formData.capacidadTanque ? parseFloat(formData.capacidadTanque) : undefined,
           autonomiaOficial: formData.autonomiaOficial ? parseFloat(formData.autonomiaOficial) : undefined,
-          costoEnergia100km: formData.costoEnergia100km ? parseFloat(formData.costoEnergia100km) : undefined,
+          costoEnergia100km: formData.costoEnergia100km || undefined,
           ahorro5Anos: formData.ahorro5Anos ? parseFloat(formData.ahorro5Anos) : undefined,
           mpgeCiudad: formData.mpgeCiudad ? parseFloat(formData.mpgeCiudad) : undefined,
           mpgeCarretera: formData.mpgeCarretera ? parseFloat(formData.mpgeCarretera) : undefined,
@@ -368,16 +368,16 @@ export function AddVehicleForm() {
           tipoPinzasFreno: formData.tipoPinzasFreno,
         },
         performance: {
-          acceleration0to100: formData.aceleracion0100 ? parseFloat(formData.aceleracion0100) : undefined,
-          acceleration0to200: formData.aceleracion0200 ? parseFloat(formData.aceleracion0200) : undefined,
-          acceleration50to80: formData.aceleracion5080 ? parseFloat(formData.aceleracion5080) : undefined,
-          overtaking80to120: formData.aceleracion80120 ? parseFloat(formData.aceleracion80120) : undefined,
-          maxLateralAcceleration: formData.aceleracionLateralMaxima ? parseFloat(formData.aceleracionLateralMaxima) : undefined,
-          maxLongitudinalAcceleration: formData.aceleracionLongitudinalMaxima ? parseFloat(formData.aceleracionLongitudinalMaxima) : undefined,
-          brakingDistance100to0: formData.frenado1000 ? parseFloat(formData.frenado1000) : undefined,
-          maxSpeed: formData.velocidadMaxima ? parseFloat(formData.velocidadMaxima) : undefined,
-          powerToWeight: formData.relacionPesoPotencia ? parseFloat(formData.relacionPesoPotencia) : undefined,
-          quarterMile: formData.cuartoMilla ? parseFloat(formData.cuartoMilla) : undefined,
+          acceleration0to100: formData.aceleracion0100 || undefined,
+          acceleration0to200: formData.aceleracion0200 || undefined,
+          acceleration50to80: formData.aceleracion5080 || undefined,
+          overtaking80to120: formData.aceleracion80120 || undefined,
+          maxLateralAcceleration: formData.aceleracionLateralMaxima || undefined,
+          maxLongitudinalAcceleration: formData.aceleracionLongitudinalMaxima || undefined,
+          brakingDistance100to0: formData.frenado1000 || undefined,
+          maxSpeed: formData.velocidadMaxima || undefined,
+          powerToWeight: formData.relacionPesoPotencia || undefined,
+          quarterMile: formData.cuartoMilla || undefined,
           launchControl: formData.launchControl,
         },
         safety: {
@@ -493,7 +493,7 @@ export function AddVehicleForm() {
         if (key === 'wisemetrics') {
           return obj;
         }
-        
+
         if (obj === null || obj === undefined) return undefined;
         if (typeof obj === 'string' && obj.trim() === '') return undefined;
         if (typeof obj === 'number' && isNaN(obj)) return undefined;
@@ -515,7 +515,7 @@ export function AddVehicleForm() {
       };
 
       let cleanedSpecs = cleanSpecifications(specifications);
-      
+
       // Añadir wisemetrics a las especificaciones (asegurar que siempre se incluya)
       if (specifications.wisemetrics) {
         if (!cleanedSpecs) {
@@ -596,14 +596,14 @@ export function AddVehicleForm() {
       } else {
         const errorData = await response.json();
         console.error('Error response:', errorData);
-        
+
         // Mostrar errores de validación detallados
         if (errorData.details && Array.isArray(errorData.details)) {
           const errorMessages = errorData.details.map((err: any) => {
             const path = err.path.join(' > ');
             return `• ${path}: ${err.message}`;
           }).join('\n');
-          
+
           alert(`❌ Error de validación:\n\n${errorMessages}\n\nRevisa los campos marcados y asegúrate de que todos los valores sean correctos.`);
         } else {
           alert(`❌ Error: ${errorData.error || 'Error al crear el vehículo'}\n\nRevisa la consola del navegador para más detalles.`);
@@ -620,7 +620,7 @@ export function AddVehicleForm() {
   // Función para determinar si un campo debe mostrarse basándose en aplicabilidad
   const shouldShowField = (aplicabilidad: string | string[]): boolean => {
     if (!aplicabilidad || aplicabilidad === 'Todos' || aplicabilidad === '—') return true;
-    
+
     const carroceria = formData.carrocería;
     const combustible = formData.combustible;
     const aplicabilidades = Array.isArray(aplicabilidad) ? aplicabilidad : [aplicabilidad];
@@ -628,7 +628,7 @@ export function AddVehicleForm() {
     // Si no hay carrocería seleccionada, verificar solo por combustible
     if (!carroceria) {
       // Si requiere carrocería específica, verificar si es offroad
-      const requiereCarroceria = aplicabilidades.some(apl => 
+      const requiereCarroceria = aplicabilidades.some(apl =>
         apl.includes('SUV') || apl.includes('Pick-up') || apl.includes('Deportivo') || apl === '4x4' || apl === 'SUV/4x4'
       );
       // Si requiere carrocería pero el vehículo está marcado como offroad, permitir mostrar campos 4x4
@@ -641,12 +641,12 @@ export function AddVehicleForm() {
           return false;
         }
       }
-      
+
       // Verificar aplicabilidades de combustible
       return aplicabilidades.some(apl => {
         if (apl === 'Todos' || apl === '—') return true;
         if (apl === 'Premium') return true;
-        
+
         if (combustible) {
           if (apl === 'EV' && combustible === 'Eléctrico') return true;
           if (apl === 'EV/PHEV' && (combustible === 'Eléctrico' || combustible === 'Híbrido Enchufable')) return true;
@@ -661,7 +661,7 @@ export function AddVehicleForm() {
             return false;
           }
         }
-        
+
         return false;
       });
     }
@@ -670,10 +670,10 @@ export function AddVehicleForm() {
     return aplicabilidades.some(apl => {
       // Si es "Todos", siempre se muestra
       if (apl === 'Todos' || apl === '—') return true;
-      
+
       // Premium: Por ahora se muestra siempre (no hay forma de determinar si es premium solo por carrocería)
       if (apl === 'Premium') return true;
-      
+
       // Verificar aplicabilidades específicas de carrocería
       if (apl.includes('SUV') && carroceria === 'SUV') return true;
       if (apl.includes('Pick-up') && carroceria === 'Pick-up') return true;
@@ -688,7 +688,7 @@ export function AddVehicleForm() {
       }
       if (apl === 'SUV/Deportivo' && (carroceria === 'SUV' || carroceria === 'Deportivo')) return true;
       if (apl === 'Pick-up/SUV' && (carroceria === 'Pick-up' || carroceria === 'SUV')) return true;
-      
+
       // Verificar aplicabilidades de combustible (solo si hay combustible seleccionado)
       if (combustible) {
         if (apl === 'EV' && combustible === 'Eléctrico') return true;
@@ -706,7 +706,7 @@ export function AddVehicleForm() {
           return false;
         }
       }
-      
+
       return false;
     });
   };
@@ -888,7 +888,7 @@ export function AddVehicleForm() {
           {renderField('consumoMixto', 'Consumo mixto', 'number', undefined, 'L/100 km; kWh/100 km')}
           {renderField('capacidadTanque', 'Capacidad de tanque combustible', 'number', undefined, 'L', 'ICE/HEV/PHE')}
           {renderField('autonomiaOficial', 'Autonomía oficial', 'number', undefined, 'km', 'EV/PHEV')}
-          {renderField('costoEnergia100km', 'Costo de energía por 100 km', 'number', undefined, 'COP')}
+          {renderField('costoEnergia100km', 'Costo de energía por 100 km', 'text', undefined, 'COP')}
           {renderField('ahorro5Anos', 'Ahorro a 3 años', 'number', undefined, 'COP')}
           {renderField('mpgeCombinado', 'KMGe combinado', 'number', undefined, 'kmge', 'EV/PHEV')}
           {renderField('motorAutostop', 'Motor autostop', 'checkbox', undefined, undefined, 'Todos')}
@@ -902,17 +902,31 @@ export function AddVehicleForm() {
           Batería y Carga
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {renderField('capacidadBrutaBateria', 'Capacidad bruta batería', 'number', undefined, 'kWh', 'HEV/PHEV')}
-          {renderField('cargadorOBCAC', 'Cargador a bordo (OBC) AC', 'number', undefined, 'kW', 'HEV/PHEV')}
-          {renderField('conduccionOnePedal', 'Conducción One-Pedal', 'checkbox', undefined, undefined, 'EV')}
-          {renderField('regeneracionNiveles', 'Regeneración (niveles)', 'number', undefined, undefined, 'HEV/PHEV')}
-          {renderField('tiempo0100AC', 'Tiempo 0-100% (AC)', 'number', undefined, 'h', 'HEV/PHEV')}
-          {renderField('tiempo1080DC', 'Tiempo 10-80% (DC)', 'number', undefined, 'min', 'HEV/PHEV')}
-          {renderField('highPowerChargingTimes', 'High Power Charging times', 'text', undefined, undefined, 'HEV/PHEV')}
-          {renderField('v2hV2g', 'V2H/V2G (bidireccional)', 'checkbox', undefined, undefined, 'EV')}
-          {renderField('potenciaV2hV2g', 'V2H/V2G Potencia', 'number', undefined, 'kW', 'EV')}
+          {/* Para híbridos (no enchufables), mostrar 5 campos específicos */}
+          {formData.combustible === 'Híbrido' ? (
+            <>
+              {renderField('capacidadBrutaBateria', 'Capacidad bruta batería (kWh)', 'number', undefined, 'kWh')}
+              {renderField('regeneracionNiveles', 'Regeneración (niveles)', 'number')}
+              {renderField('conduccionOnePedal', 'Conducción One-Pedal', 'checkbox')}
+              {renderField('v2hV2g', 'V2H/V2G (bidireccional)', 'checkbox')}
+              {renderField('potenciaV2hV2g', 'V2H/V2G Potencia (kW)', 'number', undefined, 'kW')}
+            </>
+          ) : (
+            <>
+              {/* Para eléctricos e híbridos enchufables, mostrar exactamente 9 campos */}
+              {renderField('capacidadBrutaBateria', 'Capacidad bruta batería (kWh)', 'number', undefined, 'kWh')}
+              {renderField('cargadorOBCAC', 'Cargador a bordo (OBC) AC (kW)', 'number', undefined, 'kW')}
+              {renderField('conduccionOnePedal', 'Conducción One-Pedal', 'checkbox')}
+              {renderField('regeneracionNiveles', 'Regeneración (niveles)', 'number')}
+              {renderField('tiempo0100AC', 'Tiempo 0-100% (AC) (h)', 'number', undefined, 'h')}
+              {renderField('tiempo1080DC', 'Tiempo 10-80% (DC) (min)', 'number', undefined, 'min')}
+              {renderField('highPowerChargingTimes', 'High Power Charging times', 'text')}
+              {renderField('v2hV2g', 'V2H/V2G (bidireccional)', 'checkbox')}
+              {renderField('potenciaV2hV2g', 'V2H/V2G Potencia (kW)', 'number', undefined, 'kW')}
+            </>
+          )}
         </div>
-          </div>
+      </div>
 
       {/* Chasis, frenos y dirección */}
       <div className="mb-8">
@@ -927,7 +941,7 @@ export function AddVehicleForm() {
           {renderField('materialDiscos', 'Tipos de freno', 'text', undefined)}
           {renderField('tipoPinzasFreno', 'Tipo de pistones de freno', 'text', undefined)}
         </div>
-          </div>
+      </div>
 
       {/* Prestaciones */}
       <div className="mb-8">
@@ -936,18 +950,18 @@ export function AddVehicleForm() {
           Prestaciones
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {renderField('aceleracion0100', '0-100 km/h', 'number', undefined, 's')}
-          {renderField('aceleracion0200', '0-200 km/h', 'number', undefined, 's')}
-          {renderField('aceleracion5080', '50-80 km/h (recuperación)', 'number', undefined, 's')}
-          {renderField('aceleracion80120', '80-120 km/h (adelantamiento)', 'number', undefined, 's')}
-          {renderField('aceleracionLateralMaxima', 'Aceleración lateral máxima', 'number', undefined, 'g')}
-          {renderField('aceleracionLongitudinalMaxima', 'Aceleración longitudinal máxima', 'number', undefined, 'g')}
-          {renderField('frenado1000', 'Frenado 160-0 km/h', 'number', undefined, 'm')}
-          {renderField('velocidadMaxima', 'Velocidad máxima', 'number', undefined, 'km/h')}
-          {renderField('relacionPesoPotencia', 'Relación peso/potencia', 'number', undefined, 'HP/ton')}
-          {renderField('cuartoMilla', '1/4 de milla (tiempo)', 'number', undefined, 's')}
+          {renderField('aceleracion0100', '0-100 km/h', 'text', undefined, 's')}
+          {renderField('aceleracion0200', '0-200 km/h', 'text', undefined, 's')}
+          {renderField('aceleracion5080', '50-80 km/h (recuperación)', 'text', undefined, 's')}
+          {renderField('aceleracion80120', '80-120 km/h (adelantamiento)', 'text', undefined, 's')}
+          {renderField('aceleracionLateralMaxima', 'Aceleración lateral máxima', 'text', undefined, 'g')}
+          {renderField('aceleracionLongitudinalMaxima', 'Aceleración longitudinal máxima', 'text', undefined, 'g')}
+          {renderField('frenado1000', 'Frenado 160-0 km/h', 'text', undefined, 'm')}
+          {renderField('velocidadMaxima', 'Velocidad máxima', 'text', undefined, 'km/h')}
+          {renderField('relacionPesoPotencia', 'Relación peso/potencia', 'text', undefined, 'HP/ton')}
+          {renderField('cuartoMilla', '1/4 de milla (tiempo)', 'text', undefined, 's')}
         </div>
-          </div>
+      </div>
 
       {/* Seguridad pasiva y estructural */}
       <div className="mb-8">
@@ -964,7 +978,7 @@ export function AddVehicleForm() {
           {renderField('latinNCAPEstrellas', 'Latin NCAP (estrellas)', 'number', undefined, '★')}
           {renderField('isofixTopTether', 'ISOFIX y Top Tether', 'checkbox')}
         </div>
-          </div>
+      </div>
 
       {/* ADAS */}
       <div className="mb-8">
@@ -983,7 +997,7 @@ export function AddVehicleForm() {
           {renderField('parkAssist', 'Park Assist (autónomo)', 'checkbox')}
           {renderField('sensoresEstacionamientoDelantero', 'Sensores estacionamiento delantero', 'checkbox')}
         </div>
-          </div>
+      </div>
 
       {/* Iluminación y visibilidad */}
       <div className="mb-8">
@@ -997,7 +1011,7 @@ export function AddVehicleForm() {
           {renderField('intermitentesDinamicos', 'Intermitentes dinámicos', 'checkbox', undefined, undefined, 'Premium')}
           {renderField('lavafaros', 'Lavafaros', 'checkbox', undefined, undefined, 'Premium')}
         </div>
-          </div>
+      </div>
 
       {/* Infoentretenimiento y conectividad */}
       <div className="mb-8">
@@ -1021,7 +1035,7 @@ export function AddVehicleForm() {
           {renderField('puertosUSBC', 'Puertos USB-C (cantidad)', 'number', undefined)}
           {renderField('wifiBordo', 'Wi-Fi a bordo', 'checkbox', undefined, undefined, 'Premium')}
         </div>
-          </div>
+      </div>
 
       {/* Interior y confort */}
       <div className="mb-8">
@@ -1054,7 +1068,7 @@ export function AddVehicleForm() {
           {renderField('modosConduccion', 'Modos de conducción', 'text', undefined, undefined, 'Todos')}
           {renderField('sensorLluvia', 'Sensor de lluvia', 'checkbox')}
         </div>
-          </div>
+      </div>
 
       {/* Off-road y 4x4 */}
       <div className="mb-8">
@@ -1066,7 +1080,7 @@ export function AddVehicleForm() {
           {renderField('esOffroad', 'Vehículo Off-road', 'checkbox', undefined, undefined, 'Todos')}
           {renderField('controlDescenso', 'Control de descenso', 'checkbox', undefined, undefined, 'SUV/4x4')}
           {renderField('controlTraccionOffRoad', 'Control de tracción off-road', 'checkbox', undefined, undefined, '4x4')}
-          
+
           {/* Campos adicionales que aparecen cuando esOffroad es true */}
           {formData.esOffroad && (
             <>
@@ -1081,7 +1095,7 @@ export function AddVehicleForm() {
             </>
           )}
         </div>
-          </div>
+      </div>
 
       {/* Comercial */}
       <div className="mb-8">
@@ -1099,7 +1113,7 @@ export function AddVehicleForm() {
           {renderField('financiacionCuotaEstimada', 'Financiación (cuota estimada)', 'number', undefined, 'COP')}
           {renderField('origenPaisPlanta', 'Origen (país/planta)', 'text', undefined)}
         </div>
-          </div>
+      </div>
 
       {/* Metadatos */}
       <div className="mb-8">
@@ -1143,7 +1157,7 @@ export function AddVehicleForm() {
         <h2 className="text-xl font-semibold text-gray-900 mb-6">
           Concesionarios Disponibles *
         </h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {dealers.map((dealer) => (
             <label key={dealer.id} className="flex items-center space-x-3 cursor-pointer">
@@ -1160,7 +1174,7 @@ export function AddVehicleForm() {
             </label>
           ))}
         </div>
-        
+
         {selectedDealers.length === 0 && (
           <p className="text-sm text-red-600 mt-2">
             Debe seleccionar al menos un concesionario
@@ -1178,7 +1192,7 @@ export function AddVehicleForm() {
           <X className="w-4 h-4 mr-2" />
           Cancelar
         </button>
-        
+
         <button
           type="submit"
           disabled={loading || selectedDealers.length === 0}

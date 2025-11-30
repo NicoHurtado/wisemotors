@@ -148,11 +148,11 @@ function SpecificationCard({ title, icon: Icon, colorScheme, fields, id, default
     <div
       id={id}
       className={`w-full bg-white rounded-xl border-2 ${isPinned ? 'border-wise' : ''} transition-all duration-200 mb-4 break-inside-avoid relative overflow-hidden group ${isHighlighted ? 'highlight-animation' : ''}`}
-      style={{ 
+      style={{
         borderColor: isPinned ? '#8B5CF6' : purpleColors.border,
         borderLeftWidth: '6px',
-        boxShadow: isPinned 
-          ? purpleColors.shadowHover 
+        boxShadow: isPinned
+          ? purpleColors.shadowHover
           : purpleColors.shadow,
       }}
       onMouseEnter={(e) => {
@@ -169,15 +169,15 @@ function SpecificationCard({ title, icon: Icon, colorScheme, fields, id, default
       }}
     >
       {/* Efecto de brillo sutil (metalizado) */}
-      <div 
+      <div
         className="absolute inset-0 pointer-events-none"
-        style={{ 
+        style={{
           background: `linear-gradient(135deg, ${purpleColors.bgLight} 0%, ${purpleColors.bgDark} 50%, ${purpleColors.bgLight} 100%)`
         }}
       ></div>
-      
+
       {/* Borde interno con gradiente para efecto metalizado */}
-      <div 
+      <div
         className="absolute inset-0 rounded-xl pointer-events-none"
         style={{
           background: `linear-gradient(135deg, rgba(136, 28, 183, 0.05) 0%, transparent 50%, rgba(136, 28, 183, 0.03) 100%)`,
@@ -187,7 +187,7 @@ function SpecificationCard({ title, icon: Icon, colorScheme, fields, id, default
 
       {/* Animación de brillo metálico en morado */}
       {isHighlighted && (
-        <div 
+        <div
           className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl"
           style={{ zIndex: 20 }}
         >
@@ -205,14 +205,14 @@ function SpecificationCard({ title, icon: Icon, colorScheme, fields, id, default
           ></div>
         </div>
       )}
-      
+
       <div className="p-5 relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center flex-1 gap-3">
-            <div 
+            <div
               className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md"
-              style={{ 
+              style={{
                 background: purpleColors.iconGradient,
                 boxShadow: '0 2px 8px rgba(136, 28, 183, 0.3)'
               }}
@@ -784,17 +784,24 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     iconBgTo: "to-emerald-600",
                     circleBg: "bg-green-500/10"
                   }}
-                  fields={[
-                    { label: "Capacidad bruta batería", value: battery.capacidadBrutaBateria, formatter: (v) => v ? `${v} kWh` : undefined },
-                    { label: "Cargador a bordo (OBC) AC", value: battery.cargadorOBCAC, formatter: (v) => v ? `${v} kW` : undefined },
-                    { label: "Conducción One-Pedal", value: battery.conduccionOnePedal, formatter: (v) => v === true ? "Sí" : v === false ? "No" : undefined },
-                    { label: "High Power Charging times", value: battery.highPowerChargingTimes, formatter: (v) => v ? String(v) : undefined },
-                    { label: "Regeneración (niveles)", value: battery.regeneracionNiveles, formatter: (v) => v !== undefined && v !== null ? String(v) : undefined },
-                    { label: "Tiempo 0-100% (AC)", value: battery.tiempo0100AC, formatter: (v) => v ? `${v} h` : undefined },
-                    { label: "Tiempo 10-80% (DC)", value: battery.tiempo1080DC, formatter: (v) => v ? `${v} min` : undefined },
-                    { label: "V2H/V2G (bidireccional)", value: battery.v2hV2g, formatter: (v) => v === true ? "Sí" : v === false ? "No" : undefined },
-                    { label: "V2H/V2G Potencia", value: battery.potenciaV2hV2g, formatter: (v) => v ? `${v} kW` : undefined },
-                  ]}
+                  fields={
+                    // Para híbridos, solo mostrar capacidad de batería y regeneración
+                    isHybrid && !isElectric ? [
+                      { label: "Capacidad bruta batería (kWh)", value: battery.capacidadBrutaBateria, formatter: (v) => v ? `${v} kWh` : undefined },
+                      { label: "Regeneración (niveles)", value: battery.regeneracionNiveles, formatter: (v) => v !== undefined && v !== null ? String(v) : undefined },
+                    ] : [
+                      // Para eléctricos, mostrar todos los campos
+                      { label: "Capacidad bruta batería", value: battery.capacidadBrutaBateria, formatter: (v) => v ? `${v} kWh` : undefined },
+                      { label: "Cargador a bordo (OBC) AC", value: battery.cargadorOBCAC, formatter: (v) => v ? `${v} kW` : undefined },
+                      { label: "Conducción One-Pedal", value: battery.conduccionOnePedal, formatter: (v) => v === true ? "Sí" : v === false ? "No" : undefined },
+                      { label: "High Power Charging times", value: battery.highPowerChargingTimes, formatter: (v) => v ? String(v) : undefined },
+                      { label: "Regeneración (niveles)", value: battery.regeneracionNiveles, formatter: (v) => v !== undefined && v !== null ? String(v) : undefined },
+                      { label: "Tiempo 0-100% (AC)", value: battery.tiempo0100AC, formatter: (v) => v ? `${v} h` : undefined },
+                      { label: "Tiempo 10-80% (DC)", value: battery.tiempo1080DC, formatter: (v) => v ? `${v} min` : undefined },
+                      { label: "V2H/V2G (bidireccional)", value: battery.v2hV2g, formatter: (v) => v === true ? "Sí" : v === false ? "No" : undefined },
+                      { label: "V2H/V2G Potencia", value: battery.potenciaV2hV2g, formatter: (v) => v ? `${v} kW` : undefined },
+                    ]
+                  }
                 />
               )}
 
