@@ -157,13 +157,9 @@ export const COMPARE_SECTIONS: CompareSection[] = [
     icon: '🛡️',
     fields: [
       { key: 'airbags', label: 'Número total de airbags', better: 'higher', category: 'safety' },
-      { key: 'abs', label: 'ABS', better: 'boolean', category: 'safety' },
-      { key: 'esp', label: 'ESP', better: 'boolean', category: 'safety' },
-      { key: 'ncapRating', label: 'Euro NCAP (estrellas)', better: 'higher', category: 'safety' },
-      { key: 'adultSafetyScore', label: 'Euro NCAP (Adulto %)', unit: '%', better: 'higher', category: 'safety' },
-      { key: 'pedestrianScore', label: 'Euro NCAP (Peatón %)', unit: '%', better: 'higher', category: 'safety' },
-      { key: 'assistanceScore', label: 'Euro NCAP (Asistencias %)', unit: '%', better: 'higher', category: 'safety' },
-      { key: 'latinNCAPRating', label: 'Latin NCAP (estrellas)', better: 'higher', category: 'safety' },
+      { key: 'isofixTopTether', label: 'ISOFIX y Top Tether', better: 'boolean', category: 'safety' },
+      { key: 'agenciaCertifica', label: 'Agencia que certifica', better: 'boolean', category: 'safety' },
+      { key: 'puntajeAgencia', label: 'Puntaje de agencia', better: 'higher', category: 'safety' },
     ]
   },
   {
@@ -178,7 +174,7 @@ export const COMPARE_SECTIONS: CompareSection[] = [
       { key: 'farosAdaptativos', label: 'Faros adaptativos (ADB)', better: 'boolean', category: 'adas' },
       { key: 'lka', label: 'LKA (asistente carril)', better: 'boolean', category: 'adas' },
       { key: 'lucesAltasAutomaticas', label: 'Luces altas automáticas', better: 'boolean', category: 'adas' },
-      { key: 'parkAssist', label: 'Park Assist (autónomo)', better: 'boolean', category: 'adas' },
+      { key: 'parkAssist', label: 'Parqueado Autónomo', better: 'boolean', category: 'adas' },
       { key: 'sensoresEstacionamientoDelantero', label: 'Sensores estacionamiento delantero', better: 'boolean', category: 'adas' },
     ]
   },
@@ -189,11 +185,14 @@ export const COMPARE_SECTIONS: CompareSection[] = [
     fields: [
       { key: 'capacidadBrutaBateria', label: 'Capacidad bruta batería', unit: 'kWh', better: 'higher', category: 'battery' },
       { key: 'cargadorOBCAC', label: 'Cargador a bordo (OBC) AC', unit: 'kW', better: 'higher', category: 'battery' },
+      { key: 'tipoEntrada', label: 'Tipo de entrada', better: 'boolean', category: 'battery' },
       { key: 'conduccionOnePedal', label: 'Conducción One-Pedal', better: 'boolean', category: 'battery' },
-      { key: 'highPowerChargingTimes', label: 'High Power Charging times', better: 'boolean', category: 'battery' },
       { key: 'regeneracionNiveles', label: 'Regeneración (niveles)', better: 'higher', category: 'battery' },
-      { key: 'tiempo0100AC', label: 'Tiempo 0-100% (AC)', unit: 'h', better: 'lower', category: 'battery' },
-      { key: 'tiempo1080DC', label: 'Tiempo 10-80% (DC)', unit: 'min', better: 'lower', category: 'battery' },
+      { key: 'tiempo2080AC110V', label: 'Tiempo 20-80% AC 110V (Enchufe doméstico)', unit: 'min', better: 'lower', category: 'battery' },
+      { key: 'tiempo2080AC7KW', label: 'Tiempo 20-80% AC 7KW (Instalación doméstica)', unit: 'min', better: 'lower', category: 'battery' },
+      { key: 'tiempo2080AC22KW', label: 'Tiempo 20-80% AC 22KW (Cargador empresarial)', unit: 'min', better: 'lower', category: 'battery' },
+      { key: 'tiempo2080DC50KW', label: 'Tiempo 20-80% DC 50KW (Carga rápida)', unit: 'min', better: 'lower', category: 'battery' },
+      { key: 'tiempo2080DC150KW', label: 'Tiempo 20-80% DC 150KW (Carga ultrarápida)', unit: 'min', better: 'lower', category: 'battery' },
       { key: 'v2hV2g', label: 'V2H/V2G (bidireccional)', better: 'boolean', category: 'battery' },
       { key: 'potenciaV2hV2g', label: 'V2H/V2G Potencia', unit: 'kW', better: 'higher', category: 'battery' },
     ]
@@ -253,8 +252,8 @@ export const COMPARE_SECTIONS: CompareSection[] = [
     label: 'Confort e Interior',
     icon: '🛋️',
     fields: [
-      { key: 'ajusteElectricoConductor', label: 'Ajuste eléctrico conductor', better: 'higher', category: 'comfort' },
-      { key: 'ajusteElectricoPasajero', label: 'Ajuste eléctrico pasajero', better: 'higher', category: 'comfort' },
+      { key: 'ajusteElectricoConductor', label: 'Ajuste eléctrico conductor', better: 'boolean', category: 'comfort' },
+      { key: 'ajusteElectricoPasajero', label: 'Ajuste eléctrico pasajero', better: 'boolean', category: 'comfort' },
       { key: 'calefaccionAsientos', label: 'Calefacción de asientos', better: 'boolean', category: 'comfort' },
       { key: 'ventilacionAsientos', label: 'Ventilación de asientos', better: 'boolean', category: 'comfort' },
       { key: 'masajeAsientos', label: 'Masaje en asientos', better: 'boolean', category: 'comfort' },
@@ -272,7 +271,8 @@ export const COMPARE_SECTIONS: CompareSection[] = [
       { key: 'espejoInteriorElectrocromico', label: 'Espejo interior electrocrómico', better: 'boolean', category: 'comfort' },
       { key: 'volanteMaterialAjustes', label: 'Volante (material y ajustes)', better: 'boolean', category: 'comfort' },
       { key: 'volanteCalefactable', label: 'Volante calefactable', better: 'boolean', category: 'comfort' },
-      { key: 'tomas12V120V', label: 'Tomas 12 V/120 V', better: 'higher', category: 'comfort' },
+      { key: 'tomas12V', label: 'Cantidad de tomas 12V', better: 'higher', category: 'comfort' },
+      { key: 'tomas120V', label: 'Cantidad de tomas 120V', better: 'higher', category: 'comfort' },
       { key: 'tomacorrienteEnCaja', label: 'Tomacorriente en caja', better: 'boolean', category: 'comfort' },
     ]
   },
@@ -287,7 +287,9 @@ export const COMPARE_SECTIONS: CompareSection[] = [
       { key: 'asistenciaCarretera', label: 'Asistencia en carretera', unit: 'años', better: 'higher', category: 'commercial' },
       { key: 'intervaloMantenimiento', label: 'Intervalo de mantenimiento', better: 'boolean', category: 'commercial' },
       { key: 'costoMantenimiento3Primeros', label: 'Costo mantenimiento (3 primeros)', unit: 'COP', better: 'lower', category: 'commercial' },
-      { key: 'financiacionCuotaEstimada', label: 'Financiación (cuota estimada)', unit: 'COP', better: 'lower', category: 'commercial' },
+      { key: 'financiacionCuotaEstimada12Meses', label: 'Financiación (cuota estimada) 12 meses', unit: 'COP', better: 'lower', category: 'commercial' },
+      { key: 'financiacionCuotaEstimada36Meses', label: 'Financiación (cuota estimada) 36 meses', unit: 'COP', better: 'lower', category: 'commercial' },
+      { key: 'financiacionCuotaEstimada72Meses', label: 'Financiación (cuota estimada) 72 meses', unit: 'COP', better: 'lower', category: 'commercial' },
       { key: 'origenPaisPlanta', label: 'Origen (país/planta)', better: 'boolean', category: 'commercial' },
     ]
   },

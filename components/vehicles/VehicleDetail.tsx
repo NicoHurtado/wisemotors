@@ -734,13 +734,11 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                 }}
                 fields={[
                   { label: "Número total de airbags", value: safety.airbags },
-                  { label: "ABS", value: safety.abs },
-                  { label: "ESP", value: safety.esp },
-                  { label: "Euro NCAP (estrellas)", value: safety.ncapRating, formatter: (v) => v ? `${v} ⭐` : undefined },
-                  { label: "Euro NCAP (Adulto %)", value: safety.adultSafetyScore, formatter: (v) => v ? `${v}%` : undefined },
-                  { label: "Euro NCAP (Peatón %)", value: safety.pedestrianScore, formatter: (v) => v ? `${v}%` : undefined },
-                  { label: "Euro NCAP (Asistencias %)", value: safety.assistanceScore, formatter: (v) => v ? `${v}%` : undefined },
-                  { label: "Latin NCAP (estrellas)", value: safety.latinNCAPRating, formatter: (v) => v ? `${v} ⭐` : undefined },
+                  { label: "ISOFIX y Top Tether", value: safety.isofixTopTether },
+                  { label: "Agencia que certifica", value: safety.agenciaCertifica },
+                  ...(safety.agenciaCertifica && safety.agenciaCertifica !== 'Ninguna' ? [
+                    { label: "Puntaje de agencia", value: safety.puntajeAgencia, formatter: (v) => v ? String(v) : undefined }
+                  ] : []),
                 ]}
               />
 
@@ -765,7 +763,7 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Faros adaptativos (ADB)", value: adas.farosAdaptativos },
                     { label: "LKA (asistente carril)", value: adas.lka || adas.laneKeepingAssist },
                     { label: "Luces altas automáticas", value: adas.lucesAltasAutomaticas },
-                    { label: "Park Assist (autónomo)", value: adas.parkAssist },
+                    { label: "Parqueado Autónomo", value: adas.parkAssist },
                     { label: "Sensores estacionamiento delantero", value: adas.sensoresEstacionamientoDelantero },
                   ]}
                 />
@@ -793,11 +791,14 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                       // Para eléctricos, mostrar todos los campos
                       { label: "Capacidad bruta batería", value: battery.capacidadBrutaBateria, formatter: (v) => v ? `${v} kWh` : undefined },
                       { label: "Cargador a bordo (OBC) AC", value: battery.cargadorOBCAC, formatter: (v) => v ? `${v} kW` : undefined },
+                      { label: "Tipo de entrada", value: battery.tipoEntrada },
                       { label: "Conducción One-Pedal", value: battery.conduccionOnePedal, formatter: (v) => v === true ? "Sí" : v === false ? "No" : undefined },
-                      { label: "High Power Charging times", value: battery.highPowerChargingTimes, formatter: (v) => v ? String(v) : undefined },
                       { label: "Regeneración (niveles)", value: battery.regeneracionNiveles, formatter: (v) => v !== undefined && v !== null ? String(v) : undefined },
-                      { label: "Tiempo 0-100% (AC)", value: battery.tiempo0100AC, formatter: (v) => v ? `${v} h` : undefined },
-                      { label: "Tiempo 10-80% (DC)", value: battery.tiempo1080DC, formatter: (v) => v ? `${v} min` : undefined },
+                      { label: "Tiempo 20-80% AC 110V (Enchufe doméstico)", value: battery.tiempo2080AC110V, formatter: (v) => v ? `${v} min` : undefined },
+                      { label: "Tiempo 20-80% AC 7KW (Instalación doméstica)", value: battery.tiempo2080AC7KW, formatter: (v) => v ? `${v} min` : undefined },
+                      { label: "Tiempo 20-80% AC 22KW (Cargador empresarial)", value: battery.tiempo2080AC22KW, formatter: (v) => v ? `${v} min` : undefined },
+                      { label: "Tiempo 20-80% DC 50KW (Carga rápida)", value: battery.tiempo2080DC50KW, formatter: (v) => v ? `${v} min` : undefined },
+                      { label: "Tiempo 20-80% DC 150KW (Carga ultrarápida)", value: battery.tiempo2080DC150KW, formatter: (v) => v ? `${v} min` : undefined },
                       { label: "V2H/V2G (bidireccional)", value: battery.v2hV2g, formatter: (v) => v === true ? "Sí" : v === false ? "No" : undefined },
                       { label: "V2H/V2G Potencia", value: battery.potenciaV2hV2g, formatter: (v) => v ? `${v} kW` : undefined },
                     ]
@@ -929,8 +930,16 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     circleBg: "bg-violet-500/10"
                   }}
                   fields={[
-                    { label: "Ajuste eléctrico conductor", value: comfort.ajusteElectricoConductor },
-                    { label: "Ajuste eléctrico pasajero", value: comfort.ajusteElectricoPasajero },
+                    { label: "Ajuste eléctrico conductor", value: comfort.ajusteElectricoConductor, formatter: (v) => {
+                      if (typeof v === 'boolean') return v ? 'Sí' : 'No';
+                      if (typeof v === 'number') return v > 0 ? 'Sí' : 'No';
+                      return undefined;
+                    }},
+                    { label: "Ajuste eléctrico pasajero", value: comfort.ajusteElectricoPasajero, formatter: (v) => {
+                      if (typeof v === 'boolean') return v ? 'Sí' : 'No';
+                      if (typeof v === 'number') return v > 0 ? 'Sí' : 'No';
+                      return undefined;
+                    }},
                     { label: "Calefacción de asientos", value: comfort.calefaccionAsientos || comfort.heatedSeats },
                     { label: "Ventilación de asientos", value: comfort.ventilacionAsientos },
                     { label: "Masaje en asientos", value: comfort.masajeAsientos },
@@ -948,7 +957,8 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Espejo interior electrocrómico", value: comfort.espejoInteriorElectrocromico },
                     { label: "Volante (material y ajustes)", value: comfort.volanteMaterialAjustes },
                     { label: "Volante calefactable", value: comfort.volanteCalefactable },
-                    { label: "Tomas 12 V/120 V", value: comfort.tomas12V120V },
+                    { label: "Cantidad de tomas 12V", value: comfort.tomas12V },
+                    { label: "Cantidad de tomas 120V", value: comfort.tomas120V },
                     { label: "Tomacorriente en caja", value: comfort.tomacorrienteEnCaja },
                     { label: "Tecnología Keyless", value: comfort.startStop || powertrain.startStop },
                     { label: "Modos de conducción", value: comfort.modosConduccion || powertrain.modosConduccion },
@@ -977,7 +987,9 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Asistencia en carretera", value: commercial.asistenciaCarretera, formatter: (v) => v && v > 0 ? `${v} años` : undefined },
                     { label: "Intervalo de mantenimiento", value: commercial.intervaloMantenimiento },
                     { label: "Costo mantenimiento (3 primeros)", value: commercial.costoMantenimiento3Primeros, formatter: (v) => v && v > 0 ? `$${new Intl.NumberFormat('es-CO').format(v)}` : undefined },
-                    { label: "Financiación (cuota estimada)", value: commercial.financiacionCuotaEstimada, formatter: (v) => v && v > 0 ? `$${new Intl.NumberFormat('es-CO').format(v)}` : undefined },
+                    { label: "Financiación (cuota estimada) 12 meses", value: commercial.financiacionCuotaEstimada12Meses, formatter: (v) => v && v > 0 ? `$${new Intl.NumberFormat('es-CO').format(v)}` : undefined },
+                    { label: "Financiación (cuota estimada) 36 meses", value: commercial.financiacionCuotaEstimada36Meses, formatter: (v) => v && v > 0 ? `$${new Intl.NumberFormat('es-CO').format(v)}` : undefined },
+                    { label: "Financiación (cuota estimada) 72 meses", value: commercial.financiacionCuotaEstimada72Meses, formatter: (v) => v && v > 0 ? `$${new Intl.NumberFormat('es-CO').format(v)}` : undefined },
                     { label: "Origen (país/planta)", value: commercial.origenPaisPlanta },
                   ]}
                 />

@@ -168,16 +168,22 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
         return getValueFromPath('battery.capacidadBrutaBateria');
       case 'cargadorOBCAC':
         return getValueFromPath('battery.cargadorOBCAC');
+      case 'tipoEntrada':
+        return getValueFromPath('battery.tipoEntrada');
       case 'conduccionOnePedal':
         return getValueFromPath('battery.conduccionOnePedal');
-      case 'highPowerChargingTimes':
-        return getValueFromPath('battery.highPowerChargingTimes');
       case 'regeneracionNiveles':
         return getValueFromPath('battery.regeneracionNiveles');
-      case 'tiempo0100AC':
-        return getValueFromPath('battery.tiempo0100AC');
-      case 'tiempo1080DC':
-        return getValueFromPath('battery.tiempo1080DC');
+      case 'tiempo2080AC110V':
+        return getValueFromPath('battery.tiempo2080AC110V');
+      case 'tiempo2080AC7KW':
+        return getValueFromPath('battery.tiempo2080AC7KW');
+      case 'tiempo2080AC22KW':
+        return getValueFromPath('battery.tiempo2080AC22KW');
+      case 'tiempo2080DC50KW':
+        return getValueFromPath('battery.tiempo2080DC50KW');
+      case 'tiempo2080DC150KW':
+        return getValueFromPath('battery.tiempo2080DC150KW');
       case 'v2hV2g':
         return getValueFromPath('battery.v2hV2g');
       case 'potenciaV2hV2g':
@@ -246,20 +252,12 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
       // Seguridad
       case 'airbags':
         return getValueFromPath('safety.airbags');
-      case 'abs':
-        return getValueFromPath('safety.abs');
-      case 'esp':
-        return getValueFromPath('safety.esp');
-      case 'ncapRating':
-        return getValueFromPath('safety.ncapRating');
-      case 'adultSafetyScore':
-        return getValueFromPath('safety.adultSafetyScore');
-      case 'pedestrianScore':
-        return getValueFromPath('safety.pedestrianScore');
-      case 'assistanceScore':
-        return getValueFromPath('safety.assistanceScore');
-      case 'latinNCAPRating':
-        return getValueFromPath('safety.latinNCAPRating');
+      case 'isofixTopTether':
+        return getValueFromPath('safety.isofixTopTether');
+      case 'agenciaCertifica':
+        return getValueFromPath('safety.agenciaCertifica');
+      case 'puntajeAgencia':
+        return getValueFromPath('safety.puntajeAgencia');
       
       // ADAS
       case 'acc':
@@ -380,8 +378,10 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
         return getValueFromPath('comfort.volanteMaterialAjustes');
       case 'volanteCalefactable':
         return getValueFromPath('comfort.volanteCalefactable');
-      case 'tomas12V120V':
-        return getValueFromPath('comfort.tomas12V120V');
+      case 'tomas12V':
+        return getValueFromPath('comfort.tomas12V');
+      case 'tomas120V':
+        return getValueFromPath('comfort.tomas120V');
       case 'tomacorrienteEnCaja':
         return getValueFromPath('comfort.tomacorrienteEnCaja');
       
@@ -398,8 +398,12 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
         return getValueFromPath('commercial.intervaloMantenimiento');
       case 'costoMantenimiento3Primeros':
         return getValueFromPath('commercial.costoMantenimiento3Primeros');
-      case 'financiacionCuotaEstimada':
-        return getValueFromPath('commercial.financiacionCuotaEstimada');
+      case 'financiacionCuotaEstimada12Meses':
+        return getValueFromPath('commercial.financiacionCuotaEstimada12Meses');
+      case 'financiacionCuotaEstimada36Meses':
+        return getValueFromPath('commercial.financiacionCuotaEstimada36Meses');
+      case 'financiacionCuotaEstimada72Meses':
+        return getValueFromPath('commercial.financiacionCuotaEstimada72Meses');
       case 'origenPaisPlanta':
         return getValueFromPath('commercial.origenPaisPlanta');
       
@@ -454,7 +458,10 @@ export function CompareTables({ vehicles }: CompareTablesProps) {
       
       // Formateo especial para precios y valores grandes en COP
       if (field.key === 'precioLista' || field.key === 'ahorro5Anos' || 
-          field.key === 'costoMantenimiento3Primeros' || field.key === 'financiacionCuotaEstimada' || 
+          field.key === 'costoMantenimiento3Primeros' || 
+          field.key === 'financiacionCuotaEstimada12Meses' || 
+          field.key === 'financiacionCuotaEstimada36Meses' || 
+          field.key === 'financiacionCuotaEstimada72Meses' || 
           field.key === 'costoEnergia100km') {
         return `$${new Intl.NumberFormat('es-CO').format(value)}`;
       }

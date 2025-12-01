@@ -285,7 +285,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   </div>
                   <div className="flex-1">
                     <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Categoría</div>
-                    <div className="text-base font-semibold text-gray-900">{vehicle.vehicleType || vehicle.type || 'N/A'}</div>
+                    <div className="text-base font-semibold text-gray-900">{vehicle.type || vehicle.specifications?.identification?.carrocería || 'N/A'}</div>
                   </div>
                 </div>
 
@@ -695,25 +695,30 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
 
             {/* Quick Navigation - Vertical - Comentado para vista minimalista */}
 
-            {/* Categories WiseMotors Section */}
+            {/* Aplicabilidad Flags Section */}
             <div className="bg-white rounded-2xl shadow-soft p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
                 <Sparkles className="w-5 h-5 text-wise mr-2" />
-                Categorías WiseMotors
+                Aplicabilidad (flags)
               </h3>
               <div className="flex flex-wrap gap-2">
-                {vehicle.categories && vehicle.categories.length > 0 ? (
-                  vehicle.categories.map((category: any) => (
-                    <span
-                      key={category.id}
-                      className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-wise/10 text-wise border border-wise/20 hover:bg-wise/20 transition-colors"
-                    >
-                      {category.label}
-                    </span>
-                  ))
-                ) : (
-                  <p className="text-gray-600 text-sm">No hay categorías disponibles</p>
-                )}
+                {(() => {
+                  const aplicabilidadFlags = vehicle.specifications?.metadata?.aplicabilidadFlags;
+                  if (aplicabilidadFlags && aplicabilidadFlags.trim()) {
+                    const flags = aplicabilidadFlags.split(',').map((flag: string) => flag.trim()).filter((flag: string) => flag.length > 0);
+                    if (flags.length > 0) {
+                      return flags.map((flag: string, index: number) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-wise/10 text-wise border border-wise/20 hover:bg-wise/20 transition-colors"
+                        >
+                          {flag}
+                        </span>
+                      ));
+                    }
+                  }
+                  return <p className="text-gray-600 text-sm">No hay aplicabilidad disponible</p>;
+                })()}
               </div>
             </div>
           </div>

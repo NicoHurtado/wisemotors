@@ -91,11 +91,14 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
     // Batería y carga
     capacidadBrutaBateria: '',
     cargadorOBCAC: '',
+    tipoEntrada: '',
     conduccionOnePedal: false,
     regeneracionNiveles: '',
-    tiempo0100AC: '',
-    tiempo1080DC: '',
-    highPowerChargingTimes: '',
+    tiempo2080AC110V: '',
+    tiempo2080AC7KW: '',
+    tiempo2080AC22KW: '',
+    tiempo2080DC50KW: '',
+    tiempo2080DC150KW: '',
     v2hV2g: false,
     potenciaV2hV2g: '',
 
@@ -121,12 +124,9 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
     // Seguridad pasiva y estructural
     numeroAirbags: '',
-    euroNCAPEstrellas: '',
-    euroNCAPAdulto: '',
-    euroNCAPPeaton: '',
-    euroNCAPAsistencias: '',
-    latinNCAPEstrellas: '',
     isofixTopTether: false,
+    agenciaCertifica: '',
+    puntajeAgencia: '',
 
     // ADAS (asistencias activas)
     acc: false,
@@ -163,8 +163,8 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
     wifiBordo: false,
 
     // Interior y confort
-    ajusteElectricoConductor: '',
-    ajusteElectricoPasajero: '',
+    ajusteElectricoConductor: false,
+    ajusteElectricoPasajero: false,
     calefaccionAsientos: false,
     climatizadorZonas: '',
     cristalesAcusticos: false,
@@ -176,7 +176,8 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
     segundaFilaCorrediza: false,
     techoPanoramico: false,
     terceraFilaAsientos: false,
-    tomas12V120V: '',
+    tomas12V: '',
+    tomas120V: '',
     tomacorrienteEnCaja: false,
     ventilacionAsientos: false,
     vidriosElectricos: false,
@@ -196,7 +197,9 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
     asistenciaCarretera: '',
     intervaloMantenimiento: '',
     costoMantenimiento3Primeros: '',
-    financiacionCuotaEstimada: '',
+    financiacionCuotaEstimada12Meses: '',
+    financiacionCuotaEstimada36Meses: '',
+    financiacionCuotaEstimada72Meses: '',
     origenPaisPlanta: '',
 
     // Metadatos
@@ -314,11 +317,14 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
             // Batería y carga
             capacidadBrutaBateria: specs.battery?.capacidadBrutaBateria?.toString() || '',
             cargadorOBCAC: specs.battery?.cargadorOBCAC?.toString() || '',
+            tipoEntrada: specs.battery?.tipoEntrada || '',
             conduccionOnePedal: specs.battery?.conduccionOnePedal || false,
             regeneracionNiveles: specs.battery?.regeneracionNiveles?.toString() || '',
-            tiempo0100AC: specs.battery?.tiempo0100AC?.toString() || '',
-            tiempo1080DC: specs.battery?.tiempo1080DC?.toString() || '',
-            highPowerChargingTimes: specs.battery?.highPowerChargingTimes || '',
+            tiempo2080AC110V: specs.battery?.tiempo2080AC110V?.toString() || '',
+            tiempo2080AC7KW: specs.battery?.tiempo2080AC7KW?.toString() || '',
+            tiempo2080AC22KW: specs.battery?.tiempo2080AC22KW?.toString() || '',
+            tiempo2080DC50KW: specs.battery?.tiempo2080DC50KW?.toString() || '',
+            tiempo2080DC150KW: specs.battery?.tiempo2080DC150KW?.toString() || '',
             v2hV2g: specs.battery?.v2hV2g || false,
             potenciaV2hV2g: specs.battery?.potenciaV2hV2g?.toString() || '',
 
@@ -344,12 +350,9 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
             // Seguridad pasiva y estructural
             numeroAirbags: specs.safety?.airbags?.toString() || '',
-            euroNCAPEstrellas: specs.safety?.ncapRating?.toString() || '',
-            euroNCAPAdulto: specs.safety?.adultSafetyScore?.toString() || '',
-            euroNCAPPeaton: specs.safety?.pedestrianScore?.toString() || '',
-            euroNCAPAsistencias: specs.safety?.assistanceScore?.toString() || '',
-            latinNCAPEstrellas: specs.safety?.latinNCAPRating?.toString() || '',
-            isofixTopTether: false,
+            isofixTopTether: specs.safety?.isofixTopTether || false,
+            agenciaCertifica: specs.safety?.agenciaCertifica || '',
+            puntajeAgencia: specs.safety?.puntajeAgencia?.toString() || '',
 
             // ADAS (asistencias activas)
             acc: specs.adas?.acc || false,
@@ -386,8 +389,8 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
             wifiBordo: specs.infotainment?.wifiBordo || false,
 
             // Interior y confort
-            ajusteElectricoConductor: specs.comfort?.ajusteElectricoConductor?.toString() || '',
-            ajusteElectricoPasajero: specs.comfort?.ajusteElectricoPasajero?.toString() || '',
+            ajusteElectricoConductor: specs.comfort?.ajusteElectricoConductor ? (typeof specs.comfort.ajusteElectricoConductor === 'boolean' ? specs.comfort.ajusteElectricoConductor : (specs.comfort.ajusteElectricoConductor > 0)) : false,
+            ajusteElectricoPasajero: specs.comfort?.ajusteElectricoPasajero ? (typeof specs.comfort.ajusteElectricoPasajero === 'boolean' ? specs.comfort.ajusteElectricoPasajero : (specs.comfort.ajusteElectricoPasajero > 0)) : false,
             calefaccionAsientos: specs.comfort?.calefaccionAsientos || false,
             climatizadorZonas: specs.comfort?.climatizadorZonas?.toString() || '',
             cristalesAcusticos: specs.comfort?.cristalesAcusticos || false,
@@ -399,7 +402,8 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
             segundaFilaCorrediza: specs.comfort?.segundaFilaCorrediza || false,
             techoPanoramico: specs.comfort?.techoPanoramico || false,
             terceraFilaAsientos: specs.comfort?.terceraFilaAsientos || false,
-            tomas12V120V: specs.comfort?.tomas12V120V?.toString() || '',
+            tomas12V: specs.comfort?.tomas12V?.toString() || '',
+            tomas120V: specs.comfort?.tomas120V?.toString() || '',
             tomacorrienteEnCaja: specs.comfort?.tomacorrienteEnCaja || false,
             ventilacionAsientos: specs.comfort?.ventilacionAsientos || false,
             vidriosElectricos: specs.comfort?.vidriosElectricos || false,
@@ -420,7 +424,9 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
             asistenciaCarretera: specs.commercial?.asistenciaCarretera?.toString() || '',
             intervaloMantenimiento: specs.commercial?.intervaloMantenimiento || '',
             costoMantenimiento3Primeros: specs.commercial?.costoMantenimiento3Primeros?.toString() || '',
-            financiacionCuotaEstimada: specs.commercial?.financiacionCuotaEstimada?.toString() || '',
+            financiacionCuotaEstimada12Meses: specs.commercial?.financiacionCuotaEstimada12Meses?.toString() || '',
+            financiacionCuotaEstimada36Meses: specs.commercial?.financiacionCuotaEstimada36Meses?.toString() || '',
+            financiacionCuotaEstimada72Meses: specs.commercial?.financiacionCuotaEstimada72Meses?.toString() || '',
             origenPaisPlanta: specs.commercial?.origenPaisPlanta || '',
 
             // Metadatos
@@ -598,11 +604,14 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
         battery: {
           capacidadBrutaBateria: formData.capacidadBrutaBateria ? parseFloat(formData.capacidadBrutaBateria) : undefined,
           cargadorOBCAC: formData.cargadorOBCAC ? parseFloat(formData.cargadorOBCAC) : undefined,
+          tipoEntrada: formData.tipoEntrada || undefined,
           conduccionOnePedal: formData.conduccionOnePedal,
           regeneracionNiveles: formData.regeneracionNiveles ? parseInt(formData.regeneracionNiveles) : undefined,
-          tiempo0100AC: formData.tiempo0100AC ? parseFloat(formData.tiempo0100AC) : undefined,
-          tiempo1080DC: formData.tiempo1080DC ? parseFloat(formData.tiempo1080DC) : undefined,
-          highPowerChargingTimes: formData.highPowerChargingTimes || undefined,
+          tiempo2080AC110V: formData.tiempo2080AC110V ? parseInt(formData.tiempo2080AC110V) : undefined,
+          tiempo2080AC7KW: formData.tiempo2080AC7KW ? parseInt(formData.tiempo2080AC7KW) : undefined,
+          tiempo2080AC22KW: formData.tiempo2080AC22KW ? parseInt(formData.tiempo2080AC22KW) : undefined,
+          tiempo2080DC50KW: formData.tiempo2080DC50KW ? parseInt(formData.tiempo2080DC50KW) : undefined,
+          tiempo2080DC150KW: formData.tiempo2080DC150KW ? parseInt(formData.tiempo2080DC150KW) : undefined,
           v2hV2g: formData.v2hV2g,
           potenciaV2hV2g: formData.potenciaV2hV2g ? parseFloat(formData.potenciaV2hV2g) : undefined,
         },
@@ -629,11 +638,9 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
         },
         safety: {
           airbags: formData.numeroAirbags ? parseInt(formData.numeroAirbags) : undefined,
-          ncapRating: formData.euroNCAPEstrellas ? parseInt(formData.euroNCAPEstrellas) : undefined,
-          adultSafetyScore: formData.euroNCAPAdulto ? parseFloat(formData.euroNCAPAdulto) : undefined,
-          pedestrianScore: formData.euroNCAPPeaton ? parseFloat(formData.euroNCAPPeaton) : undefined,
-          assistanceScore: formData.euroNCAPAsistencias ? parseFloat(formData.euroNCAPAsistencias) : undefined,
-          latinNCAPRating: formData.latinNCAPEstrellas ? parseInt(formData.latinNCAPEstrellas) : undefined,
+          isofixTopTether: formData.isofixTopTether,
+          agenciaCertifica: formData.agenciaCertifica || undefined,
+          puntajeAgencia: formData.agenciaCertifica && formData.agenciaCertifica !== 'Ninguna' && formData.puntajeAgencia ? parseFloat(formData.puntajeAgencia) : undefined,
         },
         adas: {
           acc: formData.acc,
@@ -669,8 +676,8 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           wifiBordo: formData.wifiBordo,
         },
         comfort: {
-          ajusteElectricoConductor: formData.ajusteElectricoConductor ? parseInt(formData.ajusteElectricoConductor) : undefined,
-          ajusteElectricoPasajero: formData.ajusteElectricoPasajero ? parseInt(formData.ajusteElectricoPasajero) : undefined,
+          ajusteElectricoConductor: formData.ajusteElectricoConductor,
+          ajusteElectricoPasajero: formData.ajusteElectricoPasajero,
           calefaccionAsientos: formData.calefaccionAsientos,
           climatizadorZonas: formData.climatizadorZonas ? parseInt(formData.climatizadorZonas) : undefined,
           cristalesAcusticos: formData.cristalesAcusticos,
@@ -682,7 +689,8 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           segundaFilaCorrediza: formData.segundaFilaCorrediza,
           techoPanoramico: formData.techoPanoramico,
           terceraFilaAsientos: formData.terceraFilaAsientos,
-          tomas12V120V: formData.tomas12V120V ? parseInt(formData.tomas12V120V) : undefined,
+          tomas12V: formData.tomas12V ? parseInt(formData.tomas12V) : undefined,
+          tomas120V: formData.tomas120V ? parseInt(formData.tomas120V) : undefined,
           tomacorrienteEnCaja: formData.tomacorrienteEnCaja,
           ventilacionAsientos: formData.ventilacionAsientos,
           vidriosElectricos: formData.vidriosElectricos,
@@ -705,7 +713,9 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           asistenciaCarretera: formData.asistenciaCarretera ? parseFloat(formData.asistenciaCarretera) : undefined,
           intervaloMantenimiento: formData.intervaloMantenimiento,
           costoMantenimiento3Primeros: formData.costoMantenimiento3Primeros ? parseFloat(formData.costoMantenimiento3Primeros) : undefined,
-          financiacionCuotaEstimada: formData.financiacionCuotaEstimada ? parseFloat(formData.financiacionCuotaEstimada) : undefined,
+          financiacionCuotaEstimada12Meses: formData.financiacionCuotaEstimada12Meses ? parseFloat(formData.financiacionCuotaEstimada12Meses) : undefined,
+          financiacionCuotaEstimada36Meses: formData.financiacionCuotaEstimada36Meses ? parseFloat(formData.financiacionCuotaEstimada36Meses) : undefined,
+          financiacionCuotaEstimada72Meses: formData.financiacionCuotaEstimada72Meses ? parseFloat(formData.financiacionCuotaEstimada72Meses) : undefined,
           origenPaisPlanta: formData.origenPaisPlanta,
         },
         metadata: {
@@ -1164,14 +1174,17 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
             </>
           ) : (
             <>
-              {/* Para eléctricos e híbridos enchufables, mostrar exactamente 9 campos */}
+              {/* Para eléctricos e híbridos enchufables, mostrar campos de batería */}
               {renderField('capacidadBrutaBateria', 'Capacidad bruta batería (kWh)', 'number', undefined, 'kWh')}
               {renderField('cargadorOBCAC', 'Cargador a bordo (OBC) AC (kW)', 'number', undefined, 'kW')}
+              {renderField('tipoEntrada', 'Tipo de entrada', 'select', ['Tipo 1', 'Tipo 2'])}
               {renderField('conduccionOnePedal', 'Conducción One-Pedal', 'checkbox')}
               {renderField('regeneracionNiveles', 'Regeneración (niveles)', 'number')}
-              {renderField('tiempo0100AC', 'Tiempo 0-100% (AC) (h)', 'number', undefined, 'h')}
-              {renderField('tiempo1080DC', 'Tiempo 10-80% (DC) (min)', 'number', undefined, 'min')}
-              {renderField('highPowerChargingTimes', 'High Power Charging times', 'text')}
+              {renderField('tiempo2080AC110V', 'Tiempo 20-80% AC 110V (Enchufe doméstico)', 'number', undefined, 'min')}
+              {renderField('tiempo2080AC7KW', 'Tiempo 20-80% AC 7KW (Instalación doméstica)', 'number', undefined, 'min')}
+              {renderField('tiempo2080AC22KW', 'Tiempo 20-80% AC 22KW (Cargador empresarial)', 'number', undefined, 'min')}
+              {renderField('tiempo2080DC50KW', 'Tiempo 20-80% DC 50KW (Carga rápida)', 'number', undefined, 'min')}
+              {renderField('tiempo2080DC150KW', 'Tiempo 20-80% DC 150KW (Carga ultrarápida)', 'number', undefined, 'min')}
               {renderField('v2hV2g', 'V2H/V2G (bidireccional)', 'checkbox')}
               {renderField('potenciaV2hV2g', 'V2H/V2G Potencia (kW)', 'number', undefined, 'kW')}
             </>
@@ -1222,12 +1235,9 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {renderField('numeroAirbags', 'Número total de airbags', 'number', undefined)}
-          {renderField('euroNCAPEstrellas', 'Euro NCAP (estrellas)', 'number', undefined, '★')}
-          {renderField('euroNCAPAdulto', 'Euro NCAP (Adulto %)', 'number', undefined, '%')}
-          {renderField('euroNCAPPeaton', 'Euro NCAP (Peatón %)', 'number', undefined, '%')}
-          {renderField('euroNCAPAsistencias', 'Euro NCAP (Asistencias %)', 'number', undefined, '%')}
-          {renderField('latinNCAPEstrellas', 'Latin NCAP (estrellas)', 'number', undefined, '★')}
           {renderField('isofixTopTether', 'ISOFIX y Top Tether', 'checkbox')}
+          {renderField('agenciaCertifica', 'Agencia que certifica', 'select', ['NCAP Europa', 'NCAP Latinoamérica', 'NHTSA', 'Ninguna'])}
+          {formData.agenciaCertifica && formData.agenciaCertifica !== 'Ninguna' && renderField('puntajeAgencia', 'Puntaje de agencia', 'number', undefined)}
         </div>
       </div>
 
@@ -1245,7 +1255,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           {renderField('farosAdaptativos', 'Faros adaptativos (ADB)', 'checkbox')}
           {renderField('lka', 'LKA (asistente carril)', 'checkbox')}
           {renderField('lucesAltasAutomaticas', 'Luces altas automáticas', 'checkbox')}
-          {renderField('parkAssist', 'Park Assist (autónomo)', 'checkbox')}
+          {renderField('parkAssist', 'Parqueado Autónomo', 'checkbox')}
           {renderField('sensoresEstacionamientoDelantero', 'Sensores estacionamiento delantero', 'checkbox')}
         </div>
       </div>
@@ -1295,8 +1305,8 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           Interior y Confort
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {renderField('ajusteElectricoConductor', 'Ajuste eléctrico conductor (vías)', 'number', undefined)}
-          {renderField('ajusteElectricoPasajero', 'Ajuste eléctrico pasajero (vías)', 'number', undefined, undefined, 'Premium')}
+          {renderField('ajusteElectricoConductor', 'Ajuste eléctrico conductor', 'checkbox', undefined)}
+          {renderField('ajusteElectricoPasajero', 'Ajuste eléctrico pasajero', 'checkbox', undefined, undefined, 'Premium')}
           {renderField('calefaccionAsientos', 'Calefacción de asientos', 'checkbox', undefined, undefined, 'Premium')}
           {renderField('climatizadorZonas', 'Climatizador (zonas)', 'number', undefined, undefined, 'Todos')}
           {renderField('cristalesAcusticos', 'Cristales acústicos', 'checkbox', undefined, undefined, 'Premium')}
@@ -1308,7 +1318,8 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           {renderField('segundaFilaCorrediza', 'Segunda fila corrediza', 'checkbox', undefined, undefined, 'SUV')}
           {renderField('techoPanoramico', 'Techo panorámico', 'checkbox', undefined, undefined, 'Premium')}
           {renderField('terceraFilaAsientos', 'Tercera fila de asientos', 'checkbox', undefined, undefined, 'SUV')}
-          {renderField('tomas12V120V', 'Tomas 12 V/120 V', 'number', undefined, undefined, 'Todos')}
+          {renderField('tomas12V', 'Cantidad de tomas 12V', 'number', undefined, undefined, 'Todos')}
+          {renderField('tomas120V', 'Cantidad de tomas 120V', 'number', undefined, undefined, 'Todos')}
           {renderField('tomacorrienteEnCaja', 'Tomacorriente en caja (pick-up)', 'checkbox', undefined, undefined, 'Pick-up')}
           {renderField('ventilacionAsientos', 'Ventilación de asientos', 'checkbox', undefined, undefined, 'Premium')}
           {renderField('vidriosElectricos', 'Vidrios automáticos', 'checkbox', undefined, undefined, 'Todos')}
@@ -1347,7 +1358,9 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           {renderField('asistenciaCarretera', 'Asistencia en carretera', 'number', undefined, 'años')}
           {renderField('intervaloMantenimiento', 'Intervalo de mantenimiento', 'text', undefined)}
           {renderField('costoMantenimiento3Primeros', 'Costo mantenimiento (3 primeros)', 'number', undefined, 'COP')}
-          {renderField('financiacionCuotaEstimada', 'Financiación (cuota estimada)', 'number', undefined, 'COP')}
+          {renderField('financiacionCuotaEstimada12Meses', 'Financiación (cuota estimada) 12 meses', 'number', undefined, 'COP')}
+          {renderField('financiacionCuotaEstimada36Meses', 'Financiación (cuota estimada) 36 meses', 'number', undefined, 'COP')}
+          {renderField('financiacionCuotaEstimada72Meses', 'Financiación (cuota estimada) 72 meses', 'number', undefined, 'COP')}
           {renderField('origenPaisPlanta', 'Origen (país/planta)', 'text', undefined)}
         </div>
       </div>

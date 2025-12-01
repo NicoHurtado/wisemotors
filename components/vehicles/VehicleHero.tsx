@@ -76,7 +76,7 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
             {/* Badge and Title */}
             <div className="mb-4 sm:mb-6 md:mb-8">
               <Badge variant="wise" className="mb-3 sm:mb-4 md:mb-6 text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 md:px-6 md:py-3">
-                {vehicle.category} • {vehicle.year}
+                {vehicle.type || vehicle.specifications?.identification?.carrocería || vehicle.category} • {vehicle.year}
               </Badge>
 
               <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-3 sm:mb-4 md:mb-6 leading-tight px-2">
