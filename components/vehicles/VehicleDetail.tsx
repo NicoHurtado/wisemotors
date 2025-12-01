@@ -531,7 +531,7 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     circleBg: "bg-green-500/10"
                   }}
                   fields={[
-                    { label: "Potencia Máxima (EV)", value: powertrain.potenciaMaxEV, formatter: (v) => v ? `${v} kW` : undefined },
+                    { label: "Potencia Máxima (EV)", value: powertrain.potenciaMaxEV, formatter: (v) => v ? `${v} HP` : undefined },
                     { label: "Torque Máximo (EV)", value: powertrain.torqueMaxEV, formatter: (v) => v ? `${v} Nm` : undefined },
                     { label: "Capacidad de Batería", value: battery.capacidadBrutaBateria, formatter: (v) => v ? `${v} kWh` : undefined },
                   ]}
@@ -557,8 +557,8 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     { label: "Número de cilindros", value: powertrain.numeroCilindros },
                     { label: "Combustible", value: powertrain.combustible },
                     { label: "Octanaje recomendado", value: powertrain.octanajeRecomendado, formatter: (v) => v ? `${v} RON` : undefined },
-                    { label: "Potencia máx. (motor térmico)", value: powertrain.potenciaMaxMotorTermico, formatter: (v) => v ? `${v} kW` : undefined },
-                    { label: "Potencia máx. (sistema híbrido)", value: powertrain.potenciaMaxSistemaHibrido, formatter: (v) => v ? `${v} kW` : undefined },
+                    { label: "Potencia máx. (motor térmico)", value: powertrain.potenciaMaxMotorTermico, formatter: (v) => v ? `${v} HP` : undefined },
+                    { label: "Potencia máx. (sistema híbrido)", value: powertrain.potenciaMaxSistemaHibrido, formatter: (v) => v ? `${v} HP` : undefined },
                     { label: "Torque máx. (motor térmico)", value: powertrain.torqueMaxMotorTermico, formatter: (v) => v ? `${v} Nm` : undefined },
                     { label: "Torque máx. (sistema híbrido)", value: powertrain.torqueMaxSistemaHibrido, formatter: (v) => v ? `${v} Nm` : undefined },
                     { label: "Launch control", value: powertrain.launchControl },
@@ -571,7 +571,7 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
               {!isElectric && !isHybrid && (() => {
                 // Preparar campos de potencia y torque con unidades correctas
                 const potenciaMaxValue = powertrain.potenciaMaxMotorTermico || combustion.maxPower;
-                const potenciaMaxUnit = powertrain.potenciaMaxMotorTermico ? 'kW' : (combustion.maxPower ? 'HP' : '');
+                const potenciaMaxUnit = 'HP';
                 const potenciaMax = potenciaMaxValue ? {
                   label: "Potencia máx.",
                   value: potenciaMaxValue,

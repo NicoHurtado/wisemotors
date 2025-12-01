@@ -108,7 +108,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
   const { user } = useAuth();
   const { isFavorite, toggleFavorite, loading: favoriteLoading } = useFavorites();
   const { createLead } = useWhatsAppLeads();
-  
+
   // Estado para el carrusel de concesionarios
   const [currentDealershipIndex, setCurrentDealershipIndex] = useState(0);
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
@@ -198,15 +198,15 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
       });
 
       // Disparar evento personalizado inmediatamente y después del scroll
-      window.dispatchEvent(new CustomEvent('highlightSpecCard', { 
-        detail: { sectionId } 
+      window.dispatchEvent(new CustomEvent('highlightSpecCard', {
+        detail: { sectionId }
       }));
-      
+
       // También disparar después del scroll para asegurar que funcione
       setTimeout(() => {
         console.log('Dispatching highlight event for:', sectionId);
-        window.dispatchEvent(new CustomEvent('highlightSpecCard', { 
-          detail: { sectionId } 
+        window.dispatchEvent(new CustomEvent('highlightSpecCard', {
+          detail: { sectionId }
         }));
       }, 800); // Esperar a que el scroll termine
     } else {
@@ -326,7 +326,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                         const displacement = powertrain?.cilindrada;
                         const systemPower = powertrain?.potenciaMaxSistemaHibrido || powertrain?.potenciaMaxMotorTermico;
                         if (displacement) {
-                          return `${displacement}L ${systemPower ? `- ${systemPower}kW` : ''}`.trim();
+                          return `${displacement}L ${systemPower ? `- ${systemPower}HP` : ''}`.trim();
                         }
                         return fuelType || 'N/A';
                       }
@@ -334,7 +334,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                       const displacement = powertrain?.cilindrada;
                       const power = powertrain?.potenciaMaxMotorTermico;
                       if (displacement) {
-                        return `${displacement}L ${power ? `- ${power}kW` : ''}`.trim();
+                        return `${displacement}L ${power ? `- ${power}HP` : ''}`.trim();
                       }
 
                       return fuelType || powertrain?.combustible || 'N/A';
@@ -373,7 +373,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                       </div>
                       <div className="flex-1">
                         <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Potencia</div>
-                        <div className="text-base font-semibold text-gray-900">{powerValue} kW</div>
+                        <div className="text-base font-semibold text-gray-900">{powerValue} HP</div>
                       </div>
                     </button>
                   );
@@ -592,18 +592,18 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                 <MapPin className="w-5 h-5 text-wise mr-2" />
                 Disponible en:
               </h3>
-              
+
               {totalDealerships > 0 ? (
                 <div className="relative">
                   {/* Carrusel Container */}
                   <div className="relative overflow-hidden min-h-[180px]">
-                    <div 
+                    <div
                       className="flex transition-transform duration-500 ease-in-out"
                       style={{ transform: `translateX(-${currentDealershipIndex * 100}%)` }}
                     >
                       {dealerships.map((dealership: any) => (
-                        <div 
-                          key={dealership.id} 
+                        <div
+                          key={dealership.id}
                           className="w-full flex-shrink-0 p-4 border border-gray-200 rounded-xl hover:border-wise/50 hover:shadow-md transition-all min-h-[180px] flex flex-col justify-between"
                         >
                           <div className="flex items-start justify-between mb-3">
@@ -649,7 +649,7 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                       >
                         <ChevronRight className="w-5 h-5 text-gray-700" />
                       </button>
-                      
+
                       {/* Indicadores de puntos */}
                       <div className="flex justify-center mt-4 gap-2">
                         {dealerships.map((_: any, index: number) => (
@@ -665,11 +665,10 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                                 setCurrentDealershipIndex((prev) => (prev + 1) % totalDealerships);
                               }, 5000);
                             }}
-                            className={`h-2 rounded-full transition-all ${
-                              index === currentDealershipIndex
+                            className={`h-2 rounded-full transition-all ${index === currentDealershipIndex
                                 ? 'bg-wise w-8'
                                 : 'bg-gray-300 w-2 hover:bg-gray-400'
-                            }`}
+                              }`}
                             aria-label={`Ir al concesionario ${index + 1}`}
                           />
                         ))}

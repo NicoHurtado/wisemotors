@@ -1088,9 +1088,9 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
           {renderField('combustible', 'Combustible', 'select', ['Gasolina', 'Diésel', 'GNV', 'Etanol', 'Eléctrico', 'Híbrido', 'Híbrido Enchufable'], undefined, 'Todos')}
           {renderField('octanajeRecomendado', 'Octanaje recomendado', 'number', undefined, 'RON', 'ICE/HEV/PHE')}
           {renderField('arquitecturaMotorTermico', 'Arquitectura motor térmico', 'select', ['En línea', 'V', 'Boxer', 'W'], undefined, 'ICE/HEV/PHE')}
-          {renderField('potenciaMaxEV', 'Potencia máx. (EV)', 'number', undefined, 'kW; HP', 'EV')}
-          {renderField('potenciaMaxMotorTermico', 'Potencia máx. (motor térmico)', 'number', undefined, 'kW; HP', 'ICE/HEV/PHE')}
-          {renderField('potenciaMaxSistemaHibrido', 'Potencia máx. (sistema híbrido)', 'number', undefined, 'kW; HP', 'HEV/PHEV')}
+          {renderField('potenciaMaxEV', 'Potencia máx. (EV)', 'number', undefined, 'HP', 'EV')}
+          {renderField('potenciaMaxMotorTermico', 'Potencia máx. (motor térmico)', 'number', undefined, 'HP', 'ICE/HEV/PHE')}
+          {renderField('potenciaMaxSistemaHibrido', 'Potencia máx. (sistema híbrido)', 'number', undefined, 'HP', 'HEV/PHEV')}
           {renderField('torqueMaxEV', 'Torque máx. (EV)', 'number', undefined, 'Nm', 'EV')}
           {renderField('torqueMaxMotorTermico', 'Torque máx. (motor térmico)', 'number', undefined, 'Nm', 'ICE/HEV/PHE')}
           {renderField('torqueMaxSistemaHibrido', 'Torque máx. (sistema híbrido)', 'number', undefined, 'Nm', 'HEV/PHEV')}
