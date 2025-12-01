@@ -903,40 +903,42 @@ export function AddVehicleForm() {
       </div>
 
       {/* Batería y carga */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-          <Car className="w-5 h-5 mr-2 text-wise" />
-          Batería y Carga
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Para híbridos (no enchufables), mostrar 5 campos específicos */}
-          {formData.combustible === 'Híbrido' ? (
-            <>
-              {renderField('capacidadBrutaBateria', 'Capacidad bruta batería (kWh)', 'number', undefined, 'kWh')}
-              {renderField('regeneracionNiveles', 'Regeneración (niveles)', 'number')}
-              {renderField('conduccionOnePedal', 'Conducción One-Pedal', 'checkbox')}
-              {renderField('v2hV2g', 'V2H/V2G (bidireccional)', 'checkbox')}
-              {renderField('potenciaV2hV2g', 'V2H/V2G Potencia (kW)', 'number', undefined, 'kW')}
-            </>
-          ) : (
-            <>
-              {/* Para eléctricos e híbridos enchufables, mostrar campos de batería */}
-              {renderField('capacidadBrutaBateria', 'Capacidad bruta batería (kWh)', 'number', undefined, 'kWh')}
-              {renderField('cargadorOBCAC', 'Cargador a bordo (OBC) AC (kW)', 'number', undefined, 'kW')}
-              {renderField('tipoEntrada', 'Tipo de entrada', 'select', ['Tipo 1', 'Tipo 2'])}
-              {renderField('conduccionOnePedal', 'Conducción One-Pedal', 'checkbox')}
-              {renderField('regeneracionNiveles', 'Regeneración (niveles)', 'number')}
-              {renderField('tiempo2080AC110V', 'Tiempo 20-80% AC 110V (Enchufe doméstico)', 'number', undefined, 'min')}
-              {renderField('tiempo2080AC7KW', 'Tiempo 20-80% AC 7KW (Instalación doméstica)', 'number', undefined, 'min')}
-              {renderField('tiempo2080AC22KW', 'Tiempo 20-80% AC 22KW (Cargador empresarial)', 'number', undefined, 'min')}
-              {renderField('tiempo2080DC50KW', 'Tiempo 20-80% DC 50KW (Carga rápida)', 'number', undefined, 'min')}
-              {renderField('tiempo2080DC150KW', 'Tiempo 20-80% DC 150KW (Carga ultrarápida)', 'number', undefined, 'min')}
-              {renderField('v2hV2g', 'V2H/V2G (bidireccional)', 'checkbox')}
-              {renderField('potenciaV2hV2g', 'V2H/V2G Potencia (kW)', 'number', undefined, 'kW')}
-            </>
-          )}
+      {!['Gasolina', 'Diésel', 'Diesel', 'GNV', 'Etanol'].includes(formData.combustible) && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+            <Car className="w-5 h-5 mr-2 text-wise" />
+            Batería y Carga
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Para híbridos (no enchufables), mostrar 5 campos específicos */}
+            {formData.combustible === 'Híbrido' ? (
+              <>
+                {renderField('capacidadBrutaBateria', 'Capacidad bruta batería (kWh)', 'number', undefined, 'kWh')}
+                {renderField('regeneracionNiveles', 'Regeneración (niveles)', 'number')}
+                {renderField('conduccionOnePedal', 'Conducción One-Pedal', 'checkbox')}
+                {renderField('v2hV2g', 'Carga bidireccional', 'checkbox')}
+                {renderField('potenciaV2hV2g', 'Potencia Carga bidireccional (kW)', 'number', undefined, 'kW')}
+              </>
+            ) : (
+              <>
+                {/* Para eléctricos e híbridos enchufables, mostrar campos de batería */}
+                {renderField('capacidadBrutaBateria', 'Capacidad bruta batería (kWh)', 'number', undefined, 'kWh')}
+                {renderField('cargadorOBCAC', 'Cargador a bordo (OBC) AC (kW)', 'number', undefined, 'kW')}
+                {renderField('tipoEntrada', 'Tipo de entrada', 'select', ['Tipo 1', 'Tipo 2'])}
+                {renderField('conduccionOnePedal', 'Conducción One-Pedal', 'checkbox')}
+                {renderField('regeneracionNiveles', 'Regeneración (niveles)', 'number')}
+                {renderField('tiempo2080AC110V', 'Tiempo 20-80% AC 110V (Enchufe doméstico)', 'number', undefined, 'min')}
+                {renderField('tiempo2080AC7KW', 'Tiempo 20-80% AC 7KW (Instalación doméstica)', 'number', undefined, 'min')}
+                {renderField('tiempo2080AC22KW', 'Tiempo 20-80% AC 22KW (Cargador empresarial)', 'number', undefined, 'min')}
+                {renderField('tiempo2080DC50KW', 'Tiempo 20-80% DC 50KW (Carga rápida)', 'number', undefined, 'min')}
+                {renderField('tiempo2080DC150KW', 'Tiempo 20-80% DC 150KW (Carga ultrarápida)', 'number', undefined, 'min')}
+                {renderField('v2hV2g', 'Carga bidireccional', 'checkbox')}
+                {renderField('potenciaV2hV2g', 'Potencia Carga bidireccional (kW)', 'number', undefined, 'kW')}
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Chasis, frenos y dirección */}
       <div className="mb-8">

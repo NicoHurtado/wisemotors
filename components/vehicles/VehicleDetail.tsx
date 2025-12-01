@@ -799,8 +799,8 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                       { label: "Tiempo 20-80% AC 22KW (Cargador empresarial)", value: battery.tiempo2080AC22KW, formatter: (v) => v ? `${v} min` : undefined },
                       { label: "Tiempo 20-80% DC 50KW (Carga rápida)", value: battery.tiempo2080DC50KW, formatter: (v) => v ? `${v} min` : undefined },
                       { label: "Tiempo 20-80% DC 150KW (Carga ultrarápida)", value: battery.tiempo2080DC150KW, formatter: (v) => v ? `${v} min` : undefined },
-                      { label: "V2H/V2G (bidireccional)", value: battery.v2hV2g, formatter: (v) => v === true ? "Sí" : v === false ? "No" : undefined },
-                      { label: "V2H/V2G Potencia", value: battery.potenciaV2hV2g, formatter: (v) => v ? `${v} kW` : undefined },
+                      { label: "Carga bidireccional", value: battery.v2hV2g, formatter: (v) => v === true ? "Sí" : v === false ? "No" : undefined },
+                      { label: "Potencia Carga bidireccional", value: battery.potenciaV2hV2g, formatter: (v) => v ? `${v} kW` : undefined },
                     ]
                   }
                 />
@@ -930,16 +930,20 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
                     circleBg: "bg-violet-500/10"
                   }}
                   fields={[
-                    { label: "Ajuste eléctrico conductor", value: comfort.ajusteElectricoConductor, formatter: (v) => {
-                      if (typeof v === 'boolean') return v ? 'Sí' : 'No';
-                      if (typeof v === 'number') return v > 0 ? 'Sí' : 'No';
-                      return undefined;
-                    }},
-                    { label: "Ajuste eléctrico pasajero", value: comfort.ajusteElectricoPasajero, formatter: (v) => {
-                      if (typeof v === 'boolean') return v ? 'Sí' : 'No';
-                      if (typeof v === 'number') return v > 0 ? 'Sí' : 'No';
-                      return undefined;
-                    }},
+                    {
+                      label: "Ajuste eléctrico conductor", value: comfort.ajusteElectricoConductor, formatter: (v) => {
+                        if (typeof v === 'boolean') return v ? 'Sí' : 'No';
+                        if (typeof v === 'number') return v > 0 ? 'Sí' : 'No';
+                        return undefined;
+                      }
+                    },
+                    {
+                      label: "Ajuste eléctrico pasajero", value: comfort.ajusteElectricoPasajero, formatter: (v) => {
+                        if (typeof v === 'boolean') return v ? 'Sí' : 'No';
+                        if (typeof v === 'number') return v > 0 ? 'Sí' : 'No';
+                        return undefined;
+                      }
+                    },
                     { label: "Calefacción de asientos", value: comfort.calefaccionAsientos || comfort.heatedSeats },
                     { label: "Ventilación de asientos", value: comfort.ventilacionAsientos },
                     { label: "Masaje en asientos", value: comfort.masajeAsientos },

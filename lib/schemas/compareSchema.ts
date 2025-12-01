@@ -122,10 +122,12 @@ export const COMPARE_SECTIONS: CompareSection[] = [
     label: 'Consumo y Eficiencia',
     icon: '⛽',
     fields: [
-      { key: 'consumoMixto', label: 'Consumo Mixto', unit: 'L/100km', better: 'lower', category: 'efficiency', formatter: (v, fuelType) => {
-        const isElectric = fuelType?.toLowerCase().includes('eléctrico') || fuelType?.toLowerCase().includes('electric');
-        return v ? `${v} ${isElectric ? 'kWh/100km' : 'L/100km'}` : undefined;
-      }},
+      {
+        key: 'consumoMixto', label: 'Consumo Mixto', unit: 'L/100km', better: 'lower', category: 'efficiency', formatter: (v, fuelType) => {
+          const isElectric = fuelType?.toLowerCase().includes('eléctrico') || fuelType?.toLowerCase().includes('electric');
+          return v ? `${v} ${isElectric ? 'kWh/100km' : 'L/100km'}` : undefined;
+        }
+      },
       { key: 'autonomiaOficial', label: 'Autonomía oficial', unit: 'km', better: 'higher', category: 'efficiency' },
       { key: 'capacidadTanque', label: 'Capacidad de tanque', unit: 'L', better: 'higher', category: 'efficiency' },
       { key: 'mpgeCombinado', label: 'KMGe combinado', unit: 'KMGe', better: 'higher', category: 'efficiency' },
@@ -193,8 +195,8 @@ export const COMPARE_SECTIONS: CompareSection[] = [
       { key: 'tiempo2080AC22KW', label: 'Tiempo 20-80% AC 22KW (Cargador empresarial)', unit: 'min', better: 'lower', category: 'battery' },
       { key: 'tiempo2080DC50KW', label: 'Tiempo 20-80% DC 50KW (Carga rápida)', unit: 'min', better: 'lower', category: 'battery' },
       { key: 'tiempo2080DC150KW', label: 'Tiempo 20-80% DC 150KW (Carga ultrarápida)', unit: 'min', better: 'lower', category: 'battery' },
-      { key: 'v2hV2g', label: 'V2H/V2G (bidireccional)', better: 'boolean', category: 'battery' },
-      { key: 'potenciaV2hV2g', label: 'V2H/V2G Potencia', unit: 'kW', better: 'higher', category: 'battery' },
+      { key: 'v2hV2g', label: 'Carga bidireccional', better: 'boolean', category: 'battery' },
+      { key: 'potenciaV2hV2g', label: 'Potencia Carga bidireccional', unit: 'kW', better: 'higher', category: 'battery' },
     ]
     // NOTA: La lógica condicional de batería se maneja explícitamente en CompareTables.tsx
     // para asegurar que solo se muestre cuando TODOS los vehículos son eléctricos o híbridos
@@ -319,11 +321,11 @@ export interface VehicleComparisonData extends FavoriteVehicle {
 
 export function getFieldValue(vehicle: VehicleComparisonData, fieldKey: string): any {
   if (!vehicle.specifications) return null;
-  
+
   // Buscar en diferentes niveles de especificaciones
   const keys = fieldKey.split('.');
   let value = vehicle.specifications;
-  
+
   for (const key of keys) {
     if (value && typeof value === 'object' && key in value) {
       value = value[key];
@@ -331,39 +333,39 @@ export function getFieldValue(vehicle: VehicleComparisonData, fieldKey: string):
       return null;
     }
   }
-  
+
   return value;
 }
 
 export function getFieldDisplayValue(vehicle: VehicleComparisonData, field: CompareField): string {
   const value = getFieldValue(vehicle, field.key);
-  
+
   if (value === null || value === undefined) return 'N/A';
-  
+
   if (typeof value === 'boolean') {
     return value ? '✓' : '✗';
   }
-  
+
   if (typeof value === 'number') {
     if (field.unit) {
       return `${value} ${field.unit}`;
     }
     return value.toString();
   }
-  
+
   return value.toString();
 }
 
 export function getWinnerIndex(vehicles: VehicleComparisonData[], field: CompareField): number | null {
   const values = vehicles.map(v => getFieldValue(v, field.key));
-  
+
   // Filtrar valores válidos (no null/undefined)
   const validValues = values.filter(v => v !== null && v !== undefined);
   if (validValues.length === 0) return null;
-  
+
   let bestValue: any;
   let bestIndex: number = -1;
-  
+
   if (field.better === 'higher') {
     bestValue = Math.max(...validValues);
   } else if (field.better === 'lower') {
@@ -379,12 +381,12 @@ export function getWinnerIndex(vehicles: VehicleComparisonData[], field: Compare
     // Si hay empate, no hay ganador único
     return null;
   }
-  
+
   bestIndex = values.findIndex(v => v === bestValue);
-  
+
   // Verificar si hay empate
   const winners = values.filter(v => v === bestValue);
   if (winners.length > 1) return null; // Empate
-  
+
   return bestIndex;
 }
