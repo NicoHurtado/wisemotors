@@ -6,7 +6,7 @@ import { vehicleSchema } from '@/lib/schemas/vehicle';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     // Parámetros de consulta
     const recommended = searchParams.get('recommended');
     const limit = searchParams.get('limit');
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
 
     // Construir filtros básicos
     const where: any = {};
-    
+
     // Filtro de búsqueda
     if (search) {
       where.OR = [
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
         }
       };
     }
-    
+
     // Paginación
     const pageNumber = parseInt(page);
     const pageSize = limit ? parseInt(limit) : 12;
@@ -106,9 +106,9 @@ export async function GET(request: NextRequest) {
 
     // Ordenamiento con conversión de parámetros del frontend
     const orderBy: any = {};
-    
+
     // Convertir sortBy del frontend a campos válidos de Prisma
-    switch(sortBy) {
+    switch (sortBy) {
       case 'price-low':
         orderBy.price = 'asc';
         break;
@@ -137,13 +137,22 @@ export async function GET(request: NextRequest) {
         skip,
         take: pageSize,
         orderBy,
-        include: {
+        select: {
+          id: true,
+          brand: true,
+          model: true,
+          year: true,
+          price: true,
+          fuelType: true,
+          type: true,
+          status: true,
           images: {
-            orderBy: { order: 'asc' }
-          },
-          vehicleDealers: {
-            include: {
-              dealer: true
+            orderBy: { order: 'asc' },
+            take: 5, // Limitamos a 5 imágenes para el carrusel de vista previa
+            select: {
+              url: true,
+              type: true,
+              isThumbnail: true
             }
           }
         }
@@ -177,33 +186,33 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // Validar datos de entrada
     const validatedData = vehicleSchema.parse(body);
-    
+
     // Extraer dealerIds e imágenes del payload
     const { dealerIds, coverImage, galleryImages, thumbnailIndex, ...vehicleData } = validatedData;
-    
+
     // Convertir specifications a string para la base de datos
     const vehicleDataForDB = {
       ...vehicleData,
       specifications: JSON.stringify(vehicleData.specifications)
     };
-    
+
     // Crear vehículo con transacción (aumentar timeout para imágenes)
     const result = await prisma.$transaction(async (tx) => {
       // 1. Crear el vehículo
       const vehicle = await tx.vehicle.create({
         data: vehicleDataForDB
       });
-      
+
       // 2. Crear las relaciones con concesionarios
       if (dealerIds && dealerIds.length > 0) {
         const vehicleDealers = dealerIds.map(dealerId => ({
           vehicleId: vehicle.id,
           dealerId: dealerId
         }));
-        
+
         await tx.vehicleDealer.createMany({
           data: vehicleDealers
         });
@@ -211,7 +220,7 @@ export async function POST(request: NextRequest) {
 
       // 3. Crear las imágenes
       const imagesToCreate = [];
-      
+
       // Imagen de portada
       if (coverImage) {
         imagesToCreate.push({
@@ -221,7 +230,7 @@ export async function POST(request: NextRequest) {
           order: 0
         });
       }
-      
+
       // Imágenes de galería
       if (galleryImages && galleryImages.length > 0) {
         galleryImages.forEach((imageUrl, index) => {
@@ -234,19 +243,19 @@ export async function POST(request: NextRequest) {
           });
         });
       }
-      
+
       if (imagesToCreate.length > 0) {
         await tx.vehicleImage.createMany({
           data: imagesToCreate
         });
       }
-      
+
       return vehicle;
     }, {
       timeout: 30000, // 30 segundos para completar la transacción
       maxWait: 5000   // 5 segundos para esperar que la transacción esté disponible
     });
-    
+
     // Retornar el vehículo creado con sus relaciones
     const createdVehicle = await prisma.vehicle.findUnique({
       where: { id: result.id },
@@ -259,7 +268,7 @@ export async function POST(request: NextRequest) {
         }
       }
     });
-    
+
     return NextResponse.json(createdVehicle, { status: 201 });
   } catch (error: any) {
     if (error.name === 'ZodError') {
@@ -268,7 +277,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     console.error('Error creating vehicle:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },

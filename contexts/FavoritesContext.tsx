@@ -66,6 +66,15 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
 
       console.log('FavoritesContext: Response status:', response.status);
 
+      if (response.status === 401) {
+        console.warn('FavoritesContext: Token expired or invalid (401), logging out...');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.dispatchEvent(new CustomEvent('auth:logout'));
+        setFavorites([]);
+        return;
+      }
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('FavoritesContext: Error response:', errorText);
@@ -74,14 +83,14 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
 
       const data = await response.json();
       console.log('FavoritesContext: Fetched data:', data);
-      
+
       // Transformar datos al formato esperado
       const transformedFavorites: FavoriteVehicle[] = data.favorites.map((fav: any) => {
         // Buscar imagen miniatura, si no existe usar la primera de galería, NO la portada
         const thumbnailImage = fav.vehicle.images?.find((img: any) => img.isThumbnail)?.url ||
-                              fav.vehicle.images?.find((img: any) => img.type === 'gallery')?.url ||
-                              fav.vehicle.images?.[0]?.url || null;
-        
+          fav.vehicle.images?.find((img: any) => img.type === 'gallery')?.url ||
+          fav.vehicle.images?.[0]?.url || null;
+
         return {
           id: fav.vehicle.id,
           brand: fav.vehicle.brand,
@@ -125,6 +134,14 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
 
       console.log('FavoritesContext: Add response status:', response.status);
 
+      if (response.status === 401) {
+        console.warn('FavoritesContext: Token expired or invalid (401) during add, logging out...');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.dispatchEvent(new CustomEvent('auth:logout'));
+        throw new Error('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
+      }
+
       if (!response.ok) {
         let errorData;
         try {
@@ -143,12 +160,12 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
 
       // Actualizar estado local inmediatamente
       const newFavorite = result.favorite;
-      
+
       // Buscar imagen miniatura, si no existe usar la primera de galería, NO la portada
       const thumbnailImage = newFavorite.vehicle.images?.find((img: any) => img.isThumbnail)?.url ||
-                            newFavorite.vehicle.images?.find((img: any) => img.type === 'gallery')?.url ||
-                            newFavorite.vehicle.images?.[0]?.url || null;
-      
+        newFavorite.vehicle.images?.find((img: any) => img.type === 'gallery')?.url ||
+        newFavorite.vehicle.images?.[0]?.url || null;
+
       setFavorites(prev => [...prev, {
         id: newFavorite.vehicle.id,
         brand: newFavorite.vehicle.brand,
@@ -187,6 +204,14 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       });
 
       console.log('FavoritesContext: Remove response status:', response.status);
+
+      if (response.status === 401) {
+        console.warn('FavoritesContext: Token expired or invalid (401) during remove, logging out...');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.dispatchEvent(new CustomEvent('auth:logout'));
+        throw new Error('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
+      }
 
       if (!response.ok) {
         let errorData;
@@ -229,7 +254,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       console.log('FavoritesContext: User:', user?.id);
       console.log('FavoritesContext: Token exists:', !!token);
       console.log('FavoritesContext: Current favorites:', favorites.map(f => f.id));
-      
+
       if (isFavorite(vehicleId)) {
         console.log('FavoritesContext: Vehicle is favorite, removing...');
         await removeFromFavorites(vehicleId);

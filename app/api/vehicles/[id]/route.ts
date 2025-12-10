@@ -40,44 +40,50 @@ export async function GET(
       }
     }
 
-    // Obtener vehículos similares con algoritmo mejorado
-    const allSimilarVehicles = await prisma.vehicle.findMany({
+    // Obtener vehículos similares con algoritmo optimizado en base de datos
+    // 1. Rango de precio +/- 30% (reducido para ser más específico)
+    const minPrice = vehicle.price * 0.7;
+    const maxPrice = vehicle.price * 1.3;
+
+    // 2. Consulta optimizada
+    const similarVehicles = await prisma.vehicle.findMany({
       where: {
-        type: vehicle.type, // Solo mismo tipo
-        NOT: {
-          id: vehicle.id
+        type: vehicle.type, // Mismo tipo
+        id: { not: vehicle.id }, // Excluir actual
+        price: {
+          gte: minPrice,
+          lte: maxPrice
+        },
+        // Opcional: Priorizar misma marca/combustible si se desea, pero por ahora precio/tipo es un buen proxy
+        status: 'NUEVO' // Preferir vehículos nuevos, o quitar si se quieren usados
+      },
+      select: {
+        // Seleccionar SOLO lo necesario para la tarjeta
+        id: true,
+        brand: true,
+        model: true,
+        year: true,
+        price: true,
+        fuelType: true,
+        type: true,
+        status: true,
+        specifications: true, // Necesario para algunos cálculos en VehicleCard? A veces sí.
+        images: {
+          take: 1, // Solo la primera imagen
+          orderBy: { order: 'asc' },
+          select: {
+            url: true,
+            type: true
+          }
         }
       },
-      include: {
-        images: {
-          take: 1
-        }
-      }
+      orderBy: {
+        // Ordenar por cercanía de precio (aproximación usando diferencia absoluta no soportada directo en sort, 
+        // así que ordenamos por precio y luego reordenamos ligero en memoria si es necesario)
+        price: 'asc'
+      },
+      take: 6 // Limitar a 6 resultados directos
     });
-
-    // Filtrar y ordenar por similaridad inteligente
-    const vehiclePrice = vehicle.price;
-    const priceRange = vehiclePrice * 0.5; // Rango del 50% del precio base
-    
-    const similarVehicles = allSimilarVehicles
-      .map(v => {
-        const priceDifference = Math.abs(v.price - vehiclePrice);
-        const priceRatio = priceDifference / vehiclePrice;
-        
-        // Penalizar mucho los precios muy diferentes (más del 100% de diferencia)
-        const priceScore = priceRatio > 1.0 ? 1000 + priceDifference : priceDifference;
-        
-        // Bonus por misma marca
-        const brandBonus = v.brand === vehicle.brand ? -50000 : 0;
-        
-        return {
-          ...v,
-          similarityScore: priceScore + brandBonus
-        };
-      })
-      .sort((a, b) => a.similarityScore - b.similarityScore)
-      .slice(0, 8) // Aumentar a 8 vehículos para permitir navegación
-      .map(({ similarityScore, ...v }) => v);
 
     // Parsear specifications de vehículos similares también
     const similarVehiclesWithParsedSpecs = similarVehicles.map(v => {
@@ -112,10 +118,10 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    
+
     // Validar datos de entrada
     const validatedData = vehicleUpdateSchema.parse(body);
-    
+
     // Verificar que el vehículo existe
     const existingVehicle = await prisma.vehicle.findUnique({
       where: { id: params.id }
@@ -127,10 +133,10 @@ export async function PUT(
         { status: 404 }
       );
     }
-    
+
     // Extraer dealerIds e imágenes si están presentes
     const { dealerIds, coverImage, galleryImages, thumbnailIndex, ...vehicleData } = validatedData;
-    
+
     // Asegurar que specifications se guarde como string
     if (vehicleData.specifications && typeof vehicleData.specifications === 'object') {
       vehicleData.specifications = JSON.stringify(vehicleData.specifications);
@@ -146,8 +152,8 @@ export async function PUT(
         );
       }
     }
-    
-    
+
+
     // Actualizar vehículo con transacción
     await prisma.$transaction(async (tx) => {
       // 1. Actualizar vehículo
@@ -155,37 +161,37 @@ export async function PUT(
         where: { id: params.id },
         data: vehicleData
       });
-      
+
       // 2. Manejar relaciones con dealers si están presentes
       if (dealerIds !== undefined) {
         // Eliminar relaciones existentes
         await tx.vehicleDealer.deleteMany({
           where: { vehicleId: params.id }
         });
-        
+
         // Crear nuevas relaciones
         if (dealerIds.length > 0) {
           const vehicleDealers = dealerIds.map(dealerId => ({
             vehicleId: params.id,
             dealerId: dealerId
           }));
-          
+
           await tx.vehicleDealer.createMany({
             data: vehicleDealers
           });
         }
       }
-      
+
       // 3. Manejar imágenes si están presentes
       if (coverImage !== undefined || galleryImages !== undefined) {
         // Eliminar imágenes existentes
         await tx.vehicleImage.deleteMany({
           where: { vehicleId: params.id }
         });
-        
+
         // Crear nuevas imágenes
         const imagesToCreate = [];
-        
+
         // Imagen de portada
         if (coverImage) {
           imagesToCreate.push({
@@ -195,7 +201,7 @@ export async function PUT(
             order: 0
           });
         }
-        
+
         // Imágenes de galería
         if (galleryImages && galleryImages.length > 0) {
           galleryImages.forEach((imageUrl, index) => {
@@ -208,7 +214,7 @@ export async function PUT(
             });
           });
         }
-        
+
         if (imagesToCreate.length > 0) {
           await tx.vehicleImage.createMany({
             data: imagesToCreate
@@ -219,7 +225,7 @@ export async function PUT(
       timeout: 30000, // 30 segundos para completar la transacción
       maxWait: 5000   // 5 segundos para esperar que la transacción esté disponible
     });
-    
+
     // Retornar vehículo actualizado
     const updatedVehicle = await prisma.vehicle.findUnique({
       where: { id: params.id },
@@ -232,14 +238,14 @@ export async function PUT(
         }
       }
     });
-    
+
     return NextResponse.json(updatedVehicle);
   } catch (error: any) {
     console.error('❌ Error completo:', error);
     console.error('❌ Error name:', error.name);
     console.error('❌ Error message:', error.message);
     console.error('❌ Error stack:', error.stack);
-    
+
     if (error.name === 'ZodError') {
       console.error('❌ Error de validación Zod:', error.errors);
       return NextResponse.json(
@@ -247,11 +253,11 @@ export async function PUT(
         { status: 400 }
       );
     }
-    
+
     if (error.code) {
       console.error('❌ Error de Prisma:', error.code);
     }
-    
+
     console.error('Error updating vehicle:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor', details: error.message },
@@ -277,12 +283,12 @@ export async function DELETE(
         { status: 404 }
       );
     }
-    
+
     // Eliminar vehículo (las imágenes y relaciones se eliminan en cascada)
     await prisma.vehicle.delete({
       where: { id: params.id }
     });
-    
+
     return NextResponse.json(
       { message: 'Vehículo eliminado exitosamente' },
       { status: 200 }

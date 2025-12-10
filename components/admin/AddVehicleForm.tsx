@@ -301,7 +301,7 @@ export function AddVehicleForm() {
           cilindrada: formData.cilindrada ? parseFloat(formData.cilindrada) : undefined,
           numeroCilindros: formData.numeroCilindros ? parseInt(formData.numeroCilindros) : undefined,
           combustible: formData.combustible,
-          octanajeRecomendado: formData.octanajeRecomendado ? parseFloat(formData.octanajeRecomendado) : undefined,
+          octanajeRecomendado: formData.octanajeRecomendado || undefined,
           arquitecturaMotorTermico: formData.arquitecturaMotorTermico || undefined,
           potenciaMaxEV: formData.potenciaMaxEV ? parseFloat(formData.potenciaMaxEV) : undefined,
           potenciaMaxMotorTermico: formData.potenciaMaxMotorTermico ? parseFloat(formData.potenciaMaxMotorTermico) : undefined,
@@ -345,7 +345,7 @@ export function AddVehicleForm() {
           capacidadTanque: formData.capacidadTanque ? parseFloat(formData.capacidadTanque) : undefined,
           autonomiaOficial: formData.autonomiaOficial ? parseFloat(formData.autonomiaOficial) : undefined,
           costoEnergia100km: formData.costoEnergia100km || undefined,
-          ahorro5Anos: formData.ahorro5Anos ? parseFloat(formData.ahorro5Anos) : undefined,
+          ahorro5Anos: formData.ahorro5Anos || undefined,
           mpgeCiudad: formData.mpgeCiudad ? parseFloat(formData.mpgeCiudad) : undefined,
           mpgeCarretera: formData.mpgeCarretera ? parseFloat(formData.mpgeCarretera) : undefined,
           mpgeCombinado: formData.mpgeCombinado ? parseFloat(formData.mpgeCombinado) : undefined,
@@ -470,10 +470,10 @@ export function AddVehicleForm() {
           garantiaBateria: formData.garantiaBateria,
           asistenciaCarretera: formData.asistenciaCarretera ? parseFloat(formData.asistenciaCarretera) : undefined,
           intervaloMantenimiento: formData.intervaloMantenimiento,
-          costoMantenimiento3Primeros: formData.costoMantenimiento3Primeros ? parseFloat(formData.costoMantenimiento3Primeros) : undefined,
-          financiacionCuotaEstimada12Meses: formData.financiacionCuotaEstimada12Meses ? parseFloat(formData.financiacionCuotaEstimada12Meses) : undefined,
-          financiacionCuotaEstimada36Meses: formData.financiacionCuotaEstimada36Meses ? parseFloat(formData.financiacionCuotaEstimada36Meses) : undefined,
-          financiacionCuotaEstimada72Meses: formData.financiacionCuotaEstimada72Meses ? parseFloat(formData.financiacionCuotaEstimada72Meses) : undefined,
+          costoMantenimiento3Primeros: formData.costoMantenimiento3Primeros || undefined,
+          financiacionCuotaEstimada12Meses: formData.financiacionCuotaEstimada12Meses || undefined,
+          financiacionCuotaEstimada36Meses: formData.financiacionCuotaEstimada36Meses || undefined,
+          financiacionCuotaEstimada72Meses: formData.financiacionCuotaEstimada72Meses || undefined,
           origenPaisPlanta: formData.origenPaisPlanta,
         },
         metadata: {
@@ -832,7 +832,7 @@ export function AddVehicleForm() {
           {renderField('cilindrada', 'Cilindrada', 'number', undefined, 'L', 'ICE/HEV/PHE')}
           {renderField('numeroCilindros', 'Número de cilindros', 'number', undefined, undefined, 'ICE/HEV/PHE')}
           {renderField('combustible', 'Combustible', 'select', ['Gasolina', 'Diésel', 'GNV', 'Etanol', 'Eléctrico', 'Híbrido', 'Híbrido Enchufable'], undefined, 'Todos')}
-          {renderField('octanajeRecomendado', 'Octanaje recomendado', 'number', undefined, 'RON', 'ICE/HEV/PHE')}
+          {renderField('octanajeRecomendado', 'Octanaje recomendado (91 Corriente, 95 extra)', 'text', undefined, 'RON', 'ICE/HEV/PHE')}
           {renderField('arquitecturaMotorTermico', 'Arquitectura motor térmico', 'select', ['En línea', 'V', 'Boxer', 'W'], undefined, 'ICE/HEV/PHE')}
           {renderField('potenciaMaxEV', 'Potencia máx. (EV)', 'number', undefined, 'HP', 'EV')}
           {renderField('potenciaMaxMotorTermico', 'Potencia máx. (motor térmico)', 'number', undefined, 'HP', 'ICE/HEV/PHE')}
@@ -870,7 +870,7 @@ export function AddVehicleForm() {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {renderField('largo', 'Largo', 'number', undefined, 'mm')}
-          {renderField('ancho', 'Ancho (sin espejos)', 'number', undefined, 'mm')}
+          {renderField('ancho', 'Ancho (con espejos)', 'number', undefined, 'mm')}
           {renderField('alto', 'Alto', 'number', undefined, 'mm')}
           {renderField('pesoOrdenMarcha', 'Peso en orden de marcha', 'number', undefined, 'kg')}
           {renderField('distanciaEntreEjes', 'Distancia entre ejes', 'number', undefined, 'mm')}
@@ -895,9 +895,9 @@ export function AddVehicleForm() {
           {renderField('consumoMixto', 'Consumo mixto', 'number', undefined, 'L/100 km; kWh/100 km')}
           {renderField('capacidadTanque', 'Capacidad de tanque combustible', 'number', undefined, 'L', 'ICE/HEV/PHE')}
           {renderField('autonomiaOficial', 'Autonomía oficial', 'number', undefined, 'km', 'EV/PHEV')}
-          {renderField('costoEnergia100km', 'Costo de energía por 100 km', 'text', undefined, 'COP')}
-          {renderField('ahorro5Anos', 'Ahorro a 3 años', 'number', undefined, 'COP')}
-          {renderField('mpgeCombinado', 'KMGe combinado', 'number', undefined, 'kmge', 'EV/PHEV')}
+          {renderField('costoEnergia100km', 'Costo de energía por 100 km', 'text', undefined, '$', ['EV', 'PHEV'])}
+          {renderField('ahorro5Anos', 'Ahorro a 3 años', 'text', undefined, '$')}
+          {renderField('mpgeCombinado', 'KMGe combinado', 'number', undefined, 'kmge', ['EV', 'PHEV'])}
           {renderField('motorAutostop', 'Motor autostop', 'checkbox', undefined, undefined, 'Todos')}
         </div>
       </div>
@@ -931,7 +931,7 @@ export function AddVehicleForm() {
                 {renderField('tiempo2080AC7KW', 'Tiempo 20-80% AC 7KW (Instalación doméstica)', 'number', undefined, 'min')}
                 {renderField('tiempo2080AC22KW', 'Tiempo 20-80% AC 22KW (Cargador empresarial)', 'number', undefined, 'min')}
                 {renderField('tiempo2080DC50KW', 'Tiempo 20-80% DC 50KW (Carga rápida)', 'number', undefined, 'min')}
-                {renderField('tiempo2080DC150KW', 'Tiempo 20-80% DC 150KW (Carga ultrarápida)', 'number', undefined, 'min')}
+                {renderField('tiempo2080DC150KW', 'Tiempo 20-80% DC 150KW (Carga ultrarrápida)', 'number', undefined, 'min')}
                 {renderField('v2hV2g', 'Carga bidireccional', 'checkbox')}
                 {renderField('potenciaV2hV2g', 'Potencia Carga bidireccional (kW)', 'number', undefined, 'kW')}
               </>
@@ -1114,15 +1114,15 @@ export function AddVehicleForm() {
           Comercial
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {renderField('precioLista', 'Precio de lista', 'number', undefined, 'COP')}
-          {renderField('garantiaVehiculo', 'Garantía vehículo', 'text', undefined)}
+          {renderField('precioLista', 'Precio de Lista', 'number', undefined, '$')}
+          {renderField('garantiaVehiculo', 'Garantía del Vehículo', 'text')}
           {renderField('garantiaBateria', 'Garantía batería (EV/PHEV)', 'text', undefined, undefined, 'EV/PHEV')}
           {renderField('asistenciaCarretera', 'Asistencia en carretera', 'number', undefined, 'años')}
           {renderField('intervaloMantenimiento', 'Intervalo de mantenimiento', 'text', undefined)}
-          {renderField('costoMantenimiento3Primeros', 'Costo mantenimiento (3 primeros)', 'number', undefined, 'COP')}
-          {renderField('financiacionCuotaEstimada12Meses', 'Financiación (cuota estimada) 12 meses', 'number', undefined, 'COP')}
-          {renderField('financiacionCuotaEstimada36Meses', 'Financiación (cuota estimada) 36 meses', 'number', undefined, 'COP')}
-          {renderField('financiacionCuotaEstimada72Meses', 'Financiación (cuota estimada) 72 meses', 'number', undefined, 'COP')}
+          {renderField('costoMantenimiento3Primeros', 'Costo Mantenimiento (3 años)', 'text', undefined, '$')}
+          {renderField('financiacionCuotaEstimada12Meses', 'Cuota Estimada (12 meses)', 'text', undefined, '$')}
+          {renderField('financiacionCuotaEstimada36Meses', 'Cuota Estimada (36 meses)', 'text', undefined, '$')}
+          {renderField('financiacionCuotaEstimada72Meses', 'Cuota Estimada (72 meses)', 'text', undefined, '$')}
           {renderField('origenPaisPlanta', 'Origen (país/planta)', 'text', undefined)}
         </div>
       </div>

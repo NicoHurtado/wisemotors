@@ -24,6 +24,7 @@ export function verifyToken(token: string): any {
   try {
     return jwt.verify(token, JWT_SECRET);
   } catch (error) {
+    console.error('Token verification failed:', error instanceof Error ? error.message : error);
     return null;
   }
 }

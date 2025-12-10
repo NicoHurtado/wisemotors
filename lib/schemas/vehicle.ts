@@ -130,6 +130,7 @@ const combustionEngineSchema = z.object({
   engineConfiguration: z.enum(['En línea', 'V', 'Boxer', 'W']).optional(),
   inductionType: z.enum(['Natural', 'Turbo', 'Supercargado', 'Biturbo', 'Electric turbo']).optional(),
   compressionRatio: z.number().min(0).optional(),
+  octanajeRecomendado: z.string().optional(),
   maxPower: z.number().min(0).optional(),
   maxTorque: z.number().min(0).optional(),
   rpmLimit: z.number().min(0).optional(),
@@ -143,6 +144,7 @@ const combustionEngineSchema = z.object({
   emissionStandard: z.string().optional(),
   startStop: z.boolean().optional(),
   ecoMode: z.boolean().optional(),
+  ahorro5Anos: z.string().optional(),
 });
 
 const electricVehicleSchema = z.object({
