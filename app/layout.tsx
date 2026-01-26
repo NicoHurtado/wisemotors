@@ -9,9 +9,37 @@ import { AuthProvider } from '@/contexts/AuthContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'WiseMotors - Encuentra tu vehículo ideal',
-  description: 'Describe lo que quieres con tus palabras y te encontramos las mejores opciones en segundos. Impulsado por inteligencia artificial.',
-  keywords: 'vehículos, carros, motos, búsqueda inteligente, WiseMotors',
+  title: {
+    default: 'WiseMotors - Encuentra tu vehículo ideal con IA',
+    template: '%s | WiseMotors'
+  },
+  description: 'Usa nuestra inteligencia artificial para encontrar el carro o moto perfecto. Describe lo que buscas y WiseMotors lo encuentra por ti en segundos.',
+  keywords: ['compra de vehículos', 'carros usados', 'motos', 'búsqueda con IA', 'WiseMotors', 'automóviles Colombia', 'concesionario digital'],
+  authors: [{ name: 'WiseMotors' }],
+  creator: 'WiseMotors',
+  publisher: 'WiseMotors',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://wisemotors.ai'),
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: 'WiseMotors - Encuentra tu vehículo ideal con IA',
+    description: 'Búsqueda inteligente de vehículos impulsada por IA. Encuentra lo que realmente necesitas.',
+    url: 'https://wisemotors.ai',
+    siteName: 'WiseMotors',
+    locale: 'es_CO',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'WiseMotors - Búsqueda de Vehículos con IA',
+    description: 'Encuentra tu próximo vehículo describiendo lo que quieres. IA al servicio de tu movilidad.',
+  },
   icons: {
     icon: '/favicon.png',
     apple: '/favicon.png',
