@@ -38,7 +38,7 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
     const fetchVehicleSpecs = async () => {
       try {
         setLoading(true);
-        
+
         // Usar las specifications reales del vehículo
         const vehiclesWithData = vehicles.map(vehicle => {
           // Parsear specifications si viene como string
@@ -51,7 +51,7 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
               specifications = {};
             }
           }
-          
+
           return {
             ...vehicle,
             specifications: specifications || {}
@@ -59,11 +59,11 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
         });
 
         setVehiclesWithSpecs(vehiclesWithData);
-        
+
         // Generar análisis real con IA
         try {
           setAiLoading(true);
-          const aiResult = await getIntelligentAnalysis(vehiclesWithData);
+          const aiResult = await getIntelligentAnalysis(vehiclesWithData.map(v => v.id));
           setAiAnalysis(aiResult.analysis);
           setProfileRecommendations(aiResult.profileRecommendations);
           setKeyDifferences(aiResult.keyDifferences);
@@ -86,77 +86,14 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
   }, [vehicles]);
 
   function generateAIAnalysis(vehicles: VehicleComparisonData[]): AIAnalysis[] {
-    return vehicles.map(vehicle => {
-      const pros: string[] = [];
-      const cons: string[] = [];
-      let recommendation = '';
-      let score = 0;
-
-      // Análisis basado en el tipo de combustible
-      if (vehicle.fuelType === 'Eléctrico') {
-        pros.push('Cero emisiones y bajo costo de operación');
-        pros.push('Aceleración instantánea y silencioso');
-        pros.push('Mantenimiento mínimo y confiable');
-        cons.push('Tiempo de carga más largo');
-        cons.push('Infraestructura de carga limitada');
-        recommendation = 'Excelente opción para uso urbano y compromiso ambiental';
-        score = 85;
-      } else if (vehicle.fuelType === 'Híbrido') {
-        pros.push('Eficiencia combinada gasolina-eléctrico');
-        pros.push('Menor consumo en ciudad');
-        pros.push('No requiere infraestructura especial');
-        cons.push('Precio inicial más alto');
-        cons.push('Complejidad mecánica adicional');
-        recommendation = 'Ideal para conductores que buscan eficiencia sin compromisos';
-        score = 78;
-      } else {
-        pros.push('Rendimiento probado y confiable');
-        pros.push('Fácil mantenimiento y repuestos');
-        pros.push('Precio inicial más accesible');
-        cons.push('Mayor consumo de combustible');
-        cons.push('Impacto ambiental más alto');
-        recommendation = 'Opción tradicional confiable para uso diario';
-        score = 72;
-      }
-
-      // Análisis basado en el tipo de vehículo
-      if (vehicle.type === 'Deportivo') {
-        pros.push('Diseño aerodinámico y deportivo');
-        pros.push('Alto rendimiento y manejo preciso');
-        cons.push('Menor practicidad diaria');
-        cons.push('Consumo de combustible alto');
-        score += 5;
-      } else if (vehicle.type === 'SUV') {
-        pros.push('Versatilidad y espacio interior');
-        pros.push('Capacidad todoterreno');
-        cons.push('Mayor consumo de combustible');
-        cons.push('Manejo menos ágil');
-        score += 3;
-      } else if (vehicle.type === 'Sedán') {
-        pros.push('Confort y elegancia');
-        pros.push('Eficiencia aerodinámica');
-        cons.push('Espacio limitado');
-        score += 2;
-      }
-
-      // Análisis basado en el precio
-      if (vehicle.price > 300000000) {
-        pros.push('Alta calidad y prestigio');
-        cons.push('Precio muy elevado');
-        score -= 5;
-      } else if (vehicle.price < 100000000) {
-        pros.push('Excelente relación precio-calidad');
-        score += 8;
-      }
-
-      return {
-        vehicleId: vehicle.id,
-        pros: pros.slice(0, 4),
-        cons: cons.slice(0, 3),
-        recommendation,
-        score: Math.max(0, Math.min(100, score))
-      };
-    });
+    // Retornamos un análisis vacío o mínimo mientras carga la IA verdadera
+    return vehicles.map(vehicle => ({
+      vehicleId: vehicle.id,
+      pros: [],
+      cons: [],
+      recommendation: 'Analizando con IA...',
+      score: 0
+    }));
   }
 
   function getProfileRecommendations(): ProfileRecommendation[] {
@@ -193,57 +130,57 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
       }
       return value !== null && value !== undefined ? value : null;
     };
-    
+
     // Función para obtener valor de un criterio
     const getCriterionValue = (vehicle: VehicleComparisonData, criterion: string): number => {
       const { specifications, fuelType } = vehicle;
       if (!specifications) return 0;
-      
+
       switch (criterion) {
         case 'maxPower':
           if (fuelType === 'Eléctrico') {
-            return getValueFromPath(specifications, 'powertrain.potenciaMaxEV') || 
-                   getValueFromPath(specifications, 'powertrain.potenciaMaxMotorTermico') || 0;
+            return getValueFromPath(specifications, 'powertrain.potenciaMaxEV') ||
+              getValueFromPath(specifications, 'powertrain.potenciaMaxMotorTermico') || 0;
           } else if (fuelType === 'Híbrido' || fuelType === 'Híbrido Enchufable') {
-            return getValueFromPath(specifications, 'powertrain.potenciaMaxSistemaHibrido') || 
-                   getValueFromPath(specifications, 'powertrain.potenciaMaxMotorTermico') ||
-                   getValueFromPath(specifications, 'powertrain.potenciaMaxEV') || 0;
+            return getValueFromPath(specifications, 'powertrain.potenciaMaxSistemaHibrido') ||
+              getValueFromPath(specifications, 'powertrain.potenciaMaxMotorTermico') ||
+              getValueFromPath(specifications, 'powertrain.potenciaMaxEV') || 0;
           } else {
-            return getValueFromPath(specifications, 'powertrain.potenciaMaxMotorTermico') || 
-                   getValueFromPath(specifications, 'powertrain.potenciaMaxEV') || 0;
+            return getValueFromPath(specifications, 'powertrain.potenciaMaxMotorTermico') ||
+              getValueFromPath(specifications, 'powertrain.potenciaMaxEV') || 0;
           }
-        
+
         case 'acceleration0to100':
           const acc = getValueFromPath(specifications, 'performance.acceleration0to100');
           // Invertir: menor aceleración = mejor (más puntos)
           return acc ? Math.max(0, 100 - (acc * 10)) : 0;
-        
+
         case 'maxSpeed':
           return getValueFromPath(specifications, 'performance.maxSpeed') || 0;
-        
+
         case 'drivingFun':
           return getValueFromPath(specifications, 'wisemetrics.drivingFun') || 0;
-        
+
         case 'passengerCapacity':
-          return getValueFromPath(specifications, 'interior.passengerCapacity') || 
-                 getValueFromPath(specifications, 'identification.plazas') || 0;
-        
+          return getValueFromPath(specifications, 'interior.passengerCapacity') ||
+            getValueFromPath(specifications, 'identification.plazas') || 0;
+
         case 'cargoCapacity':
-          return getValueFromPath(specifications, 'dimensions.cargoCapacity') || 
-                 getValueFromPath(specifications, 'interior.trunkCapacitySeatsDown') ||
-                 getValueFromPath(specifications, 'dimensions.cargoCapacityMin') || 0;
-        
+          return getValueFromPath(specifications, 'dimensions.cargoCapacity') ||
+            getValueFromPath(specifications, 'interior.trunkCapacitySeatsDown') ||
+            getValueFromPath(specifications, 'dimensions.cargoCapacityMin') || 0;
+
         case 'safety':
-          return getValueFromPath(specifications, 'wisemetrics.reliability') || 
-                 (getValueFromPath(specifications, 'safety.airbags') || 0) * 10 ||
-                 (getValueFromPath(specifications, 'safety.ncapRating') || 0) * 20;
-        
+          return getValueFromPath(specifications, 'wisemetrics.reliability') ||
+            (getValueFromPath(specifications, 'safety.airbags') || 0) * 10 ||
+            (getValueFromPath(specifications, 'safety.ncapRating') || 0) * 20;
+
         case 'comfort':
           return getValueFromPath(specifications, 'wisemetrics.comfort') || 0;
-        
+
         case 'efficiency':
           return getValueFromPath(specifications, 'wisemetrics.efficiency') || 0;
-        
+
         case 'cityConsumption':
           const cityCons = getValueFromPath(specifications, 'efficiency.consumoCiudad');
           // Invertir: menor consumo = mejor (más puntos)
@@ -252,19 +189,19 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
           } else {
             return cityCons ? Math.max(0, 100 - (cityCons * 10)) : 0;
           }
-        
+
         case 'qualityPriceRatio':
           return getValueFromPath(specifications, 'wisemetrics.qualityPriceRatio') || 0;
-        
+
         case 'reliability':
           return getValueFromPath(specifications, 'wisemetrics.reliability') || 0;
-        
+
         case 'technology':
           return getValueFromPath(specifications, 'wisemetrics.technology') || 0;
-        
+
         case 'environmentalImpact':
           return getValueFromPath(specifications, 'wisemetrics.environmentalImpact') || 0;
-        
+
         default:
           return 0;
       }
@@ -282,7 +219,7 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
             score += value;
           }
         });
-        
+
         if (score > bestScore) {
           bestScore = score;
           bestVehicle = vehicle;
@@ -339,7 +276,7 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {vehiclesWithSpecs.map((vehicle) => {
           const analysis = aiAnalysis.find(a => a.vehicleId === vehicle.id);
-          
+
           return (
             <Card key={vehicle.id} className="hover:shadow-lg transition-all duration-300">
               <CardHeader className="pb-4">
@@ -407,8 +344,8 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
                 </div>
 
                 {/* Botón de acción */}
-                <Button 
-                  variant="wise" 
+                <Button
+                  variant="wise"
                   className="w-full"
                   onClick={() => window.location.href = `/vehicles/${vehicle.id}`}
                 >
@@ -461,33 +398,33 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
                 const vehicle = vehiclesWithSpecs.find(v => v.id === rec.vehicle);
                 vehicleName = vehicle ? `${vehicle.brand} ${vehicle.model}` : rec.vehicle;
               }
-              
+
               return (
-              <div key={index} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-wise/20 rounded-full">
-                    {rec.profile === 'Familiar' && <Users className="w-4 h-4 text-wise" />}
-                    {rec.profile === 'Performance' && <TrendingUp className="w-4 h-4 text-wise" />}
-                    {rec.profile === 'Economía' && <Zap className="w-4 h-4 text-wise" />}
-                    {rec.profile === 'Tecnología' && <Shield className="w-4 h-4 text-wise" />}
+                <div key={index} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-wise/20 rounded-full">
+                      {rec.profile === 'Familiar' && <Users className="w-4 h-4 text-wise" />}
+                      {rec.profile === 'Performance' && <TrendingUp className="w-4 h-4 text-wise" />}
+                      {rec.profile === 'Economía' && <Zap className="w-4 h-4 text-wise" />}
+                      {rec.profile === 'Tecnología' && <Shield className="w-4 h-4 text-wise" />}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{rec.profile}</h4>
+                      <p className="text-sm text-gray-600">Perfil recomendado</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{rec.profile}</h4>
-                    <p className="text-sm text-gray-600">Perfil recomendado</p>
+
+                  <div className="space-y-2">
+                    <div className="text-sm">
+                      <span className="text-gray-600">Vehículo: </span>
+                      <span className="font-medium text-gray-900">{vehicleName}</span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-gray-600">Razón: </span>
+                      <span className="text-gray-700">{rec.reason}</span>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="space-y-2">
-                  <div className="text-sm">
-                    <span className="text-gray-600">Vehículo: </span>
-                    <span className="font-medium text-gray-900">{vehicleName}</span>
-                  </div>
-                  <div className="text-sm">
-                    <span className="text-gray-600">Razón: </span>
-                    <span className="text-gray-700">{rec.reason}</span>
-                  </div>
-                </div>
-              </div>
               );
             })}
           </div>
@@ -516,8 +453,8 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
 
             <div className="text-center">
               <p className="text-sm text-gray-600">
-                Este análisis utiliza <strong>Inteligencia Artificial real (GPT-4)</strong> para analizar 
-                las especificaciones técnicas de cada vehículo y proporcionar recomendaciones 
+                Este análisis utiliza <strong>Inteligencia Artificial real (GPT-4)</strong> para analizar
+                las especificaciones técnicas de cada vehículo y proporcionar recomendaciones
                 objetivas, personalizadas y basadas en datos reales.
               </p>
             </div>

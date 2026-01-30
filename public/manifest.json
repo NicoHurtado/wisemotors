@@ -1,0 +1,16 @@
+{
+  "name": "WiseMotors",
+  "short_name": "WiseMotors",
+  "description": "Encuentra tu vehículo ideal impulsado por IA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#881cb7",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

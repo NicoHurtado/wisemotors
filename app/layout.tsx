@@ -41,12 +41,20 @@ export const metadata: Metadata = {
     description: 'Encuentra tu próximo vehículo describiendo lo que quieres. IA al servicio de tu movilidad.',
   },
   icons: {
-    icon: '/favicon.png',
-    apple: '/favicon.png',
+    icon: [
+      { url: '/favicon.png' },
+      { url: '/icon.png', sizes: '512x512', type: 'image/png' },
+    ],
+    shortcut: '/favicon.png',
+    apple: [
+      { url: '/favicon.png' },
+      { url: '/favicon.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
   verification: {
     google: 'sbnaPtb58P-S65ESDPs8gbDU37O2nCKIy28NIXIKuLk',
   },
+  manifest: '/manifest.json',
 }
 
 export default function RootLayout({

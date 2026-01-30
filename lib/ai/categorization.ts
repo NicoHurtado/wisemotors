@@ -13,7 +13,7 @@ export enum QueryType {
 export const CategorizedIntentSchema = z.object({
   query_type: z.nativeEnum(QueryType),
   confidence: z.number().min(0).max(1), // Confidence in categorization
-  
+
   // Objective filters detected from database analysis
   objective_filters: z.object({
     brands: z.array(z.string()).optional(),
@@ -38,7 +38,7 @@ export const CategorizedIntentSchema = z.object({
     })).optional(),
     features: z.array(z.string()).optional(), // sunroof, leather, etc.
   }).optional(),
-  
+
   // Subjective preferences (for ranking)
   subjective_weights: z.object({
     beauty: z.number().min(0).max(1).default(0),
@@ -52,16 +52,16 @@ export const CategorizedIntentSchema = z.object({
     comfort: z.number().min(0).max(1).default(0),
     safety: z.number().min(0).max(1).default(0),
   }).optional(),
-  
+
   // Regional context
   regional_context: z.object({
     location: z.string().default('Medellín'),
     specific_needs: z.array(z.string()).default([]), // "subir palmas", "huecos", etc.
   }).optional(),
-  
+
   // Original query for context
   original_query: z.string(),
-  
+
   // Explanation of categorization
   reasoning: z.string().optional(),
 });
@@ -128,14 +128,14 @@ function createCategorizeQueryFunction(dbOptions: any) {
               },
               description: 'Rango de precio específico mencionado'
             },
-                    year_range: {
-                      type: 'object',
-                      properties: {
-                        min: { type: 'number' },
-                        max: { type: 'number' }
-                      },
-                      description: 'Rango de año específico. Si el usuario menciona un año exacto (ej: "2025", "carro 2025"), establece min y max al mismo valor para indicar año exacto. Si menciona un rango (ej: "2020-2023"), usa min y max diferentes. IMPORTANTE: Si el usuario dice "carro 2025", debe ser año EXACTO (min: 2025, max: 2025), NO un rango.'
-                    },
+            year_range: {
+              type: 'object',
+              properties: {
+                min: { type: 'number' },
+                max: { type: 'number' }
+              },
+              description: 'Rango de año específico. Si el usuario menciona un año exacto (ej: "2025", "carro 2025"), establece min y max al mismo valor para indicar año exacto. Si menciona un rango (ej: "2020-2023"), usa min y max diferentes. IMPORTANTE: Si el usuario dice "carro 2025", debe ser año EXACTO (min: 2025, max: 2025), NO un rango.'
+            },
             technical_specs: {
               type: 'array',
               items: {
@@ -214,27 +214,27 @@ export async function getDatabaseOptions() {
         distinct: ['brand'],
         orderBy: { brand: 'asc' }
       }),
-      
+
       // Get distinct body types
       prisma.vehicle.findMany({
         select: { type: true },
         distinct: ['type'],
         orderBy: { type: 'asc' }
       }),
-      
+
       // Get distinct fuel types
       prisma.vehicle.findMany({
         select: { fuelType: true },
         distinct: ['fuelType'],
         orderBy: { fuelType: 'asc' }
       }),
-      
+
       // Get year range
       prisma.vehicle.aggregate({
         _min: { year: true },
         _max: { year: true }
       }),
-      
+
       // Get price range
       prisma.vehicle.aggregate({
         _min: { price: true },
@@ -270,10 +270,10 @@ export async function getDatabaseOptions() {
 // Main categorization function
 export async function categorizeQuery(prompt: string): Promise<CategorizedIntent> {
   const apiKey = process.env.OPENAI_API_KEY;
-  
+
   // Get database options for context
   const dbOptions = await getDatabaseOptions();
-  
+
   if (!apiKey) {
     // Fallback to heuristic categorization
     return categorizeQueryHeuristic(prompt, dbOptions);
@@ -377,7 +377,7 @@ Analiza la consulta y extrae tanto filtros objetivos como pesos subjetivos aprop
       yearRange: dbOptions.yearRange,
       priceRange: dbOptions.priceRange
     });
-    
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -404,7 +404,7 @@ Analiza la consulta y extrae tanto filtros objetivos como pesos subjetivos aprop
 
     const data = await response.json();
     const functionCall = data.choices[0]?.message?.function_call;
-    
+
     if (!functionCall || functionCall.name !== 'categorize_vehicle_query') {
       console.error('[categorizeQuery] Invalid function call:', functionCall);
       throw new Error('No se pudo categorizar la consulta');
@@ -412,11 +412,11 @@ Analiza la consulta y extrae tanto filtros objetivos como pesos subjetivos aprop
 
     const rawResult = JSON.parse(functionCall.arguments);
     console.log(`[categorizeQuery] AI raw response:`, JSON.stringify(rawResult, null, 2));
-    
+
     // FIX: La IA a veces devuelve year_range en el nivel raíz en lugar de dentro de objective_filters
     // Necesitamos moverlo al lugar correcto antes de validar
     let parsedResult = { ...rawResult };
-    
+
     // Si year_range está en el nivel raíz pero no en objective_filters, moverlo
     if (parsedResult.year_range && !parsedResult.objective_filters?.year_range) {
       console.log(`[categorizeQuery] Moving year_range from root to objective_filters`);
@@ -426,7 +426,7 @@ Analiza la consulta y extrae tanto filtros objetivos como pesos subjetivos aprop
       parsedResult.objective_filters.year_range = parsedResult.year_range;
       delete parsedResult.year_range;
     }
-    
+
     // Si price_range está en el nivel raíz pero no en objective_filters, moverlo
     if (parsedResult.price_range && !parsedResult.objective_filters?.price_range) {
       console.log(`[categorizeQuery] Moving price_range from root to objective_filters`);
@@ -436,7 +436,7 @@ Analiza la consulta y extrae tanto filtros objetivos como pesos subjetivos aprop
       parsedResult.objective_filters.price_range = parsedResult.price_range;
       delete parsedResult.price_range;
     }
-    
+
     // Si brands está en el nivel raíz pero no en objective_filters, moverlo
     if (parsedResult.brands && !parsedResult.objective_filters?.brands) {
       console.log(`[categorizeQuery] Moving brands from root to objective_filters`);
@@ -446,7 +446,7 @@ Analiza la consulta y extrae tanto filtros objetivos como pesos subjetivos aprop
       parsedResult.objective_filters.brands = parsedResult.brands;
       delete parsedResult.brands;
     }
-    
+
     // Si body_types está en el nivel raíz pero no en objective_filters, moverlo
     if (parsedResult.body_types && !parsedResult.objective_filters?.body_types) {
       console.log(`[categorizeQuery] Moving body_types from root to objective_filters`);
@@ -456,7 +456,7 @@ Analiza la consulta y extrae tanto filtros objetivos como pesos subjetivos aprop
       parsedResult.objective_filters.body_types = parsedResult.body_types;
       delete parsedResult.body_types;
     }
-    
+
     // Si fuel_types está en el nivel raíz pero no en objective_filters, moverlo
     if (parsedResult.fuel_types && !parsedResult.objective_filters?.fuel_types) {
       console.log(`[categorizeQuery] Moving fuel_types from root to objective_filters`);
@@ -466,7 +466,7 @@ Analiza la consulta y extrae tanto filtros objetivos como pesos subjetivos aprop
       parsedResult.objective_filters.fuel_types = parsedResult.fuel_types;
       delete parsedResult.fuel_types;
     }
-    
+
     // Si technical_specs está en el nivel raíz pero no en objective_filters, moverlo
     if (parsedResult.technical_specs && !parsedResult.objective_filters?.technical_specs) {
       console.log(`[categorizeQuery] Moving technical_specs from root to objective_filters`);
@@ -476,9 +476,9 @@ Analiza la consulta y extrae tanto filtros objetivos como pesos subjetivos aprop
       parsedResult.objective_filters.technical_specs = parsedResult.technical_specs;
       delete parsedResult.technical_specs;
     }
-    
+
     console.log(`[categorizeQuery] Parsed result after fixing structure:`, JSON.stringify(parsedResult, null, 2));
-    
+
     const categorizedIntent = CategorizedIntentSchema.parse({
       ...parsedResult,
       original_query: prompt
@@ -505,22 +505,22 @@ Analiza la consulta y extrae tanto filtros objetivos como pesos subjetivos aprop
 // Heuristic fallback categorization
 function categorizeQueryHeuristic(prompt: string, dbOptions: any): CategorizedIntent {
   const text = prompt.toLowerCase();
-  
+
   // Check for specific brands
-  const mentionedBrands = dbOptions.brands.filter((brand: string) => 
+  const mentionedBrands = dbOptions.brands.filter((brand: string) =>
     text.includes(brand.toLowerCase())
   );
-  
+
   // Check for specific body types
-  const mentionedBodyTypes = dbOptions.bodyTypes.filter((type: string) => 
+  const mentionedBodyTypes = dbOptions.bodyTypes.filter((type: string) =>
     text.includes(type.toLowerCase())
   );
-  
+
   // Extract year from prompt (4-digit numbers between 2000 and current year + 2)
   const yearRegex = /\b(20[0-3][0-9])\b/g;
   const yearMatches = prompt.match(yearRegex);
   let yearRange: { min: number; max: number } | undefined;
-  
+
   if (yearMatches && yearMatches.length > 0) {
     const years = yearMatches.map(y => parseInt(y)).filter(y => y >= 2000 && y <= new Date().getFullYear() + 2);
     if (years.length > 0) {
@@ -536,7 +536,7 @@ function categorizeQueryHeuristic(prompt: string, dbOptions: any): CategorizedIn
       }
     }
   }
-  
+
   // Extract price ranges (patterns like "menos de $50M", "más de $30M", "entre $40M y $60M")
   let priceRange: { min?: number; max?: number } | undefined;
   const pricePatterns = [
@@ -546,7 +546,7 @@ function categorizeQueryHeuristic(prompt: string, dbOptions: any): CategorizedIn
     { regex: /mínimo \$?(\d+)\s*M/i, type: 'min' },
     { regex: /entre \$?(\d+)\s*M y \$?(\d+)\s*M/i, type: 'range' },
   ];
-  
+
   for (const pattern of pricePatterns) {
     const match = prompt.match(pattern.regex);
     if (match) {
@@ -560,7 +560,7 @@ function categorizeQueryHeuristic(prompt: string, dbOptions: any): CategorizedIn
       break;
     }
   }
-  
+
   // Check for specific features
   const objectiveKeywords = [
     'pickup', 'suv', 'sedán', 'sedan', 'hatchback', 'deportivo', 'convertible',
@@ -572,7 +572,7 @@ function categorizeQueryHeuristic(prompt: string, dbOptions: any): CategorizedIn
     'peso', 'kg', 'metros', 'altura', 'ancho', 'largo', 'consumo', 'airbags', 'tracción', 'frenos',
     'bluetooth', 'pantalla', 'navegación', 'navegacion', 'asientos', 'maletero', 'suspensión', 'suspension'
   ];
-  
+
   const subjectiveKeywords = [
     'bonito', 'elegante', 'hermoso', 'lindo', 'feo', 'deportivo', 'rápido', 'rapido',
     'familia', 'familiar', 'cómodo', 'comodo', 'confiable', 'seguro', 'económico', 'economico',
@@ -581,19 +581,19 @@ function categorizeQueryHeuristic(prompt: string, dbOptions: any): CategorizedIn
     'trepar palmas', 'subir palmas', 'finca', 'trabajo pesado', 'huecos', 'ciudad', 'campo',
     'montaña', 'terreno difícil', 'terreno dificil', 'carga pesada', 'remolque'
   ];
-  
+
   // Year or price in query makes it objective
-  const hasObjective = objectiveKeywords.some(keyword => text.includes(keyword)) || 
-                     mentionedBrands.length > 0 || 
-                     mentionedBodyTypes.length > 0 ||
-                     !!yearRange ||
-                     !!priceRange;
-  
+  const hasObjective = objectiveKeywords.some(keyword => text.includes(keyword)) ||
+    mentionedBrands.length > 0 ||
+    mentionedBodyTypes.length > 0 ||
+    !!yearRange ||
+    !!priceRange;
+
   const hasSubjective = subjectiveKeywords.some(keyword => text.includes(keyword));
-  
+
   let queryType: QueryType;
   let confidence = 0.7;
-  
+
   if (hasObjective && hasSubjective) {
     queryType = QueryType.HYBRID;
   } else if (hasObjective) {
@@ -603,7 +603,7 @@ function categorizeQueryHeuristic(prompt: string, dbOptions: any): CategorizedIn
     queryType = QueryType.SUBJECTIVE_PREFERENCE;
     confidence = 0.6;
   }
-  
+
   return {
     query_type: queryType,
     confidence,

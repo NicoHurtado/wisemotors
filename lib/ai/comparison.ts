@@ -105,52 +105,52 @@ export async function getOptimizedComparison(
   vehicleIds: string[]
 ): Promise<OptimizedComparisonResult> {
   const startTime = Date.now();
-  
+
   try {
     // 0. Limpiar cache expirado periódicamente
     if (Math.random() < 0.1) { // 10% de probabilidad de limpiar
       cleanExpiredCache();
     }
-    
-    // 0.1. Forzar limpieza de cache tras actualizaciones (versión 4.3 - ANÁLISIS RICO)
-    const LOGIC_VERSION = '4.3'; // Análisis diversificado, más facetas, datos enriquecidos
+
+    // 0.1. Forzar limpieza de cache tras actualizaciones (versión 5.1 - ANTI-ESPEJO)
+    const LOGIC_VERSION = '5.1'; // Prohibe efecto espejo con ejemplos explícitos
     const versionKey = `comparison_logic_version`;
     const currentVersion = comparisonCache.get(versionKey);
-    
+
     if (!currentVersion || (currentVersion as any).version !== LOGIC_VERSION) {
       console.log(`🔄 Actualizando lógica de comparación a versión ${LOGIC_VERSION}`);
       clearComparisonCache(); // Limpiar todo el cache
       comparisonCache.set(versionKey, { version: LOGIC_VERSION, timestamp: Date.now() } as any);
     }
-    
+
     // 1. Verificar cache con validación de vehículos
     const cacheKey = vehicleIds.sort().join('-');
     const cached = comparisonCache.get(cacheKey);
-    
-    if (cached && 
-        (Date.now() - cached.timestamp < CACHE_TTL) &&
-        JSON.stringify(cached.vehicleIds.sort()) === JSON.stringify(vehicleIds.sort())) {
-      
+
+    if (cached &&
+      (Date.now() - cached.timestamp < CACHE_TTL) &&
+      JSON.stringify(cached.vehicleIds.sort()) === JSON.stringify(vehicleIds.sort())) {
+
       console.log(`🎯 Cache HIT: Comparación encontrada para vehículos [${vehicleIds.join(', ')}]`);
       return {
         ...cached.result,
-        meta: { 
-          ...cached.result.meta, 
-          cacheHit: true, 
-          processingTime: Date.now() - startTime 
+        meta: {
+          ...cached.result.meta,
+          cacheHit: true,
+          processingTime: Date.now() - startTime
         }
       };
     }
-    
+
     console.log(`🔄 Cache MISS: Generando nueva comparación para vehículos [${vehicleIds.join(', ')}]`);
 
     // 2. Obtener datos y precomputar features
     const vehicles = await getVehiclesWithFeatures(vehicleIds);
-    
+
     if (vehicles.length === 0) {
       throw new Error('No vehicles found for comparison');
     }
-    
+
     // 3. Análisis 100% con IA (eliminar sistema determinístico)
     const { analysis, profileRecommendations, tokensUsed } = await generatePureAIComparison(vehicles);
 
@@ -170,19 +170,19 @@ export async function getOptimizedComparison(
       vehicleIds: [...vehicleIds], // Copia para validación
       timestamp: Date.now()
     });
-    
+
     console.log(`💾 Cache SAVED: Comparación guardada para vehículos [${vehicleIds.join(', ')}]`);
 
     return result;
-    
+
   } catch (error) {
     console.error('Error in getOptimizedComparison:', error);
-    
+
     // Fallback completo: análisis determinístico sin LLM
     try {
       const vehicles = await getVehiclesWithFeatures(vehicleIds);
       const deterministicAnalysis = generateDeterministicComparison(vehicles);
-      
+
       return {
         analysis: deterministicAnalysis,
         profileRecommendations: generateFallbackProfileRecommendations(vehicles),
@@ -207,16 +207,16 @@ async function getVehiclesWithFeatures(vehicleIds: string[]): Promise<VehicleCom
   });
 
   const marketStats = await getMarketStats();
-  
+
   return vehicles.map(vehicle => {
     const features = computeVehicleFeatures(vehicle, marketStats);
     const tags = generateVehicleTags(vehicle, features);
-    
+
     // Obtener imagen válida
     const rawImageUrl = vehicle.images?.[0]?.url || null;
     const validImageUrl = getValidImageUrl(rawImageUrl);
     const finalImageUrl = validImageUrl || createImagePlaceholder(vehicle.brand, vehicle.model);
-    
+
     return {
       id: vehicle.id,
       brand: vehicle.brand,
@@ -240,83 +240,105 @@ async function generatePureAIComparison(vehicles: VehicleComparisonData[]): Prom
   tokensUsed: number
 }> {
   const apiKey = process.env.OPENAI_API_KEY;
-  
+
   if (!apiKey) {
     // Fallback simple sin rankings complicados
     return generateSimpleFallback(vehicles);
   }
 
-  // Crear payload compacto con DATOS REALES
+  // Crear payload compacto - SOLO CAMPOS CON DATOS REALES (sin N/A)
   const vehicleData = vehicles.map(vehicle => {
     const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
     const priceMillions = Math.round(vehicle.price / 1000000);
-    
+
+    // Extraer características adicionales para un análisis más rico
+    const safetyFeatures = [
+      specs.safety?.stabilityControl ? 'Control de estabilidad' : null,
+      specs.safety?.tractionControl ? 'Control de tracción' : null,
+      specs.safety?.brakeAssist ? 'Asistente de frenado' : null,
+      specs.safety?.isofix ? 'Anclajes ISOFIX' : null
+    ].filter(Boolean).slice(0, 3);
+
+    const techFeatures = [
+      specs.technology?.touchscreen ? `Pantalla ${specs.technology.touchscreenSize || ''}` : null,
+      specs.technology?.appleCarplay ? 'Apple CarPlay' : null,
+      specs.technology?.androidAuto ? 'Android Auto' : null,
+      specs.technology?.wirelessCharging ? 'Carga inalámbrica' : null,
+      specs.comfort?.keylessEntry ? 'Llave inteligente' : null
+    ].filter(Boolean).slice(0, 3);
+
+    // Construir array de características SOLO con datos reales
+    const dataPoints: string[] = [];
+    dataPoints.push(`💰 Precio: $${priceMillions}M`);
+    dataPoints.push(`🏎️ Tipo: ${vehicle.type} | Combustible: ${vehicle.fuelType}`);
+
+    const power = specs.performance?.maxPower || specs.combustion?.maxPower;
+    const torque = specs.performance?.maxTorque || specs.combustion?.maxTorque;
+    if (power) dataPoints.push(`⚡ Potencia: ${power}hp${torque ? ` / ${torque}Nm` : ''}`);
+
+    const acceleration = specs.performance?.acceleration0to100;
+    if (acceleration) dataPoints.push(`🏁 0-100km/h: ${acceleration}s`);
+
+    const consumption = specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption;
+    if (consumption) dataPoints.push(`⛽ Consumo: ${consumption}L/100km`);
+
+    const trunk = specs.dimensions?.cargoVolume || specs.dimensions?.trunkCapacity;
+    const groundClearance = specs.chassis?.groundClearance;
+    if (trunk || groundClearance) {
+      let dimStr = '📦';
+      if (trunk) dimStr += ` Baúl: ${trunk}L`;
+      if (groundClearance) dimStr += ` | Altura: ${groundClearance}mm`;
+      dataPoints.push(dimStr);
+    }
+
+    const airbags = specs.safety?.airbags;
+    if (airbags && airbags >= 6) dataPoints.push(`🛡️ Airbags: ${airbags}`);
+
+    if (safetyFeatures.length > 0) dataPoints.push(`✅ Seguridad: ${safetyFeatures.join(', ')}`);
+    if (techFeatures.length > 0) dataPoints.push(`📱 Tech: ${techFeatures.join(', ')}`);
+
+    const electricRange = specs.electric?.electricRange;
+    if (electricRange) dataPoints.push(`🔋 Autonomía: ${electricRange}km`);
+
     return {
       id: vehicle.id,
       name: `${vehicle.brand} ${vehicle.model}`,
       year: vehicle.year,
-      price: `$${priceMillions}M`,
-      type: vehicle.type,
-      fuel: vehicle.fuelType,
-      power: specs.performance?.maxPower || specs.combustion?.maxPower || 'N/A',
-      acceleration: specs.performance?.acceleration0to100 || 'N/A',
-      consumption: specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption || 'N/A',
-      maxSpeed: specs.performance?.maxSpeed || 'N/A',
-      airbags: specs.safety?.airbags || 'N/A',
-      range: specs.electric?.electricRange || 'N/A'
+      dataPoints
     };
   });
 
-  const systemPrompt = `Eres un experto consultor automotriz en Colombia. Tu trabajo es comparar vehículos usando los DATOS REALES, no rankings relativos.
+  const systemPrompt = `Eres el consultor automotriz más experto de Colombia.
 
-REGLAS CRÍTICAS:
-1. USA LOS NÚMEROS REALES para determinar ventajas/desventajas
-2. Si un carro cuesta $500M, NO es "accesible" - es de súper lujo
-3. Si un carro consume 12L/100km, NO es "eficiente" - consume mucho
-4. Si un carro consume 3L/100km, SÍ es eficiente
-5. Destaca las fortalezas REALES de cada vehículo
-6. Las ventajas y desventajas NO pueden contradecirse
-7. Máximo 3 ventajas y 3 desventajas por vehículo
-8. Genera recomendaciones específicas por contexto de precio
+REGLA #1 - PROHIBIDO EL EFECTO ESPEJO:
+❌ INCORRECTO (Espejo):
+   - Vehículo A PRO: "Aceleración rápida de 6.5s"
+   - Vehículo B CON: "Aceleración más lenta de 9.6s"
 
-Contexto colombiano:
-- Precios accesibles: < $100M
-- Precios premium: $100M - $300M  
-- Precios de lujo: $300M - $500M
-- Súper lujo: > $500M
-- Eficiencia buena: < 8L/100km
-- Eficiencia mala: > 12L/100km`;
+✅ CORRECTO (Diverso):
+   - Vehículo A PRO: "Aceleración rápida de 6.5s"  
+   - Vehículo B CON: "Precio elevado de $280M" (métrica DIFERENTE)
 
-  const userPrompt = `COMPARA ESTOS VEHÍCULOS USANDO SUS DATOS REALES:
+Si mencionas un atributo (ej: aceleración) como PRO de un vehículo, NO puedes usar ese mismo atributo como CON de otro.
+
+OTRAS REGLAS:
+- Genera EXACTAMENTE 3 pros y 3 cons por vehículo.
+- Usa cifras reales: "$250M", "177mm", "6.5s".
+- NO menciones datos faltantes. Si no hay info, busca otro punto.
+- Scores: 0-100 reflejando calidad-precio.`;
+
+  const userPrompt = `COMPARA ESTOS VEHÍCULOS (recuerda: SIN EFECTO ESPEJO):
 
 ${vehicleData.map(v => `
 🚗 ${v.name} (${v.year}) - ID: ${v.id}
-   💰 Precio: ${v.price}
-   🏎️ Tipo: ${v.type} ${v.fuel}
-   ⚡ Potencia: ${v.power}hp
-   🏁 Aceleración: ${v.acceleration}s (0-100km/h)
-   ⛽ Consumo: ${v.consumption}L/100km
-   🏃 Velocidad máxima: ${v.maxSpeed}km/h
-   🛡️ Airbags: ${v.airbags}
-   🔋 Autonomía eléctrica: ${v.range}km
+${v.dataPoints.join('\n   ')}
 `).join('\n')}
 
-ANALIZA Y PROPORCIONA:
-1. Para cada vehículo: 3 ventajas, 3 desventajas, recomendación, score
-2. DIFERENCIAS CLAVE - Texto fluido y conversacional que explique:
-   - Escribe párrafos completos, NO viñetas ni listas
-   - Usa lenguaje natural y profesional, como un artículo de revista automotriz
-   - Explica las diferencias entre TODOS los vehículos de forma narrativa
-   - Evita enumerar especificaciones técnicas secas
-   - Enfócate en experiencias de uso y situaciones reales
-   - Haz que sea interesante y fácil de leer
-3. PERFILES DE USUARIO - Para cada vehículo asigna la categoría MÁS APROPIADA:
-   - Puedes repetir categorías si varios vehículos son del mismo tipo
-   - Elige entre: Performance, Familiar, Económico, Tecnología, Lujo
-   - Ejemplo: Si son 4 deportivos, pueden ser todos "Performance"
-   - Ejemplo: Si son 3 SUVs familiares, pueden ser todos "Familiar"
+IMPORTANTE: 
+- USA LOS IDs EXACTOS: ${vehicleData.map(v => v.id).join(', ')}
+- Cada ventaja/desventaja debe usar una MÉTRICA DIFERENTE.
+- Si usas "aceleración" para uno, NO la uses para el otro.
 
-IMPORTANTE: USA LOS IDs EXACTOS: ${vehicleData.map(v => v.id).join(', ')}
 
 Responde EXACTAMENTE en este formato JSON (sin texto adicional):
 {
@@ -394,9 +416,9 @@ Responde EXACTAMENTE en este formato JSON (sin texto adicional):
 
     const data = await response.json();
     const content = data.choices[0].message.content;
-    
+
     console.log('🤖 Respuesta cruda de IA:', content);
-    
+
     let result;
     try {
       result = JSON.parse(content);
@@ -406,13 +428,13 @@ Responde EXACTAMENTE en este formato JSON (sin texto adicional):
       console.log('📄 Contenido que falló:', content);
       throw new Error('IA devolvió JSON inválido');
     }
-    
+
     // Validar estructura de respuesta
     if (!result.vehicles || !Array.isArray(result.vehicles)) {
       console.error('❌ Estructura inválida - no hay vehicles array:', result);
       throw new Error('IA devolvió estructura inválida');
     }
-    
+
     console.log('🔍 Vehicles encontrados:', result.vehicles.length);
     result.vehicles.forEach((v: any, i: number) => {
       console.log(`  Vehicle ${i + 1}:`, {
@@ -423,7 +445,7 @@ Responde EXACTAMENTE en este formato JSON (sin texto adicional):
         score: v.score
       });
     });
-    
+
     // Transformar al formato esperado
     const analysis: ComparisonAnalysis = {
       categories: [], // No necesitamos categorías con IA
@@ -440,7 +462,7 @@ Responde EXACTAMENTE en este formato JSON (sin texto adicional):
       })),
       keyDifferences: result.keyDifferences || []
     };
-    
+
     console.log('📊 Analysis generado:', {
       summaryCount: analysis.summary.length,
       winner: analysis.winner.overall,
@@ -487,8 +509,8 @@ function generateSimpleFallback(vehicles: VehicleComparisonData[]): {
     // Generar desventajas simples
     const cons: string[] = [];
     if (vehicle.price > 400000000) cons.push(`Precio muy alto: $${priceMillions}M, inversión considerable`);
-    if (consumption && consumption > 12) cons.push(`Alto consumo: ${consumption}L/100km en ciudad`);
-    if (vehicle.year < 2018) cons.push(`Modelo anterior: ${vehicle.year}, tecnología menos actual`);
+    if (consumption && typeof consumption === 'number' && consumption > 12) cons.push(`Alto consumo: ${consumption}L/100km en ciudad`);
+    if (vehicle.year && vehicle.year < 2018) cons.push(`Modelo anterior: ${vehicle.year}, tecnología menos actual`);
 
     // Asegurar al menos 2 ventajas
     if (pros.length < 2) {
@@ -539,7 +561,7 @@ function generateDeterministicComparison(vehicles: VehicleComparisonData[]): Com
   // Calcular ganadores por categoría
   const byCategory: Record<string, string> = {};
   categories.forEach(category => {
-    const winner = category.vehicles.reduce((best, current) => 
+    const winner = category.vehicles.reduce((best, current) =>
       current.score > best.score ? current : best
     );
     byCategory[category.name] = winner.vehicleId;
@@ -551,11 +573,11 @@ function generateDeterministicComparison(vehicles: VehicleComparisonData[]): Com
       const vehicleScore = category.vehicles.find(v => v.vehicleId === vehicle.id)?.score || 0;
       return sum + (vehicleScore * category.weight);
     }, 0);
-    
+
     return { vehicleId: vehicle.id, score: totalScore };
   });
 
-  const overallWinner = overallScores.reduce((best, current) => 
+  const overallWinner = overallScores.reduce((best, current) =>
     current.score > best.score ? current : best
   );
 
@@ -593,8 +615,8 @@ function generateEfficiencyCategory(vehicles: VehicleComparisonData[]): Comparis
     vehicles: vehicles.map(vehicle => ({
       vehicleId: vehicle.id,
       score: vehicle.features.efficiency_score,
-      value: vehicle.fuelType === 'Eléctrico' ? 
-        `${Math.round(vehicle.features.electric_range)}km` : 
+      value: vehicle.fuelType === 'Eléctrico' ?
+        `${Math.round(vehicle.features.electric_range)}km` :
         `${Math.round(100 - vehicle.features.consumption_score * 100)}%`,
       explanation: `Optimizado para ${vehicle.features.usage_urban > 0.7 ? 'ciudad' : 'carretera'}`
     }))
@@ -655,10 +677,10 @@ function generateValueCategory(vehicles: VehicleComparisonData[]): ComparisonCat
 
 // Paso 3: Mejora con LLM (contexto ultracompacto)
 async function enhanceWithLLM(
-  vehicles: VehicleComparisonData[], 
+  vehicles: VehicleComparisonData[],
   deterministicAnalysis: ComparisonAnalysis
 ): Promise<{ analysis: ComparisonAnalysis, profileRecommendations: ProfileRecommendation[], tokensUsed: number }> {
-  
+
   // Crear payload mínimo
   const compactVehicles = vehicles.map(v => ({
     id: v.id,
@@ -767,7 +789,7 @@ Responde en JSON:
     }
 
     const result = JSON.parse(content);
-    
+
     // Combinar análisis determinístico con mejoras del LLM
     const enhancedAnalysis = {
       ...deterministicAnalysis,
@@ -775,7 +797,7 @@ Responde en JSON:
         const enhanced = result.enhanced_summaries?.find(
           (e: any) => e.vehicleId === summary.vehicleId
         );
-        
+
         return enhanced ? {
           ...summary,
           pros: enhanced.pros || summary.pros,
@@ -793,7 +815,7 @@ Responde en JSON:
 
   } catch (error) {
     console.error('Error enhancing with LLM:', error);
-    
+
     // Fallback: devolver análisis determinístico
     return {
       analysis: deterministicAnalysis,
@@ -804,7 +826,7 @@ Responde en JSON:
 }
 
 // Función principal para generar comparación inteligente y única
-function generateSmartComparison(vehicles: VehicleComparisonData[], overallScores: Array<{vehicleId: string, score: number}>): Array<{
+function generateSmartComparison(vehicles: VehicleComparisonData[], overallScores: Array<{ vehicleId: string, score: number }>): Array<{
   vehicleId: string;
   pros: string[];
   cons: string[];
@@ -813,16 +835,16 @@ function generateSmartComparison(vehicles: VehicleComparisonData[], overallScore
 }> {
   // 1. Análisis global de todos los vehículos
   const globalAnalysis = analyzeGlobalVehicleData(vehicles);
-  
+
   // 2. Generar ranking de características
   const rankings = generateCharacteristicRankings(vehicles, globalAnalysis);
-  
+
   // 3. Asignar ventajas/desventajas únicas a cada vehículo
   const vehicleAnalysis = vehicles.map(vehicle => {
     const vehicleRankings = rankings[vehicle.id];
     const pros = generateUniquePros(vehicle, vehicleRankings, globalAnalysis);
     const cons = generateUniqueCons(vehicle, vehicleRankings, globalAnalysis);
-    
+
     return {
       vehicleId: vehicle.id,
       pros,
@@ -831,7 +853,7 @@ function generateSmartComparison(vehicles: VehicleComparisonData[], overallScore
       score: overallScores.find(s => s.vehicleId === vehicle.id)?.score || 0
     };
   });
-  
+
   return vehicleAnalysis;
 }
 
@@ -850,21 +872,21 @@ function analyzeGlobalVehicleData(vehicles: VehicleComparisonData[]): {
     const specs = v.specifications ? JSON.parse(v.specifications) : {};
     return specs.performance?.maxPower || specs.combustion?.maxPower || 0;
   }).filter(p => p > 0);
-  
+
   const consumptions = vehicles.map(v => {
     const specs = v.specifications ? JSON.parse(v.specifications) : {};
     return specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption || 0;
   }).filter(c => c > 0);
-  
+
   const airbags = vehicles.map(v => {
     const specs = v.specifications ? JSON.parse(v.specifications) : {};
     return specs.safety?.airbags || 0;
   }).filter(a => a > 0);
-  
+
   const years = vehicles.map(v => v.year);
   const fuelTypes = Array.from(new Set(vehicles.map(v => v.fuelType)));
   const vehicleTypes = Array.from(new Set(vehicles.map(v => v.type)));
-  
+
   return {
     priceRange: {
       min: Math.min(...prices),
@@ -906,14 +928,14 @@ function generateCharacteristicRankings(vehicles: VehicleComparisonData[], globa
   uniqueness: number; // 1 = más único, vehicles.length = más común
 }> {
   const rankings: Record<string, any> = {};
-  
+
   // Ranking por precio (ascendente - más barato = mejor ranking)
   const priceSorted = [...vehicles].sort((a, b) => a.price - b.price);
   priceSorted.forEach((vehicle, index) => {
     if (!rankings[vehicle.id]) rankings[vehicle.id] = {};
     rankings[vehicle.id].price = index + 1;
   });
-  
+
   // Ranking por potencia (descendente - más potente = mejor ranking)
   const powerSorted = [...vehicles].sort((a, b) => {
     const aPower = a.specifications ? JSON.parse(a.specifications) : {};
@@ -926,7 +948,7 @@ function generateCharacteristicRankings(vehicles: VehicleComparisonData[], globa
     if (!rankings[vehicle.id]) rankings[vehicle.id] = {};
     rankings[vehicle.id].power = index + 1;
   });
-  
+
   // Ranking por eficiencia (ascendente - menos consumo = mejor ranking)
   const efficiencySorted = [...vehicles].sort((a, b) => {
     const aConsumption = a.specifications ? JSON.parse(a.specifications) : {};
@@ -939,7 +961,7 @@ function generateCharacteristicRankings(vehicles: VehicleComparisonData[], globa
     if (!rankings[vehicle.id]) rankings[vehicle.id] = {};
     rankings[vehicle.id].efficiency = index + 1;
   });
-  
+
   // Ranking por seguridad (descendente - más airbags = mejor ranking)
   const safetySorted = [...vehicles].sort((a, b) => {
     const aSafety = a.specifications ? JSON.parse(a.specifications) : {};
@@ -952,43 +974,43 @@ function generateCharacteristicRankings(vehicles: VehicleComparisonData[], globa
     if (!rankings[vehicle.id]) rankings[vehicle.id] = {};
     rankings[vehicle.id].safety = index + 1;
   });
-  
+
   // Ranking por año (descendente - más nuevo = mejor ranking)
   const yearSorted = [...vehicles].sort((a, b) => b.year - a.year);
   yearSorted.forEach((vehicle, index) => {
     if (!rankings[vehicle.id]) rankings[vehicle.id] = {};
     rankings[vehicle.id].year = index + 1;
   });
-  
+
   // Ranking por unicidad (combinación de características únicas)
   vehicles.forEach(vehicle => {
     if (!rankings[vehicle.id]) rankings[vehicle.id] = {};
-    
+
     let uniquenessScore = 0;
     const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
-    
+
     // Único por tipo de combustible
     const sameFuelType = vehicles.filter(v => v.fuelType === vehicle.fuelType).length;
     if (sameFuelType === 1) uniquenessScore += 3;
-    
+
     // Único por tipo de vehículo
     const sameVehicleType = vehicles.filter(v => v.type === vehicle.type).length;
     if (sameVehicleType === 1) uniquenessScore += 2;
-    
+
     // Único por características especiales
     if (vehicle.fuelType === 'Eléctrico') uniquenessScore += 2;
     if (specs.performance?.allWheelDrive) uniquenessScore += 1;
     if (specs.technology?.headUpDisplay) uniquenessScore += 1;
-    
+
     rankings[vehicle.id].uniqueness = uniquenessScore;
   });
-  
+
   // Convertir unicidad a ranking (más único = mejor ranking)
   const uniquenessSorted = [...vehicles].sort((a, b) => rankings[b.id].uniqueness - rankings[a.id].uniqueness);
   uniquenessSorted.forEach((vehicle, index) => {
     rankings[vehicle.id].uniqueness = index + 1;
   });
-  
+
   return rankings;
 }
 
@@ -997,9 +1019,9 @@ function generateUniquePros(vehicle: VehicleComparisonData, rankings: any, globa
   const pros: string[] = [];
   const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
   const priceMillions = Math.round(vehicle.price / 1000000);
-  
+
   const totalVehicles = Object.keys(rankings).length;
-  
+
   // Ventaja de precio (SOLO para vehículos realmente accesibles o competitivos)
   if (rankings.price <= Math.ceil(totalVehicles / 2)) {
     // SOLO mencionar precio como ventaja si realmente es accesible
@@ -1010,7 +1032,7 @@ function generateUniquePros(vehicle: VehicleComparisonData, rankings: any, globa
     }
     // NO mencionar precio como ventaja para vehículos de más de $200M
   }
-  
+
   // Ventaja de potencia (top 3 más potentes o mejor que promedio)
   if (rankings.power <= Math.ceil(totalVehicles / 2)) {
     const power = specs.performance?.maxPower || specs.combustion?.maxPower;
@@ -1018,7 +1040,7 @@ function generateUniquePros(vehicle: VehicleComparisonData, rankings: any, globa
       pros.push(`Buena potencia: ${power}hp, ${rankings.power === 1 ? 'el más potente' : 'uno de los más potentes'} de la comparación`);
     }
   }
-  
+
   // Ventaja de eficiencia (SOLO si realmente es eficiente)
   if (rankings.efficiency <= Math.ceil(totalVehicles / 2)) {
     const consumption = specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption;
@@ -1032,7 +1054,7 @@ function generateUniquePros(vehicle: VehicleComparisonData, rankings: any, globa
     }
     // NO mencionar eficiencia si consume más de 8L/100km
   }
-  
+
   // Ventaja de seguridad (top 3 más seguros o mejor que promedio)
   if (rankings.safety <= Math.ceil(totalVehicles / 2)) {
     const airbags = specs.safety?.airbags;
@@ -1040,12 +1062,12 @@ function generateUniquePros(vehicle: VehicleComparisonData, rankings: any, globa
       pros.push(`Seguridad sólida: ${airbags} airbags, ${rankings.safety === 1 ? 'el más seguro' : 'uno de los más seguros'} de la comparación`);
     }
   }
-  
+
   // Ventaja de año (más nuevo o mejor que promedio)
   if (rankings.year <= Math.ceil(totalVehicles / 2)) {
     pros.push(`Modelo actualizado: ${vehicle.year}, ${rankings.year === 1 ? 'el más reciente' : 'uno de los más recientes'} de la comparación`);
   }
-  
+
   // Ventajas específicas por tipo de vehículo (más específicas)
   if (vehicle.type === 'SUV') {
     const height = specs.dimensions?.height;
@@ -1069,7 +1091,7 @@ function generateUniquePros(vehicle: VehicleComparisonData, rankings: any, globa
       pros.push(`Equilibrio perfecto: combina elegancia, confort y eficiencia en un diseño clásico`);
     }
   }
-  
+
   // Ventajas específicas por tipo de combustible (más detalladas)
   if (vehicle.fuelType === 'Eléctrico') {
     const range = specs.electric?.electricRange;
@@ -1095,62 +1117,62 @@ function generateUniquePros(vehicle: VehicleComparisonData, rankings: any, globa
       pros.push(`Confiabilidad probada: tecnología de gasolina madura con red de servicio completa en Colombia`);
     }
   }
-  
+
   // Ventajas por características específicas
   const hasTouchscreen = specs.technology?.touchscreen;
   const hasNavigation = specs.technology?.navigation;
   const hasBluetooth = specs.technology?.bluetooth;
-  
+
   if (hasTouchscreen && hasNavigation && hasBluetooth) {
     pros.push(`Tecnología completa: pantalla táctil, GPS y conectividad moderna`);
   } else if (hasNavigation) {
     pros.push(`Navegación integrada: GPS incorporado para direcciones sin smartphone`);
   }
-  
+
   // Ventajas específicas para vehículos de lujo (cuando no hay precio o eficiencia)
   if (pros.length < 2 && vehicle.price > 200000000) {
     const acceleration = specs.performance?.acceleration0to100;
     const maxSpeed = specs.performance?.maxSpeed;
     const power = specs.performance?.maxPower || specs.combustion?.maxPower;
-    
+
     if (acceleration && acceleration < 5.0) {
       pros.push(`Aceleración excepcional: 0-100 km/h en ${acceleration}s, rendimiento de supercarro`);
     }
-    
+
     if (maxSpeed && maxSpeed > 250) {
       pros.push(`Velocidad máxima: ${maxSpeed} km/h, diseñado para circuito`);
     }
-    
+
     if (power && power > 400) {
       pros.push(`Motor de alto rendimiento: ${power}hp de potencia pura para experiencias extremas`);
     }
-    
+
     if (vehicle.brand === 'Porsche' || vehicle.brand === 'Ferrari' || vehicle.brand === 'McLaren') {
       pros.push(`Prestigio exclusivo: legado de ${vehicle.brand} en deportivos de alto rendimiento`);
     }
-    
+
     if (vehicle.year >= 2020) {
       pros.push(`Tecnología moderna: ${vehicle.year} con sistemas avanzados de última generación`);
     }
   }
-  
+
   // Asegurar al menos 2 ventajas por vehículo (para vehículos normales)
   if (pros.length < 2 && vehicle.price <= 200000000) {
     // Ventajas adicionales basadas en características generales
     if (vehicle.price < globalAnalysis.priceRange.avg) {
-      pros.push(`Precio competitivo: $${priceMillions}M por debajo del promedio de $${Math.round(globalAnalysis.priceRange.avg/1000000)}M`);
+      pros.push(`Precio competitivo: $${priceMillions}M por debajo del promedio de $${Math.round(globalAnalysis.priceRange.avg / 1000000)}M`);
     }
-    
+
     if (vehicle.year >= globalAnalysis.yearRange.avg) {
       pros.push(`Modelo actual: ${vehicle.year} igual o superior al promedio de ${Math.round(globalAnalysis.yearRange.avg)}`);
     }
-    
+
     // Ventaja genérica si no hay suficientes específicas
     if (pros.length < 2) {
       pros.push(`Equilibrio general: características balanceadas para uso diario`);
     }
   }
-  
+
   return pros.slice(0, 3);
 }
 
@@ -1159,9 +1181,9 @@ function generateUniqueCons(vehicle: VehicleComparisonData, rankings: any, globa
   const cons: string[] = [];
   const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
   const priceMillions = Math.round(vehicle.price / 1000000);
-  
+
   const totalVehicles = Object.keys(rankings).length;
-  
+
   // Desventaja de precio (contextualizada según precio real)
   if (rankings.price >= Math.ceil(totalVehicles / 2)) {
     // Contextualizar según precio real en el mercado
@@ -1175,7 +1197,7 @@ function generateUniqueCons(vehicle: VehicleComparisonData, rankings: any, globa
       cons.push(`Precio alto: $${priceMillions}M, ${rankings.price === totalVehicles ? 'el más caro' : 'uno de los más caros'} de las opciones económicas`);
     }
   }
-  
+
   // Desventaja de potencia (menos potente que el promedio o bottom 3)
   if (rankings.power >= Math.ceil(totalVehicles / 2)) {
     const power = specs.performance?.maxPower || specs.combustion?.maxPower;
@@ -1183,7 +1205,7 @@ function generateUniqueCons(vehicle: VehicleComparisonData, rankings: any, globa
       cons.push(`Menor potencia: ${power}hp, ${rankings.power === totalVehicles ? 'el menos potente' : 'uno de los menos potentes'} de la comparación`);
     }
   }
-  
+
   // Desventaja de eficiencia (SOLO si realmente consume mucho)
   if (rankings.efficiency >= Math.ceil(totalVehicles / 2)) {
     const consumption = specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption;
@@ -1197,7 +1219,7 @@ function generateUniqueCons(vehicle: VehicleComparisonData, rankings: any, globa
     }
     // NO mencionar eficiencia como desventaja si no consume realmente mucho
   }
-  
+
   // Desventaja de seguridad (menos seguro que el promedio o bottom 3)
   if (rankings.safety >= Math.ceil(totalVehicles / 2)) {
     const airbags = specs.safety?.airbags;
@@ -1205,12 +1227,12 @@ function generateUniqueCons(vehicle: VehicleComparisonData, rankings: any, globa
       cons.push(`Menos airbags: ${airbags} airbags, ${rankings.safety === totalVehicles ? 'el menos seguro' : 'uno de los menos seguros'} de la comparación`);
     }
   }
-  
+
   // Desventaja de año (más viejo que el promedio)
   if (rankings.year >= Math.ceil(totalVehicles / 2)) {
     cons.push(`Modelo más antiguo: ${vehicle.year}, ${rankings.year === totalVehicles ? 'el menos actualizado' : 'menos actualizado'} de la comparación`);
   }
-  
+
   // Desventajas específicas por tipo de vehículo
   if (vehicle.type === 'Deportivo') {
     cons.push(`Menos práctico: diseño deportivo sacrifica espacio familiar vs otros vehículos`);
@@ -1219,7 +1241,7 @@ function generateUniqueCons(vehicle: VehicleComparisonData, rankings: any, globa
   } else if (vehicle.type === 'SUV' && globalAnalysis.vehicleTypes.includes('Deportivo')) {
     cons.push(`Menos deportivo: enfoque familiar vs vehículos deportivos de alto rendimiento`);
   }
-  
+
   // Desventajas específicas por tipo de combustible
   if (vehicle.fuelType === 'Eléctrico') {
     cons.push(`Infraestructura limitada: red de carga aún en desarrollo en Colombia`);
@@ -1231,35 +1253,35 @@ function generateUniqueCons(vehicle: VehicleComparisonData, rankings: any, globa
   } else if (vehicle.fuelType === 'Híbrido') {
     cons.push(`Complejidad mecánica: mantenimiento especializado aumenta costos operativos`);
   }
-  
+
   // Desventajas por características específicas
   const hasTouchscreen = specs.technology?.touchscreen;
   const hasNavigation = specs.technology?.navigation;
   const hasBluetooth = specs.technology?.bluetooth;
-  
+
   if (!hasTouchscreen && !hasNavigation && !hasBluetooth) {
     cons.push(`Tecnología básica: sin conectividad moderna vs vehículos con equipamiento avanzado`);
   } else if (!hasNavigation) {
     cons.push(`Sin navegación GPS: dependencia total del smartphone para direcciones`);
   }
-  
+
   // Asegurar al menos 2 desventajas por vehículo
   if (cons.length < 2) {
     // Desventajas adicionales basadas en características generales
     if (vehicle.price > globalAnalysis.priceRange.avg) {
-      cons.push(`Precio por encima del promedio: $${priceMillions}M vs promedio de $${Math.round(globalAnalysis.priceRange.avg/1000000)}M`);
+      cons.push(`Precio por encima del promedio: $${priceMillions}M vs promedio de $${Math.round(globalAnalysis.priceRange.avg / 1000000)}M`);
     }
-    
+
     if (vehicle.year < globalAnalysis.yearRange.avg) {
       cons.push(`Modelo menos reciente: ${vehicle.year} vs promedio de ${Math.round(globalAnalysis.yearRange.avg)}`);
     }
-    
+
     // Desventaja genérica si no hay suficientes específicas
     if (cons.length < 2) {
       cons.push(`Características promedio: sin ventajas destacadas vs vehículos especializados`);
     }
   }
-  
+
   return cons.slice(0, 3);
 }
 
@@ -1268,17 +1290,17 @@ function generateRelativePros(vehicle: VehicleComparisonData, allVehicles: Vehic
   const pros: string[] = [];
   const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
   const priceMillions = Math.round(vehicle.price / 1000000);
-  
+
   // Comparar con otros vehículos
   const otherVehicles = allVehicles.filter(v => v.id !== vehicle.id);
-  
+
   // Ventaja de precio
   const cheaperThan = otherVehicles.filter(v => vehicle.price < v.price);
   if (cheaperThan.length > 0) {
     const avgOtherPrice = Math.round(cheaperThan.reduce((sum, v) => sum + v.price, 0) / cheaperThan.length / 1000000);
     pros.push(`Precio más accesible: $${priceMillions}M vs promedio de $${avgOtherPrice}M de los otros vehículos`);
   }
-  
+
   // Ventaja de potencia
   const vehiclePower = specs.performance?.maxPower || specs.combustion?.maxPower;
   if (vehiclePower) {
@@ -1287,12 +1309,12 @@ function generateRelativePros(vehicle: VehicleComparisonData, allVehicles: Vehic
       const otherPowerValue = otherPower.performance?.maxPower || otherPower.combustion?.maxPower;
       return otherPowerValue && vehiclePower > otherPowerValue;
     });
-    
+
     if (morePowerfulThan.length > 0) {
       pros.push(`Mayor potencia: ${vehiclePower}hp supera a ${morePowerfulThan.length} de los ${otherVehicles.length} vehículos comparados`);
     }
   }
-  
+
   // Ventaja de eficiencia
   const vehicleConsumption = specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption;
   if (vehicleConsumption) {
@@ -1301,12 +1323,12 @@ function generateRelativePros(vehicle: VehicleComparisonData, allVehicles: Vehic
       const otherConsumption = otherSpecs.combustion?.cityConsumption || otherSpecs.hybrid?.cityConsumption;
       return otherConsumption && vehicleConsumption < otherConsumption;
     });
-    
+
     if (moreEfficientThan.length > 0) {
       pros.push(`Mejor eficiencia: ${vehicleConsumption}L/100km vs ${moreEfficientThan.length} vehículos con mayor consumo`);
     }
   }
-  
+
   // Ventaja de seguridad
   const vehicleAirbags = specs.safety?.airbags;
   if (vehicleAirbags) {
@@ -1315,12 +1337,12 @@ function generateRelativePros(vehicle: VehicleComparisonData, allVehicles: Vehic
       const otherAirbags = otherSpecs.safety?.airbags;
       return otherAirbags && vehicleAirbags > otherAirbags;
     });
-    
+
     if (saferThan.length > 0) {
       pros.push(`Más airbags: ${vehicleAirbags} vs ${saferThan.length} vehículos con menos protección`);
     }
   }
-  
+
   // Ventaja de autonomía eléctrica
   if (vehicle.fuelType === 'Eléctrico') {
     const vehicleRange = specs.electric?.electricRange;
@@ -1332,7 +1354,7 @@ function generateRelativePros(vehicle: VehicleComparisonData, allVehicles: Vehic
           const otherRange = otherSpecs.electric?.electricRange;
           return otherRange && vehicleRange > otherRange;
         });
-        
+
         if (hasBetterRange.length > 0) {
           pros.push(`Mayor autonomía eléctrica: ${vehicleRange}km vs otros vehículos eléctricos`);
         }
@@ -1341,13 +1363,13 @@ function generateRelativePros(vehicle: VehicleComparisonData, allVehicles: Vehic
       }
     }
   }
-  
+
   // Ventaja de año (más nuevo)
   const newerThan = otherVehicles.filter(v => vehicle.year > v.year);
   if (newerThan.length > 0) {
     pros.push(`Más reciente: modelo ${vehicle.year} vs ${newerThan.length} vehículos de años anteriores`);
   }
-  
+
   // Ventaja de tipo de vehículo específico
   if (vehicle.type === 'SUV') {
     const nonSUVs = otherVehicles.filter(v => v.type !== 'SUV');
@@ -1355,7 +1377,7 @@ function generateRelativePros(vehicle: VehicleComparisonData, allVehicles: Vehic
       pros.push(`Único SUV: mayor espacio y versatilidad vs ${nonSUVs.length} vehículos de otros tipos`);
     }
   }
-  
+
   return pros.slice(0, 3);
 }
 
@@ -1363,17 +1385,17 @@ function generateRelativeCons(vehicle: VehicleComparisonData, allVehicles: Vehic
   const cons: string[] = [];
   const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
   const priceMillions = Math.round(vehicle.price / 1000000);
-  
+
   // Comparar con otros vehículos
   const otherVehicles = allVehicles.filter(v => v.id !== vehicle.id);
-  
+
   // Desventaja de precio
   const moreExpensiveThan = otherVehicles.filter(v => vehicle.price > v.price);
   if (moreExpensiveThan.length > 0) {
     const avgOtherPrice = Math.round(moreExpensiveThan.reduce((sum, v) => sum + v.price, 0) / moreExpensiveThan.length / 1000000);
     cons.push(`Precio más alto: $${priceMillions}M vs promedio de $${avgOtherPrice}M de los otros vehículos`);
   }
-  
+
   // Desventaja de potencia
   const vehiclePower = specs.performance?.maxPower || specs.combustion?.maxPower;
   if (vehiclePower) {
@@ -1382,12 +1404,12 @@ function generateRelativeCons(vehicle: VehicleComparisonData, allVehicles: Vehic
       const otherPower = otherSpecs.performance?.maxPower || otherSpecs.combustion?.maxPower;
       return otherPower && vehiclePower < otherPower;
     });
-    
+
     if (lessPowerfulThan.length > 0) {
       cons.push(`Menor potencia: ${vehiclePower}hp vs ${lessPowerfulThan.length} vehículos más potentes`);
     }
   }
-  
+
   // Desventaja de eficiencia
   const vehicleConsumption = specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption;
   if (vehicleConsumption) {
@@ -1396,12 +1418,12 @@ function generateRelativeCons(vehicle: VehicleComparisonData, allVehicles: Vehic
       const otherConsumption = otherSpecs.combustion?.cityConsumption || otherSpecs.hybrid?.cityConsumption;
       return otherConsumption && vehicleConsumption > otherConsumption;
     });
-    
+
     if (lessEfficientThan.length > 0) {
       cons.push(`Mayor consumo: ${vehicleConsumption}L/100km vs ${lessEfficientThan.length} vehículos más eficientes`);
     }
   }
-  
+
   // Desventaja de seguridad
   const vehicleAirbags = specs.safety?.airbags;
   if (vehicleAirbags) {
@@ -1410,12 +1432,12 @@ function generateRelativeCons(vehicle: VehicleComparisonData, allVehicles: Vehic
       const otherAirbags = otherSpecs.safety?.airbags;
       return otherAirbags && vehicleAirbags < otherAirbags;
     });
-    
+
     if (lessSafeThan.length > 0) {
       cons.push(`Menos airbags: ${vehicleAirbags} vs ${lessSafeThan.length} vehículos con más protección`);
     }
   }
-  
+
   // Desventaja de autonomía eléctrica
   if (vehicle.fuelType === 'Eléctrico') {
     const vehicleRange = specs.electric?.electricRange;
@@ -1427,20 +1449,20 @@ function generateRelativeCons(vehicle: VehicleComparisonData, allVehicles: Vehic
           const otherRange = otherSpecs.electric?.electricRange;
           return otherRange && vehicleRange < otherRange;
         });
-        
+
         if (hasWorseRange.length > 0) {
           cons.push(`Menor autonomía eléctrica: ${vehicleRange}km vs otros vehículos eléctricos`);
         }
       }
     }
   }
-  
+
   // Desventaja de año (más viejo)
   const olderThan = otherVehicles.filter(v => vehicle.year < v.year);
   if (olderThan.length > 0) {
     cons.push(`Modelo más antiguo: ${vehicle.year} vs ${olderThan.length} vehículos más recientes`);
   }
-  
+
   // Desventaja de tipo de vehículo
   if (vehicle.type === 'Deportivo') {
     const nonSporty = otherVehicles.filter(v => v.type !== 'Deportivo');
@@ -1448,7 +1470,7 @@ function generateRelativeCons(vehicle: VehicleComparisonData, allVehicles: Vehic
       cons.push(`Menos práctico: diseño deportivo vs ${nonSporty.length} vehículos más familiares`);
     }
   }
-  
+
   return cons.slice(0, 3);
 }
 
@@ -1457,13 +1479,13 @@ function generatePros(vehicle: VehicleComparisonData): string[] {
   const pros: string[] = [];
   const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
   const priceMillions = Math.round(vehicle.price / 1000000);
-  
+
   // Pros específicos de rendimiento con datos concretos
   if (vehicle.features.performance_score > 0.8) {
     const power = specs.performance?.maxPower || specs.combustion?.maxPower;
     const acceleration = specs.performance?.acceleration0to100;
     const torque = specs.performance?.maxTorque;
-    
+
     if (power && acceleration) {
       pros.push(`Potencia excepcional de ${power}hp con aceleración 0-100km/h en solo ${acceleration}s`);
       if (torque) {
@@ -1475,12 +1497,12 @@ function generatePros(vehicle: VehicleComparisonData): string[] {
       pros.push('Rendimiento deportivo superior con características de alta gama');
     }
   }
-  
+
   // Pros específicos de eficiencia con datos concretos
   if (vehicle.features.efficiency_score > 0.8) {
     const consumption = specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption;
     const highwayConsumption = specs.combustion?.highwayConsumption;
-    
+
     if (consumption) {
       pros.push(`Consumo ultra eficiente de ${consumption}L/100km en ciudad, significativamente mejor que el promedio del segmento`);
       if (highwayConsumption && highwayConsumption < consumption) {
@@ -1499,7 +1521,7 @@ function generatePros(vehicle: VehicleComparisonData): string[] {
       }
     }
   }
-  
+
   // Pros específicos de seguridad con datos concretos
   if (vehicle.features.safety_score > 0.8) {
     const airbags = specs.safety?.airbags;
@@ -1507,21 +1529,21 @@ function generatePros(vehicle: VehicleComparisonData): string[] {
     const hasLaneAssist = specs.safety?.laneAssist;
     const hasBlindSpot = specs.safety?.blindSpotMonitoring;
     const hasAutoBrake = specs.safety?.automaticEmergencyBraking;
-    
+
     let safetyFeatures = [];
     if (airbags >= 8) safetyFeatures.push(`${airbags} airbags de última generación`);
     if (hasStability) safetyFeatures.push('control electrónico de estabilidad');
     if (hasLaneAssist) safetyFeatures.push('asistente de mantenimiento de carril');
     if (hasBlindSpot) safetyFeatures.push('monitoreo de punto ciego');
     if (hasAutoBrake) safetyFeatures.push('frenado automático de emergencia');
-    
+
     if (safetyFeatures.length > 0) {
       pros.push(`Seguridad premium con ${safetyFeatures.join(', ')} para máxima protección familiar`);
     } else {
       pros.push('Sistemas de seguridad avanzados que superan estándares internacionales');
     }
   }
-  
+
   // Pros específicos de tecnología con datos concretos
   if (vehicle.features.tech_score > 0.7) {
     let techFeatures = [];
@@ -1529,20 +1551,20 @@ function generatePros(vehicle: VehicleComparisonData): string[] {
     const hasWireless = specs.technology?.wirelessCharging;
     const hasCarPlay = specs.technology?.appleCarPlay;
     const hasAndroid = specs.technology?.androidAuto;
-    
+
     if (screenSize) techFeatures.push(`pantalla táctil de ${screenSize}"`);
     if (specs.technology?.navigation) techFeatures.push('navegación GPS con mapas actualizados');
     if (hasCarPlay || hasAndroid) techFeatures.push('integración completa con smartphone');
     if (hasWireless) techFeatures.push('carga inalámbrica para dispositivos');
     if (specs.technology?.bluetooth) techFeatures.push('conectividad Bluetooth 5.0');
-    
+
     if (techFeatures.length > 0) {
       pros.push(`Tecnología de vanguardia: ${techFeatures.join(', ')} para conectividad total`);
     } else {
       pros.push('Equipamiento tecnológico completo con las últimas innovaciones');
     }
   }
-  
+
   // Pros específicos por tipo de combustible con contexto colombiano
   if (vehicle.fuelType === 'Eléctrico') {
     pros.push('Cero emisiones locales contribuyendo a un aire más limpio en Bogotá y principales ciudades');
@@ -1551,38 +1573,38 @@ function generatePros(vehicle: VehicleComparisonData): string[] {
     pros.push('Tecnología híbrida que combina eficiencia eléctrica con la confiabilidad de motor convencional');
     pros.push('Ideal para el tráfico colombiano: motor eléctrico en bajas velocidades, gasolina en carretera');
   }
-  
+
   // Pros específicos de valor con contexto de mercado
   if (vehicle.features.value_score > 0.7) {
     const segmentAvg = getSegmentAveragePrice(vehicle.type, vehicle.year);
     if (segmentAvg && vehicle.price < segmentAvg) {
       const savings = Math.round((segmentAvg - vehicle.price) / 1000000);
-      pros.push(`Excelente valor: $${priceMillions}M vs promedio de segmento $${Math.round(segmentAvg/1000000)}M (ahorro de $${savings}M)`);
+      pros.push(`Excelente valor: $${priceMillions}M vs promedio de segmento $${Math.round(segmentAvg / 1000000)}M (ahorro de $${savings}M)`);
     } else {
       pros.push(`Precio competitivo de $${priceMillions}M con equipamiento superior a su categoría`);
     }
   }
-  
+
   // Pros específicos de confort y practicidad
   if (vehicle.features.comfort_score > 0.8) {
     const seats = specs.comfort?.seats;
     const cargo = specs.dimensions?.cargoVolume;
     const hasAC = specs.comfort?.airConditioning;
     const hasHeatedSeats = specs.comfort?.heatedSeats;
-    
+
     let comfortFeatures = [];
     if (seats >= 5) comfortFeatures.push(`${seats} asientos cómodos`);
     if (cargo && cargo > 400) comfortFeatures.push(`${cargo}L de espacio de carga`);
     if (hasAC) comfortFeatures.push('aire acondicionado automático');
     if (hasHeatedSeats) comfortFeatures.push('asientos calefaccionados');
-    
+
     if (comfortFeatures.length > 0) {
       pros.push(`Máximo confort con ${comfortFeatures.join(', ')} para viajes largos`);
     } else {
       pros.push('Interior premium diseñado para comodidad en todos los viajes');
     }
   }
-  
+
   return pros.slice(0, 3);
 }
 
@@ -1590,13 +1612,13 @@ function generateCons(vehicle: VehicleComparisonData): string[] {
   const cons: string[] = [];
   const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
   const priceMillions = Math.round(vehicle.price / 1000000);
-  
+
   // Cons específicos de rendimiento con datos concretos
   if (vehicle.features.performance_score < 0.4) {
     const power = specs.performance?.maxPower || specs.combustion?.maxPower;
     const acceleration = specs.performance?.acceleration0to100;
     const torque = specs.performance?.maxTorque;
-    
+
     if (power && power < 150) {
       cons.push(`Potencia limitada de ${power}hp insuficiente para adelantamientos seguros en carretera`);
     } else if (acceleration && acceleration > 12) {
@@ -1607,12 +1629,12 @@ function generateCons(vehicle: VehicleComparisonData): string[] {
       cons.push('Rendimiento general por debajo del promedio de su segmento y año');
     }
   }
-  
+
   // Cons específicos de eficiencia con impacto económico
   if (vehicle.features.efficiency_score < 0.4) {
     const consumption = specs.combustion?.cityConsumption;
     const highwayConsumption = specs.combustion?.highwayConsumption;
-    
+
     if (consumption && consumption > 10) {
       cons.push(`Consumo elevado de ${consumption}L/100km en ciudad, por encima del promedio del segmento`);
       if (highwayConsumption && highwayConsumption > consumption) {
@@ -1622,7 +1644,7 @@ function generateCons(vehicle: VehicleComparisonData): string[] {
       cons.push('Eficiencia de combustible inferior a competidores, impactando presupuesto familiar');
     }
   }
-  
+
   // Cons específicos de precio con contexto de mercado
   if (vehicle.features.value_score < 0.4) {
     const segmentAvg = getSegmentAveragePrice(vehicle.type, vehicle.year);
@@ -1635,22 +1657,22 @@ function generateCons(vehicle: VehicleComparisonData): string[] {
       cons.push('Relación precio-equipamiento desfavorable comparado con alternativas del mercado');
     }
   }
-  
+
   // Cons específicos por tipo de combustible con contexto colombiano
   if (vehicle.fuelType === 'Eléctrico') {
     const range = specs.electric?.electricRange;
     const chargingTime = specs.electric?.chargingTime;
-    
+
     if (range && range < 300) {
       cons.push(`Autonomía limitada de ${range}km insuficiente para viajes interurbanos sin paradas`);
     } else {
       cons.push('Infraestructura de carga limitada en Colombia, especialmente fuera de ciudades principales');
     }
-    
+
     if (chargingTime && chargingTime > 60) {
       cons.push(`Tiempo de recarga lento de ${chargingTime} minutos limita flexibilidad de uso`);
     }
-    
+
     cons.push('Inversión inicial alta sin garantía de red de carga confiable en todo el país');
   } else if (vehicle.fuelType === 'Gasolina') {
     const consumption = specs.combustion?.cityConsumption;
@@ -1663,13 +1685,13 @@ function generateCons(vehicle: VehicleComparisonData): string[] {
     cons.push('Complejidad mecánica dual aumenta costos de mantenimiento especializado');
     cons.push('Sobreprecio híbrido de $10-20M vs versión gasolina sin garantía de ahorro proporcional');
   }
-  
+
   // Cons específicos de seguridad con datos concretos
   if (vehicle.features.safety_score < 0.6) {
     const airbags = specs.safety?.airbags;
     const hasStability = specs.safety?.stabilityControl;
     const hasLaneAssist = specs.safety?.laneAssist;
-    
+
     if (airbags && airbags < 6) {
       cons.push(`Solo ${airbags} airbags, por debajo de los 6-8 estándar en vehículos modernos`);
     } else if (!hasStability) {
@@ -1680,13 +1702,13 @@ function generateCons(vehicle: VehicleComparisonData): string[] {
       cons.push('Sistemas de seguridad básicos sin tecnologías avanzadas de protección');
     }
   }
-  
+
   // Cons específicos de tecnología
   if (vehicle.features.tech_score < 0.5) {
     const hasTouchscreen = specs.technology?.touchscreen;
     const hasNavigation = specs.technology?.navigation;
     const hasBluetooth = specs.technology?.bluetooth;
-    
+
     if (!hasTouchscreen && !hasNavigation && !hasBluetooth) {
       cons.push('Equipamiento tecnológico básico sin conectividad moderna o pantalla táctil');
     } else if (!hasNavigation) {
@@ -1695,13 +1717,13 @@ function generateCons(vehicle: VehicleComparisonData): string[] {
       cons.push('Sin conectividad Bluetooth, limitando integración con dispositivos móviles');
     }
   }
-  
+
   // Cons específicos de confort y practicidad
   if (vehicle.features.comfort_score < 0.5) {
     const seats = specs.comfort?.seats;
     const cargo = specs.dimensions?.cargoVolume;
     const hasAC = specs.comfort?.airConditioning;
-    
+
     if (seats && seats < 5) {
       cons.push(`Solo ${seats} asientos, limitando capacidad para familias o grupos`);
     }
@@ -1712,13 +1734,13 @@ function generateCons(vehicle: VehicleComparisonData): string[] {
       cons.push('Sin aire acondicionado, incomodidad en clima tropical colombiano');
     }
   }
-  
+
   // Cons específicos de mantenimiento y confiabilidad
   const maintenanceCost = getMaintenanceCost(vehicle.brand, vehicle.year);
   if (maintenanceCost > 5000000) { // Más de 5M anuales
-    cons.push(`Mantenimiento costoso estimado en $${Math.round(maintenanceCost/1000000)}M anuales, típico de marcas premium`);
+    cons.push(`Mantenimiento costoso estimado en $${Math.round(maintenanceCost / 1000000)}M anuales, típico de marcas premium`);
   }
-  
+
   return cons.slice(0, 3);
 }
 
@@ -1733,12 +1755,12 @@ function getSegmentAveragePrice(type: string, year: number): number | null {
     'Wagon': 200000000,
     'Pickup': 250000000
   };
-  
+
   const basePrice = segmentPrices[type] || 200000000;
-  
+
   // Ajustar por año (vehículos más nuevos son más caros)
   const yearMultiplier = 1 + ((year - 2020) * 0.05);
-  
+
   return Math.round(basePrice * yearMultiplier);
 }
 
@@ -1763,12 +1785,12 @@ function getMaintenanceCost(brand: string, year: number): number {
     'Infiniti': 7500000,
     'Acura': 6500000
   };
-  
+
   const baseCost = brandCosts[brand] || 4000000;
-  
+
   // Ajustar por año (vehículos más nuevos tienen garantía)
   const yearMultiplier = year >= 2022 ? 0.7 : 1.0;
-  
+
   return Math.round(baseCost * yearMultiplier);
 }
 
@@ -1777,12 +1799,12 @@ function generateBasicRecommendation(vehicle: VehicleComparisonData): string {
   const priceMillions = Math.round(vehicle.price / 1000000);
   const maintenanceCost = getMaintenanceCost(vehicle.brand, vehicle.year);
   const segmentAvg = getSegmentAveragePrice(vehicle.type, vehicle.year);
-  
+
   // Recomendación basada en rendimiento y contexto de precio
   if (vehicle.features.performance_score > 0.8) {
     const power = specs.performance?.maxPower || specs.combustion?.maxPower;
     const acceleration = specs.performance?.acceleration0to100;
-    
+
     // Contextualizar según precio para ser consistente
     if (vehicle.price > 400000000) { // Súper lujo
       if (power && acceleration && acceleration < 4.0) {
@@ -1805,12 +1827,12 @@ function generateBasicRecommendation(vehicle: VehicleComparisonData): string {
         return `Perfecto para entusiastas: rendimiento deportivo genuino en un paquete más accesible para uso diario`;
       }
     }
-  } 
-  
+  }
+
   if (vehicle.features.efficiency_score > 0.8) {
     const consumption = specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption;
     const range = specs.electric?.electricRange;
-    
+
     if (consumption) {
       return `Excelente para uso diario eficiente: ${consumption}L/100km en ciudad, significativamente mejor que el promedio del segmento`;
     } else if (vehicle.fuelType === 'Eléctrico' && range) {
@@ -1820,25 +1842,25 @@ function generateBasicRecommendation(vehicle: VehicleComparisonData): string {
     } else {
       return `Recomendado para máxima eficiencia: diseño optimizado para minimizar consumo sin sacrificar prestaciones esenciales`;
     }
-  } 
-  
+  }
+
   if (vehicle.features.safety_score > 0.8) {
     const airbags = specs.safety?.airbags;
     const hasStability = specs.safety?.stabilityControl;
     const hasLaneAssist = specs.safety?.laneAssist;
-    
+
     let safetyFeatures = [];
     if (airbags >= 8) safetyFeatures.push(`${airbags} airbags`);
     if (hasStability) safetyFeatures.push('control de estabilidad');
     if (hasLaneAssist) safetyFeatures.push('asistente de carril');
-    
+
     if (safetyFeatures.length > 0) {
       return `Ideal para familias: ${safetyFeatures.join(', ')} y sistemas de seguridad avanzados brindan máxima protección para los seres queridos`;
     } else {
       return `Recomendado para seguridad familiar: equipamiento de protección que supera estándares de seguridad modernos`;
     }
   }
-  
+
   if (vehicle.features.value_score > 0.8) {
     // Contextualizar el "valor" según el rango de precio
     if (vehicle.price > 400000000) { // Súper lujo
@@ -1847,55 +1869,55 @@ function generateBasicRecommendation(vehicle: VehicleComparisonData): string {
       return `Lujo justificado: $${priceMillions}M por equipamiento premium, ingeniería superior y la experiencia de marca de prestigio`;
     } else if (segmentAvg && vehicle.price < segmentAvg) {
       const savings = Math.round((segmentAvg - vehicle.price) / 1000000);
-      return `Excelente oportunidad: $${priceMillions}M vs promedio de segmento $${Math.round(segmentAvg/1000000)}M, ahorrando $${savings}M sin comprometer equipamiento esencial`;
+      return `Excelente oportunidad: $${priceMillions}M vs promedio de segmento $${Math.round(segmentAvg / 1000000)}M, ahorrando $${savings}M sin comprometer equipamiento esencial`;
     } else {
       return `Equilibrio inteligente: $${priceMillions}M con equipamiento completo y confiabilidad probada de ${vehicle.brand}`;
     }
   }
-  
+
   if (vehicle.features.comfort_score > 0.8) {
     const seats = specs.comfort?.seats;
     const cargo = specs.dimensions?.cargoVolume;
-    
+
     let comfortFeatures = [];
     if (seats >= 5) comfortFeatures.push(`${seats} asientos`);
     if (cargo && cargo > 400) comfortFeatures.push(`${cargo}L de carga`);
-    
+
     if (comfortFeatures.length > 0) {
       return `Perfecto para viajes familiares: ${comfortFeatures.join(', ')} y confort premium garantizan comodidad en trayectos largos`;
     } else {
       return `Ideal para confort: interior diseñado para máxima comodidad en uso diario y viajes ocasionales`;
     }
   }
-  
+
   if (vehicle.features.tech_score > 0.8) {
     const screenSize = specs.technology?.screenSize;
     const hasCarPlay = specs.technology?.appleCarPlay;
     const hasAndroid = specs.technology?.androidAuto;
-    
+
     let techFeatures = [];
     if (screenSize) techFeatures.push(`pantalla ${screenSize}"`);
     if (hasCarPlay || hasAndroid) techFeatures.push('integración smartphone');
     if (specs.technology?.navigation) techFeatures.push('GPS integrado');
-    
+
     if (techFeatures.length > 0) {
       return `Ideal para tecnología: ${techFeatures.join(', ')} y conectividad moderna mantienen al conductor siempre conectado`;
     } else {
       return `Recomendado para entusiastas de la tecnología: equipamiento digital completo para la conducción moderna`;
     }
   }
-  
+
   // Recomendación general basada en características principales
   const usage = vehicle.features.usage_urban > 0.7 ? 'urbano' : 'mixto';
-  const fuelAdvantage = vehicle.fuelType === 'Eléctrico' ? 'cero emisiones' : 
-                       vehicle.fuelType === 'Híbrido' ? 'máxima eficiencia' : 'confiabilidad probada';
-  
+  const fuelAdvantage = vehicle.fuelType === 'Eléctrico' ? 'cero emisiones' :
+    vehicle.fuelType === 'Híbrido' ? 'máxima eficiencia' : 'confiabilidad probada';
+
   return `Opción versátil para uso ${usage}: ${fuelAdvantage} con balance equilibrado entre prestaciones, eficiencia y precio de $${priceMillions}M`;
 }
 
 function generateFallbackProfileRecommendations(vehicles: VehicleComparisonData[]): ProfileRecommendation[] {
   const recommendations: ProfileRecommendation[] = [];
-  
+
   // Calcular scores detallados para cada perfil
   const profileScores = vehicles.map(vehicle => ({
     vehicle,
@@ -1904,26 +1926,26 @@ function generateFallbackProfileRecommendations(vehicles: VehicleComparisonData[
     performance: calculateDetailedPerformanceScore(vehicle),
     technology: calculateDetailedTechnologyScore(vehicle)
   }));
-  
+
   // Ordenar por cada perfil y tomar el mejor
   const familyBest = profileScores.sort((a, b) => b.family - a.family)[0];
   const economicBest = profileScores.sort((a, b) => b.economic - a.economic)[0];
   const performanceBest = profileScores.sort((a, b) => b.performance - a.performance)[0];
   const technologyBest = profileScores.sort((a, b) => b.technology - a.technology)[0];
-  
+
   // Asegurar que no se repitan vehículos (diversidad)
   const usedVehicles = new Set<string>();
-  
+
   // Familiar - prioridad alta
   if (!usedVehicles.has(familyBest.vehicle.id)) {
-  recommendations.push({
-    profile: 'Familiar',
+    recommendations.push({
+      profile: 'Familiar',
       vehicle: `${familyBest.vehicle.brand} ${familyBest.vehicle.model}`,
       reason: getFamilyReason(familyBest.vehicle)
     });
     usedVehicles.add(familyBest.vehicle.id);
   }
-  
+
   // Económico - prioridad alta
   if (!usedVehicles.has(economicBest.vehicle.id)) {
     recommendations.push({
@@ -1933,17 +1955,17 @@ function generateFallbackProfileRecommendations(vehicles: VehicleComparisonData[
     });
     usedVehicles.add(economicBest.vehicle.id);
   }
-  
+
   // Performance - solo si hay variedad y no se repite
   if (vehicles.length > 2 && !usedVehicles.has(performanceBest.vehicle.id)) {
-  recommendations.push({
+    recommendations.push({
       profile: 'Performance',
       vehicle: `${performanceBest.vehicle.brand} ${performanceBest.vehicle.model}`,
       reason: getPerformanceReason(performanceBest.vehicle)
     });
     usedVehicles.add(performanceBest.vehicle.id);
   }
-  
+
   // Tecnología - solo si hay variedad y no se repite
   if (vehicles.length > 2 && !usedVehicles.has(technologyBest.vehicle.id)) {
     recommendations.push({
@@ -1953,13 +1975,13 @@ function generateFallbackProfileRecommendations(vehicles: VehicleComparisonData[
     });
     usedVehicles.add(technologyBest.vehicle.id);
   }
-  
+
   // Si aún hay perfiles sin asignar, buscar segundos mejores
   if (recommendations.length < 4) {
-    const remainingProfiles = ['Performance', 'Tecnología'].filter(profile => 
+    const remainingProfiles = ['Performance', 'Tecnología'].filter(profile =>
       !recommendations.some(r => r.profile === profile)
     );
-    
+
     for (const profile of remainingProfiles) {
       const availableVehicles = profileScores.filter(p => !usedVehicles.has(p.vehicle.id));
       if (availableVehicles.length > 0) {
@@ -1967,7 +1989,7 @@ function generateFallbackProfileRecommendations(vehicles: VehicleComparisonData[
           const profileKey = profile.toLowerCase() as 'family' | 'economic' | 'performance' | 'technology';
           return (b[profileKey] as number) - (a[profileKey] as number);
         })[0];
-    recommendations.push({
+        recommendations.push({
           profile,
           vehicle: `${best.vehicle.brand} ${best.vehicle.model}`,
           reason: getProfileReason(best.vehicle, profile)
@@ -1976,7 +1998,7 @@ function generateFallbackProfileRecommendations(vehicles: VehicleComparisonData[
       }
     }
   }
-  
+
   return recommendations;
 }
 
@@ -1984,34 +2006,34 @@ function generateFallbackProfileRecommendations(vehicles: VehicleComparisonData[
 function getPerformanceReason(vehicle: VehicleComparisonData): string {
   const reasons = [];
   const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
-  
+
   // Razones específicas de rendimiento
   const power = specs.performance?.maxPower || specs.combustion?.maxPower;
   const acceleration = specs.performance?.acceleration0to100;
   const torque = specs.performance?.maxTorque;
   const topSpeed = specs.performance?.topSpeed;
-  
+
   if (power && acceleration) {
     reasons.push(`${power}hp con 0-100km/h en ${acceleration}s`);
   } else if (power) {
     reasons.push(`${power}hp de potencia`);
   }
-  
+
   if (torque && torque > 300) {
     reasons.push(`${torque}Nm de torque`);
   }
-  
+
   if (topSpeed && topSpeed > 200) {
     reasons.push(`velocidad máxima de ${topSpeed}km/h`);
   }
-  
+
   // Razones por tipo de vehículo
   if (vehicle.type === 'Deportivo') {
     reasons.push('diseño deportivo');
   } else if (vehicle.type === 'Sedán' && power > 200) {
     reasons.push('sedán deportivo');
   }
-  
+
   // Razones por características especiales
   if (specs.performance?.allWheelDrive) {
     reasons.push('tracción integral');
@@ -2019,7 +2041,7 @@ function getPerformanceReason(vehicle: VehicleComparisonData): string {
   if (specs.performance?.sportMode) {
     reasons.push('modo deportivo');
   }
-  
+
   // Construir frase dinámica
   if (reasons.length >= 3) {
     return `Máximo rendimiento: ${reasons.slice(0, 2).join(', ')} y ${reasons[2]}`;
@@ -2035,7 +2057,7 @@ function getPerformanceReason(vehicle: VehicleComparisonData): string {
 function getTechnologyReason(vehicle: VehicleComparisonData): string {
   const reasons = [];
   const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
-  
+
   // Razones específicas de tecnología
   const screenSize = specs.technology?.screenSize;
   const hasCarPlay = specs.technology?.appleCarPlay;
@@ -2043,11 +2065,11 @@ function getTechnologyReason(vehicle: VehicleComparisonData): string {
   const hasWireless = specs.technology?.wirelessCharging;
   const hasNavigation = specs.technology?.navigation;
   const hasBluetooth = specs.technology?.bluetooth;
-  
+
   if (screenSize) {
     reasons.push(`pantalla táctil de ${screenSize}"`);
   }
-  
+
   if (hasCarPlay && hasAndroid) {
     reasons.push('Apple CarPlay y Android Auto');
   } else if (hasCarPlay) {
@@ -2055,19 +2077,19 @@ function getTechnologyReason(vehicle: VehicleComparisonData): string {
   } else if (hasAndroid) {
     reasons.push('Android Auto');
   }
-  
+
   if (hasWireless) {
     reasons.push('carga inalámbrica');
   }
-  
+
   if (hasNavigation) {
     reasons.push('navegación GPS integrada');
   }
-  
+
   if (hasBluetooth) {
     reasons.push('conectividad Bluetooth 5.0');
   }
-  
+
   // Razones por características avanzadas
   if (specs.technology?.voiceControl) {
     reasons.push('control por voz');
@@ -2081,13 +2103,13 @@ function getTechnologyReason(vehicle: VehicleComparisonData): string {
   if (specs.technology?.parkingAssist) {
     reasons.push('asistente de estacionamiento');
   }
-  
+
   // Razones por marca tecnológica
   const techBrands = ['Tesla', 'BMW', 'Audi', 'Mercedes-Benz', 'Porsche'];
   if (techBrands.includes(vehicle.brand)) {
     reasons.push('innovación ' + vehicle.brand);
   }
-  
+
   // Construir frase dinámica
   if (reasons.length >= 3) {
     return `Tecnología de vanguardia: ${reasons.slice(0, 2).join(', ')} y ${reasons[2]}`;
@@ -2104,94 +2126,94 @@ function getTechnologyReason(vehicle: VehicleComparisonData): string {
 function calculateDetailedFamilyScore(vehicle: VehicleComparisonData): number {
   let score = 0;
   const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
-  
+
   // Tipo de vehículo (40% del score)
   if (vehicle.type === 'SUV') score += 0.4;
   else if (vehicle.type === 'Sedán') score += 0.3;
   else if (vehicle.type === 'Hatchback') score += 0.2;
   else if (vehicle.type === 'Deportivo') score -= 0.3;
-  
+
   // Seguridad (30% del score)
   score += vehicle.features.safety_score * 0.3;
-  
+
   // Confort (20% del score)
   score += vehicle.features.comfort_score * 0.2;
-  
+
   // Espacio y practicidad (10% del score)
   if (specs.dimensions?.length > 4.5) score += 0.05;
   if (specs.dimensions?.width > 1.8) score += 0.03;
   if (specs.dimensions?.height > 1.5) score += 0.02;
-  
+
   // Características familiares específicas
   if (specs.comfort?.airConditioning) score += 0.02;
   if (specs.comfort?.heatedSeats) score += 0.01;
   if (specs.safety?.airbags >= 6) score += 0.02;
   if (specs.safety?.stabilityControl) score += 0.01;
-  
+
   return Math.max(0, Math.min(1, score));
 }
 
 function calculateDetailedEconomicScore(vehicle: VehicleComparisonData): number {
   let score = 0;
   const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
-  
+
   // Eficiencia de combustible (40% del score)
   score += vehicle.features.efficiency_score * 0.4;
-  
+
   // Valor por precio (30% del score)
   score += vehicle.features.value_score * 0.3;
-  
+
   // Tipo de vehículo económico (20% del score)
   if (vehicle.type === 'Hatchback') score += 0.2;
   else if (vehicle.type === 'Sedán') score += 0.15;
   else if (vehicle.type === 'SUV') score += 0.1;
   else if (vehicle.type === 'Deportivo') score -= 0.3;
-  
+
   // Costo de mantenimiento estimado (10% del score)
   const maintenanceScore = getMaintenanceCost(vehicle.brand, vehicle.price);
   score += (1 - maintenanceScore) * 0.1;
-  
+
   // Penalizaciones por precio alto
   if (vehicle.price > 300000000) score -= 0.2;
   else if (vehicle.price > 200000000) score -= 0.1;
-  
+
   return Math.max(0, Math.min(1, score));
 }
 
 function calculateDetailedPerformanceScore(vehicle: VehicleComparisonData): number {
   let score = 0;
   const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
-  
+
   // Rendimiento general (50% del score)
   score += vehicle.features.performance_score * 0.5;
-  
+
   // Potencia específica (30% del score)
   const power = specs.performance?.maxPower || specs.combustion?.maxPower || 0;
   if (power > 300) score += 0.2;
   else if (power > 200) score += 0.15;
   else if (power > 150) score += 0.1;
-  
+
   // Aceleración (20% del score)
   const acceleration = specs.performance?.acceleration0to100 || 10;
   if (acceleration < 5) score += 0.2;
   else if (acceleration < 7) score += 0.15;
   else if (acceleration < 9) score += 0.1;
-  
+
   // Características deportivas
   if (specs.performance?.allWheelDrive) score += 0.05;
   if (specs.performance?.sportMode) score += 0.03;
   if (vehicle.type === 'Deportivo') score += 0.02;
-  
+
   return Math.max(0, Math.min(1, score));
 }
 
 function calculateDetailedTechnologyScore(vehicle: VehicleComparisonData): number {
   let score = 0;
   const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
-  
+
   // Score de tecnología base (40% del score)
   score += vehicle.features.tech_score * 0.4;
-  
+
   // Características tecnológicas específicas (60% del score)
   if (specs.technology?.touchscreen) score += 0.1;
   if (specs.technology?.navigation) score += 0.1;
@@ -2205,11 +2227,11 @@ function calculateDetailedTechnologyScore(vehicle: VehicleComparisonData): numbe
   if (specs.technology?.laneAssist) score += 0.05;
   if (specs.technology?.parkingAssist) score += 0.05;
   if (specs.technology?.blindSpotMonitoring) score += 0.05;
-  
+
   // Tecnología de propulsión
   if (vehicle.fuelType === 'Eléctrico') score += 0.1;
   else if (vehicle.fuelType === 'Híbrido') score += 0.05;
-  
+
   return Math.max(0, Math.min(1, score));
 }
 
@@ -2225,7 +2247,7 @@ function calculateEconomicScore(vehicle: VehicleComparisonData): number {
 function getFamilyReason(vehicle: VehicleComparisonData): string {
   const reasons = [];
   const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
-  
+
   // Razones específicas por tipo
   if (vehicle.type === 'SUV') {
     reasons.push('espacio amplio');
@@ -2234,19 +2256,19 @@ function getFamilyReason(vehicle: VehicleComparisonData): string {
     reasons.push('comodidad en viajes largos');
     if (specs.dimensions?.length > 4.5) reasons.push('espacio interior generoso');
   }
-  
+
   // Razones por características de seguridad
   if (specs.safety?.airbags >= 6) reasons.push('múltiples airbags');
   if (specs.safety?.stabilityControl) reasons.push('control de estabilidad');
-  
+
   // Razones por confort
   if (specs.comfort?.airConditioning) reasons.push('aire acondicionado');
   if (specs.comfort?.heatedSeats) reasons.push('asientos calefaccionados');
-  
+
   // Razones por precio/practicidad
   if (vehicle.price < 200000000) reasons.push('precio accesible para familias');
   if (vehicle.fuelType === 'Híbrido') reasons.push('eficiencia para el uso diario');
-  
+
   // Construir frase dinámica
   if (reasons.length >= 3) {
     return `Ideal por su ${reasons.slice(0, 2).join(', ')} y ${reasons[2]}`;
@@ -2262,7 +2284,7 @@ function getFamilyReason(vehicle: VehicleComparisonData): string {
 function getEconomicReason(vehicle: VehicleComparisonData): string {
   const reasons = [];
   const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
-  
+
   // Razones específicas por combustible y consumo
   if (vehicle.fuelType === 'Híbrido') {
     const consumption = specs.combustion?.cityConsumption || specs.hybrid?.cityConsumption;
@@ -2284,27 +2306,27 @@ function getEconomicReason(vehicle: VehicleComparisonData): string {
       reasons.push('consumo moderado de ' + consumption + 'L/100km');
     }
   }
-  
+
   // Razones por precio
   if (vehicle.price < 100000000) {
     reasons.push('precio muy accesible');
   } else if (vehicle.price < 150000000) {
     reasons.push('excelente relación calidad-precio');
   }
-  
+
   // Razones por tipo y practicidad
   if (vehicle.type === 'Hatchback') {
     reasons.push('fácil estacionamiento y maniobrabilidad');
   } else if (vehicle.type === 'Sedán' && vehicle.price < 200000000) {
     reasons.push('equilibrio entre confort y economía');
   }
-  
+
   // Razones por mantenimiento (basado en marca)
   const economicBrands = ['Honda', 'Toyota', 'Nissan', 'Hyundai', 'Kia'];
   if (economicBrands.includes(vehicle.brand)) {
     reasons.push('bajo costo de mantenimiento');
   }
-  
+
   // Construir frase dinámica
   if (reasons.length >= 3) {
     return `Económico por su ${reasons.slice(0, 2).join(', ')} y ${reasons[2]}`;
