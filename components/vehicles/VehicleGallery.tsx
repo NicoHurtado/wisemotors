@@ -125,7 +125,7 @@ export function VehicleGallery({ images, coverImage, vehicle, className = '' }: 
           style={{ padding: '1rem' }}
           onClick={closeModal}
         >
-          <div className="relative max-w-4xl max-h-full" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-w-7xl w-full max-h-full" onClick={(e) => e.stopPropagation()}>
             {/* Botón de cerrar */}
             <button
               onClick={closeModal}
@@ -136,7 +136,7 @@ export function VehicleGallery({ images, coverImage, vehicle, className = '' }: 
 
             {/* Imagen en modal */}
             <div className="relative">
-              <div className="relative w-full h-[80vh]">
+              <div className="relative w-full h-[90vh]">
                 <Image
                   src={allImages[currentIndex]}
                   alt={`Vehículo ${currentIndex + 1}`}
