@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Car, Save, X } from 'lucide-react';
+import { Car, Save, X, Download } from 'lucide-react';
 import { ImageUpload } from './ImageUpload';
 import { WiseMetricsForm } from './WiseMetricsForm';
+import { getTangData, getSongPlusData } from '@/lib/vehicle-data';
 
 interface Dealer {
   id: string;
@@ -253,6 +254,24 @@ export function AddVehicleForm() {
         ? prev.filter(id => id !== dealerId)
         : [...prev, dealerId]
     );
+  };
+
+  const handleAutoFillTang = () => {
+    const tangData = getTangData();
+    setFormData(prev => ({
+      ...prev,
+      ...tangData
+    }));
+    alert('✅ Datos del BYD Tang cargados exitosamente!\n\nRevisa los campos y ajusta lo que necesites antes de guardar.');
+  };
+
+  const handleAutoFillSongPlus = () => {
+    const songPlusData = getSongPlusData();
+    setFormData(prev => ({
+      ...prev,
+      ...songPlusData
+    }));
+    alert('✅ Datos del BYD Song Plus cargados exitosamente!\n\nRevisa los campos y ajusta lo que necesites antes de guardar.');
   };
 
   const handleSpecificationChange = (section: string, field: string, value: any) => {

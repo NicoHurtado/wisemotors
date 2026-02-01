@@ -50,11 +50,11 @@ interface ProfileRecommendation {
   reason: string;
 }
 
-export function VehicleComparisonModal({ 
-  isOpen, 
-  onClose, 
-  currentVehicle, 
-  compareVehicle 
+export function VehicleComparisonModal({
+  isOpen,
+  onClose,
+  currentVehicle,
+  compareVehicle
 }: VehicleComparisonModalProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -76,32 +76,8 @@ export function VehicleComparisonModal({
       setLoading(true);
       setError(null);
 
-      // Preparar datos para la IA
-      const vehiclesForAnalysis = [
-        {
-          id: currentVehicle.id,
-          brand: currentVehicle.brand,
-          model: currentVehicle.model,
-          year: currentVehicle.year,
-          price: currentVehicle.price,
-          fuelType: currentVehicle.fuelType,
-          type: currentVehicle.type,
-          specifications: currentVehicle.specifications
-        },
-        {
-          id: compareVehicle.id,
-          brand: compareVehicle.brand,
-          model: compareVehicle.model,
-          year: compareVehicle.year,
-          price: compareVehicle.price,
-          fuelType: compareVehicle.fuelType,
-          type: compareVehicle.type,
-          specifications: compareVehicle.specifications
-        }
-      ];
-
       // Llamar a la IA para análisis
-      const aiResult = await getIntelligentAnalysis(vehiclesForAnalysis);
+      const aiResult = await getIntelligentAnalysis([currentVehicle.id, compareVehicle.id]);
       setAiAnalysis(aiResult.analysis);
       setProfileRecommendations(aiResult.profileRecommendations);
       setKeyDifferences(aiResult.keyDifferences);
@@ -137,7 +113,7 @@ export function VehicleComparisonModal({
       if (!isCurrentFavorite) {
         await toggleFavorite(currentVehicle.id);
       }
-      
+
       if (!isCompareFavorite) {
         await toggleFavorite(compareVehicle.id);
       }
@@ -366,33 +342,33 @@ export function VehicleComparisonModal({
                           vehicleName = `${compareVehicle.brand} ${compareVehicle.model}`;
                         }
                       }
-                      
+
                       return (
-                      <div key={index} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-8 h-8 bg-wise/20 rounded-full flex items-center justify-center">
-                            {rec.profile === 'Familiar' && <span className="text-wise text-sm">👥</span>}
-                            {rec.profile === 'Performance' && <TrendingUp className="w-4 h-4 text-wise" />}
-                            {rec.profile === 'Economía' && <span className="text-wise text-sm">💰</span>}
-                            {rec.profile === 'Tecnología' && <Brain className="w-4 h-4 text-wise" />}
+                        <div key={index} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-8 h-8 bg-wise/20 rounded-full flex items-center justify-center">
+                              {rec.profile === 'Familiar' && <span className="text-wise text-sm">👥</span>}
+                              {rec.profile === 'Performance' && <TrendingUp className="w-4 h-4 text-wise" />}
+                              {rec.profile === 'Economía' && <span className="text-wise text-sm">💰</span>}
+                              {rec.profile === 'Tecnología' && <Brain className="w-4 h-4 text-wise" />}
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-gray-900">{rec.profile}</h4>
+                              <p className="text-sm text-gray-600">Perfil recomendado</p>
+                            </div>
                           </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-900">{rec.profile}</h4>
-                            <p className="text-sm text-gray-600">Perfil recomendado</p>
+
+                          <div className="space-y-2">
+                            <div className="text-sm">
+                              <span className="text-gray-600">Vehículo: </span>
+                              <span className="font-medium text-gray-900">{vehicleName}</span>
+                            </div>
+                            <div className="text-sm">
+                              <span className="text-gray-600">Razón: </span>
+                              <span className="text-gray-700">{rec.reason}</span>
+                            </div>
                           </div>
                         </div>
-                        
-                        <div className="space-y-2">
-                          <div className="text-sm">
-                            <span className="text-gray-600">Vehículo: </span>
-                            <span className="font-medium text-gray-900">{vehicleName}</span>
-                          </div>
-                          <div className="text-sm">
-                            <span className="text-gray-600">Razón: </span>
-                            <span className="text-gray-700">{rec.reason}</span>
-                          </div>
-                        </div>
-                      </div>
                       );
                     })}
                   </div>
@@ -421,8 +397,8 @@ export function VehicleComparisonModal({
 
                 <div className="text-center mt-4">
                   <p className="text-sm text-gray-600">
-                    Esta comparación utiliza <strong>Inteligencia Artificial real (GPT-4)</strong> para analizar 
-                    las especificaciones técnicas de ambos vehículos y proporcionar recomendaciones 
+                    Esta comparación utiliza <strong>Inteligencia Artificial real (GPT-4)</strong> para analizar
+                    las especificaciones técnicas de ambos vehículos y proporcionar recomendaciones
                     objetivas y personalizadas.
                   </p>
                 </div>
@@ -434,8 +410,8 @@ export function VehicleComparisonModal({
               <Button variant="outline" onClick={onClose}>
                 Cerrar
               </Button>
-              <Button 
-                variant="wise" 
+              <Button
+                variant="wise"
                 onClick={handleFullComparison}
               >
                 Comparación Completa

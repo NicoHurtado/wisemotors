@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface VehicleGalleryProps {
@@ -52,7 +53,7 @@ export function VehicleGallery({ images, coverImage, vehicle, className = '' }: 
         {allImages.length > 0 ? (
           <div className="relative h-64 bg-gray-100 rounded-lg overflow-hidden">
             {/* Carrusel infinito */}
-            <div 
+            <div
               className="flex absolute top-0 left-0 h-full animate-scroll-infinite"
               style={{
                 width: `${allImages.length * 2 * 320}px`
@@ -68,16 +69,19 @@ export function VehicleGallery({ images, coverImage, vehicle, className = '' }: 
                     openModal();
                   }}
                 >
-                  <img
+                  <Image
                     src={image}
                     alt={`Imagen ${(index % allImages.length) + 1}`}
-                    className="w-full h-full object-cover rounded-lg transition-transform group-hover:scale-105"
+                    fill
+                    quality={100}
+                    unoptimized={true}
+                    className="object-cover rounded-lg transition-transform group-hover:scale-105"
                     onError={(e) => {
                       console.error('Error loading carousel image:', image);
                       e.currentTarget.style.display = 'none';
                     }}
                   />
-                  
+
                   {/* Overlay */}
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center rounded-lg">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -116,7 +120,7 @@ export function VehicleGallery({ images, coverImage, vehicle, className = '' }: 
 
       {/* Modal de galería completa */}
       {isModalOpen && (
-        <div 
+        <div
           className="modal-fullscreen bg-black bg-opacity-70 flex items-center justify-center"
           style={{ padding: '1rem' }}
           onClick={closeModal}
@@ -132,15 +136,20 @@ export function VehicleGallery({ images, coverImage, vehicle, className = '' }: 
 
             {/* Imagen en modal */}
             <div className="relative">
-              <img
-                src={allImages[currentIndex]}
-                alt={`Vehículo ${currentIndex + 1}`}
-                className="max-w-full max-h-[80vh] object-contain rounded-lg"
-                onError={(e) => {
-                  console.error('Error loading modal image:', allImages[currentIndex]);
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
+              <div className="relative w-full h-[80vh]">
+                <Image
+                  src={allImages[currentIndex]}
+                  alt={`Vehículo ${currentIndex + 1}`}
+                  fill
+                  quality={100}
+                  unoptimized={true}
+                  className="object-contain rounded-lg"
+                  onError={(e) => {
+                    console.error('Error loading modal image:', allImages[currentIndex]);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
 
               {/* Controles en modal */}
               {allImages.length > 1 && (

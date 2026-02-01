@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface PhotoCarouselProps {
@@ -12,9 +13,9 @@ interface PhotoCarouselProps {
   autoPlayInterval?: number;
 }
 
-export function PhotoCarousel({ 
-  images, 
-  alt, 
+export function PhotoCarousel({
+  images,
+  alt,
   className = '',
   showNavigation = true,
   autoPlay = false,
@@ -26,7 +27,7 @@ export function PhotoCarousel({
   useEffect(() => {
     if (autoPlay && images.length > 1) {
       const interval = setInterval(() => {
-        setCurrentIndex((prevIndex) => 
+        setCurrentIndex((prevIndex) =>
           prevIndex === images.length - 1 ? 0 : prevIndex + 1
         );
       }, autoPlayInterval);
@@ -59,10 +60,13 @@ export function PhotoCarousel({
   if (images.length === 1) {
     return (
       <div className={`relative overflow-hidden ${className}`}>
-        <img
+        <Image
           src={images[0]}
           alt={alt}
-          className="w-full h-full object-cover"
+          fill
+          quality={100}
+          unoptimized={true}
+          className="object-cover"
           onError={(e) => {
             console.error('Error loading image:', images[0]);
             e.currentTarget.style.display = 'none';
@@ -75,10 +79,13 @@ export function PhotoCarousel({
   return (
     <div className={`relative group overflow-hidden ${className}`}>
       {/* Imagen actual */}
-      <img
+      <Image
         src={images[currentIndex]}
         alt={`${alt} - Imagen ${currentIndex + 1}`}
-        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        fill
+        quality={100}
+        unoptimized={true}
+        className="object-cover transition-transform duration-300 group-hover:scale-105"
         onError={(e) => {
           console.error('Error loading image:', images[currentIndex]);
           e.currentTarget.style.display = 'none';
@@ -121,9 +128,8 @@ export function PhotoCarousel({
                   e.stopPropagation();
                   setCurrentIndex(index);
                 }}
-                className={`w-3 h-3 rounded-full transition-all hover:scale-125 ${
-                  index === currentIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/75'
-                }`}
+                className={`w-3 h-3 rounded-full transition-all hover:scale-125 ${index === currentIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/75'
+                  }`}
                 aria-label={`Ir a imagen ${index + 1}`}
               />
             ))}
