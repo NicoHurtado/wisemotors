@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export interface VehicleCard {
   id: string;
@@ -65,13 +65,21 @@ interface UseVehiclesOptions {
   sortBy?: string;
 }
 
-export function useVehicles(options: UseVehiclesOptions = {}) {
-  const [vehicles, setVehicles] = useState<VehicleCard[]>([]);
-  const [loading, setLoading] = useState(true);
+export function useVehicles(options: UseVehiclesOptions = {}, initialData: VehicleCard[] | null = null) {
+  const [vehicles, setVehicles] = useState<VehicleCard[]>(initialData || []);
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
+  const isFirstRun = useRef(true);
 
   useEffect(() => {
     const fetchVehicles = async () => {
+      // Skiping initial fetch if initialData provided
+      if (isFirstRun.current && initialData) {
+        isFirstRun.current = false;
+        return;
+      }
+      isFirstRun.current = false;
+
       try {
         setLoading(true);
         setError(null);
@@ -82,7 +90,7 @@ export function useVehicles(options: UseVehiclesOptions = {}) {
         if (options.recommended) params.append('recommended', '1');
         if (options.dealerId) params.append('dealerId', options.dealerId);
         if (options.search) params.append('search', options.search);
-        
+
         // Agregar múltiples categorías
         if (options.category) {
           if (Array.isArray(options.category)) {
@@ -91,7 +99,7 @@ export function useVehicles(options: UseVehiclesOptions = {}) {
             params.append('category', options.category);
           }
         }
-        
+
         // Agregar múltiples tipos de combustible
         if (options.fuelType) {
           if (Array.isArray(options.fuelType)) {
@@ -100,26 +108,26 @@ export function useVehicles(options: UseVehiclesOptions = {}) {
             params.append('fuelType', options.fuelType);
           }
         }
-        
+
         if (options.minPrice) params.append('minPrice', options.minPrice.toString());
         if (options.maxPrice) params.append('maxPrice', options.maxPrice.toString());
         if (options.sortBy) params.append('sortBy', options.sortBy);
 
         const response = await fetch(`/api/vehicles?${params.toString()}`);
-        
+
         if (!response.ok) {
           throw new Error('Error al cargar los vehículos');
         }
 
         const data = await response.json();
-        
+
         // Transformar datos de la API al formato esperado por la UI
         const transformedVehicles: VehicleCard[] = data.vehicles.map((vehicle: any) => {
           // Buscar imagen miniatura, si no existe usar la primera de galería
           const thumbnailImage = vehicle.images?.find((img: any) => img.isThumbnail)?.url ||
-                                vehicle.images?.find((img: any) => img.type === 'gallery')?.url ||
-                                vehicle.images?.[0]?.url || null;
-          
+            vehicle.images?.find((img: any) => img.type === 'gallery')?.url ||
+            vehicle.images?.[0]?.url || null;
+
           return {
             id: vehicle.id,
             brand: vehicle.brand,
@@ -149,15 +157,17 @@ export function useVehicles(options: UseVehiclesOptions = {}) {
     options.recommended,
     options.dealerId,
     options.search,
-    options.category,
-    options.fuelType,
+    JSON.stringify(options.category), // Fix for array dependency stability
+    JSON.stringify(options.fuelType), // Fix for array dependency stability
     options.minPrice,
     options.maxPrice,
-    options.sortBy
+    options.sortBy,
+    initialData // Add initialData to dependency to be safe, though mainly for the ref check
   ]);
 
   return { vehicles, loading, error };
 }
+
 
 export function useVehicle(id: string) {
   const [vehicle, setVehicle] = useState<VehicleDetail | null>(null);
@@ -171,15 +181,15 @@ export function useVehicle(id: string) {
         setError(null);
 
         const response = await fetch(`/api/vehicles/${id}`);
-        
+
         if (!response.ok) {
           throw new Error('Error al cargar el vehículo');
         }
 
         const data = await response.json();
-        
+
         // Transformar datos de la API al formato esperado por la UI
-        
+
         // Parsear specifications si es un string (ya viene parseado desde la API, pero asegurarse)
         let parsedSpecs = data.specifications;
         if (typeof parsedSpecs === 'string') {
@@ -190,7 +200,7 @@ export function useVehicle(id: string) {
             parsedSpecs = {};
           }
         }
-        
+
         const transformedVehicle: VehicleDetail = {
           id: data.id,
           brand: data.brand,
@@ -217,8 +227,8 @@ export function useVehicle(id: string) {
           specifications: parsedSpecs || {},
           wisemetrics: parsedSpecs?.wisemetrics || null,
           // Pasar también fuelType y vehicleType para uso en el componente
-              fuelType: data.fuelType,
-              vehicleType: data.vehicleType,
+          fuelType: data.fuelType,
+          vehicleType: data.vehicleType,
           type: data.type,
           reviewVideoUrl: data.reviewVideoUrl,
           categories: (() => {
@@ -231,7 +241,7 @@ export function useVehicle(id: string) {
               }));
               return customCategories;
             }
-            
+
             // Categorías por defecto si no hay personalizadas
             return [
               {
@@ -302,7 +312,7 @@ export function useCategories() {
         setError(null);
 
         const response = await fetch('/api/vehicles?getCategories=true');
-        
+
         if (!response.ok) {
           throw new Error('Error al cargar las categorías');
         }
@@ -336,7 +346,7 @@ export function useFuelTypes() {
         setError(null);
 
         const response = await fetch('/api/vehicles?getFuelTypes=true');
-        
+
         if (!response.ok) {
           throw new Error('Error al cargar los tipos de combustible');
         }

@@ -63,6 +63,9 @@ model Vehicle {
   dealers        Dealer[]        @relation("DealerVehicles")
   whatsappLeads  WhatsAppLead[]
 
+  @@index([status, type, price])
+  @@index([status, price])
+  @@index([brand, model])
   @@map("vehicles")
 }
 
