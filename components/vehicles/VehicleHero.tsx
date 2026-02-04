@@ -55,9 +55,12 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
               fill
               className="object-contain sm:object-contain md:object-cover"
               priority
+              quality={100}
+              unoptimized={true}
               sizes="100vw"
               style={{
-                objectPosition: 'center center'
+                objectPosition: 'center center',
+                imageRendering: '-webkit-optimize-contrast'
               }}
             />
           ) : (
@@ -67,8 +70,11 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
           );
         })()}
 
-        {/* Overlay gradient - Más fuerte en móvil para mejor legibilidad */}
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/95 via-gray-900/50 to-gray-900/20 sm:from-gray-900/90 sm:via-gray-900/30 sm:to-transparent" />
+        {/* Overlay gradient - Mejorado para mejor contraste y legibilidad */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20 sm:from-black/70 sm:via-black/35 sm:to-transparent" />
+
+        {/* Subtle backdrop blur for depth - only on text area */}
+        <div className="absolute inset-0 backdrop-blur-[0.5px]" />
 
         {/* Content overlay - Centered */}
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
@@ -79,7 +85,7 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
                 {vehicle.type || vehicle.specifications?.identification?.carrocería || vehicle.category} • {vehicle.year}
               </Badge>
 
-              <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-3 sm:mb-4 md:mb-6 leading-tight px-2">
+              <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-3 sm:mb-4 md:mb-6 leading-tight px-2" style={{ textShadow: '0 4px 12px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.6)' }}>
                 {vehicle.brand} {vehicle.model}
               </h1>
             </div>

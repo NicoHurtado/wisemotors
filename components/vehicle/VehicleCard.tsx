@@ -25,10 +25,10 @@ interface VehicleCardProps {
   matchPercentage?: number;
 }
 
-export function VehicleCard({ 
-  vehicle, 
-  isFavorite: externalIsFavorite, 
-  onToggleFavorite: externalOnToggleFavorite, 
+export function VehicleCard({
+  vehicle,
+  isFavorite: externalIsFavorite,
+  onToggleFavorite: externalOnToggleFavorite,
   onExplore,
   showAffinity = false,
   affinityScore,
@@ -42,11 +42,11 @@ export function VehicleCard({
 
   // Usar el estado interno de favoritos si no se proporciona externamente
   const isFav = externalIsFavorite !== undefined ? externalIsFavorite : isFavorite(vehicle.id);
-  
+
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     // Prevenir que el click en favoritos abra el detalle del vehículo
     e.stopPropagation();
-    
+
     if (!user) {
       // Redirigir al login si no está autenticado
       router.push('/login');
@@ -83,30 +83,23 @@ export function VehicleCard({
 
   // Obtener solo las imágenes de galería (NO la portada)
   const galleryImages = vehicle.images?.filter((img: any) => img.type === 'gallery') || [];
-  
-  // Buscar imagen miniatura entre las de galería
-  const thumbnailImage = galleryImages.find((img: any) => img.isThumbnail);
-  const otherGalleryImages = galleryImages.filter((img: any) => !img.isThumbnail);
-  
-  // Ordenar: miniatura primero, luego el resto por orden
-  const orderedGalleryImages = [
-    ...(thumbnailImage ? [thumbnailImage] : []),
-    ...otherGalleryImages.sort((a: any, b: any) => a.order - b.order)
-  ];
-  
+
+  // Ordenar todas las imágenes de galería por orden
+  const orderedGalleryImages = galleryImages.sort((a: any, b: any) => a.order - b.order);
+
   // Obtener URLs de las imágenes ordenadas
   const vehicleImages = orderedGalleryImages.map((img: any) => img.url);
-  
-  // Para el thumbnail estático, usar la miniatura o la primera de galería
-  const displayThumbnailUrl = thumbnailImage?.url || galleryImages[0]?.url || vehicle.imageUrl;
+
+  // Para el thumbnail estático, usar siempre la primera imagen de galería
+  const displayThumbnailUrl = galleryImages[0]?.url || vehicle.imageUrl;
   const displayThumbnail = useVehicleImage(displayThumbnailUrl, vehicle.brand, vehicle.model);
-  
+
   // Si hay múltiples imágenes de galería, usar el carrusel, sino usar la imagen estática
   const hasMultipleImages = vehicleImages.length > 1;
   const displayImages = hasMultipleImages ? vehicleImages : [displayThumbnail];
 
   return (
-    <Card 
+    <Card
       className="group overflow-hidden transition-all duration-300 hover:shadow-soft hover:-translate-y-1 cursor-pointer"
       onClick={handleCardClick}
     >
@@ -118,7 +111,7 @@ export function VehicleCard({
           showNavigation={hasMultipleImages}
           autoPlay={false}
         />
-        
+
         {/* Favorite button */}
         <button
           onClick={handleFavoriteClick}
@@ -127,12 +120,11 @@ export function VehicleCard({
           aria-label={isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
         >
           <Heart
-            className={`w-4 h-4 transition-colors ${
-              isFav ? 'fill-wise text-wise' : 'text-gray-400'
-            }`}
+            className={`w-4 h-4 transition-colors ${isFav ? 'fill-wise text-wise' : 'text-gray-400'
+              }`}
           />
         </button>
-        
+
         {/* Category badge */}
         {vehicle.category && !showAffinity && (
           <div className="absolute bottom-3 left-3">
@@ -141,39 +133,37 @@ export function VehicleCard({
             </Badge>
           </div>
         )}
-        
+
         {/* Affinity badge */}
         {showAffinity && affinityScore !== undefined && (
           <div className="absolute bottom-3 left-3">
-            <Badge 
-              variant="wise" 
-              className={`text-xs ${
-                affinityScore >= 80 
-                  ? 'bg-green-500 text-white' 
-                  : affinityScore >= 60 
-                    ? 'bg-yellow-500 text-white' 
+            <Badge
+              variant="wise"
+              className={`text-xs ${affinityScore >= 80
+                  ? 'bg-green-500 text-white'
+                  : affinityScore >= 60
+                    ? 'bg-yellow-500 text-white'
                     : 'bg-red-500 text-white'
-              }`}
+                }`}
             >
               {affinityScore}% match
             </Badge>
           </div>
         )}
-        
+
         {/* Match percentage badge for objective searches */}
         {!showAffinity && matchPercentage !== undefined && matchPercentage < 100 && (
           <div className="absolute bottom-3 left-3">
-            <Badge 
-              variant="wise" 
-              className={`text-xs ${
-                matchPercentage >= 90 
-                  ? 'bg-green-500 text-white' 
-                  : matchPercentage >= 75 
+            <Badge
+              variant="wise"
+              className={`text-xs ${matchPercentage >= 90
+                  ? 'bg-green-500 text-white'
+                  : matchPercentage >= 75
                     ? 'bg-blue-500 text-white'
                     : matchPercentage >= 60
-                      ? 'bg-yellow-500 text-white' 
+                      ? 'bg-yellow-500 text-white'
                       : 'bg-orange-500 text-white'
-              }`}
+                }`}
             >
               {matchPercentage}% coincidencia
             </Badge>
@@ -186,15 +176,15 @@ export function VehicleCard({
           <h3 className="font-semibold text-lg text-foreground">
             {vehicle.brand} {vehicle.model}
           </h3>
-          
+
           <p className="text-sm text-muted-foreground">
             {getFuelLabel(vehicle.fuel)} • {vehicle.status || 'Nuevo'} • {vehicle.year}
           </p>
-          
+
           <p className="text-xl font-bold text-foreground">
             {formatPrice(vehicle.price)}
           </p>
-          
+
           {/* AI Reasons */}
           {reasons && reasons.length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-100">
@@ -213,7 +203,7 @@ export function VehicleCard({
       </CardContent>
 
       <CardFooter className="p-4 pt-0">
-        <Button 
+        <Button
           onClick={handleButtonClick}
           className="w-full bg-wise hover:bg-wise-dark transition-colors"
         >

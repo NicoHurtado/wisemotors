@@ -8,15 +8,19 @@
     transform: translateX(-100%) translateY(-100%) rotate(45deg);
     opacity: 0;
   }
+
   10% {
     opacity: 0.8;
   }
+
   50% {
     opacity: 1;
   }
+
   90% {
     opacity: 0.8;
   }
+
   100% {
     transform: translateX(200%) translateY(200%) rotate(45deg);
     opacity: 0;
@@ -32,9 +36,12 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 4px 6px -1px rgba(136, 28, 183, 0.2), 0 2px 4px -1px rgba(136, 28, 183, 0.1);
   }
+
   50% {
     box-shadow: 0 10px 25px -5px rgba(136, 28, 183, 0.5), 0 8px 10px -6px rgba(136, 28, 183, 0.4);
   }
@@ -96,11 +103,40 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  /* High-quality image rendering for vehicle images */
+  img,
+  picture,
+  [data-nextjs-image] {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+
+  /* Ensure Next.js Image components maintain quality */
+  img[loading="lazy"],
+  img[loading="eager"] {
+    image-rendering: -webkit-optimize-contrast;
+  }
 }
 
 /* Custom background with subtle radial gradient */
 .bg-hero {
   background: radial-gradient(ellipse at center, rgba(136, 28, 183, 0.03) 0%, rgba(255, 255, 255, 1) 70%);
+}
+
+/* Hero image overlay for better text contrast */
+.hero-text-shadow {
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.hero-overlay-dark {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.2));
+}
+
+@media (min-width: 640px) {
+  .hero-overlay-dark {
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.35), transparent);
+  }
 }
 
 /* Animación para carrusel infinito */
