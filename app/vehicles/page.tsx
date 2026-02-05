@@ -1,6 +1,8 @@
 import { getVehicles } from '@/lib/data/vehicles';
 import VehiclesClient from '@/components/vehicles/VehiclesClient';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Vehículos | WiseMotors',
   description: 'Explora nuestra selección de vehículos de alta gama, deportivos y exclusivos. Encuentra tu próximo auto con WiseMotors.',

@@ -415,9 +415,7 @@
   --border-angle: 200deg;
   --border-color-1: hsla(320, 75%, 90%, 0.6);
   --border-color-2: hsla(320, 50%, 90%, 0.15);
-}
-
-.gradient-button-variant:hover {
+}.gradient-button-variant:hover {
   --pos-x: 0%;
   --pos-y: 95.51%;
   --spread-x: 110.24%;
