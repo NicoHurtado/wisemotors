@@ -55,7 +55,7 @@ export function HeroSearch({ initialQuery, showFilters = false }: HeroSearchProp
     let typingTimeoutId: NodeJS.Timeout;
     let currentCharIndex = 0;
     const currentExample = examplePrompts[currentExampleIndex];
-    
+
     // Calculate timing based on text length for consistent duration
     const totalDuration = 8000; // 8 seconds total per example
     const readingTime = 3000; // 3 seconds to read
@@ -111,12 +111,12 @@ export function HeroSearch({ initialQuery, showFilters = false }: HeroSearchProp
     if (!query.trim()) return;
 
     setIsSearching(true);
-    
+
     try {
       // Build search URL preserving existing params
       const params = new URLSearchParams(searchParams.toString());
       params.set('q', query.trim());
-      
+
       // Stay on home and trigger AI recommendations section
       router.push(`/?${params.toString()}`);
     } catch (error) {
@@ -151,7 +151,7 @@ export function HeroSearch({ initialQuery, showFilters = false }: HeroSearchProp
           <span className="text-wise">Wise</span>
           <span className="text-foreground">Motors</span>
         </h1>
-        
+
         <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
           Describe lo que quieres con tus palabras y te encontramos las mejores opciones en segundos
         </p>
@@ -178,7 +178,7 @@ export function HeroSearch({ initialQuery, showFilters = false }: HeroSearchProp
               </div>
             )}
           </div>
-          
+
           <Button
             onClick={handleSearch}
             disabled={!query.trim() || isSearching}
@@ -186,14 +186,14 @@ export function HeroSearch({ initialQuery, showFilters = false }: HeroSearchProp
             className="h-14 w-14 bg-wise hover:bg-wise-dark transition-colors"
             aria-label="Buscar"
           >
-            <Search className="w-6 h-6" />
+            {isSearching ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Search className="w-6 h-6" />}
           </Button>
         </div>
-        
+
         <p id="search-description" className="sr-only">
           Escribe tu búsqueda y presiona Enter o el botón de búsqueda
         </p>
-        
+
       </div>
 
       {/* AI Badge */}
@@ -207,9 +207,9 @@ export function HeroSearch({ initialQuery, showFilters = false }: HeroSearchProp
       {/* Filter Buttons - Solo se muestran cuando hay resultados */}
       {showFilters && (
         <div className="pt-4">
-          <FilterButtons 
-            currentQuery={query} 
-            onFilterClick={handleFilterClick} 
+          <FilterButtons
+            currentQuery={query}
+            onFilterClick={handleFilterClick}
           />
         </div>
       )}

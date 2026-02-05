@@ -17,17 +17,17 @@ export function SubjectiveResults({ results, query, onFilterClick }: SubjectiveR
   const [showMore, setShowMore] = useState(true); // Mostrar desplegado por defecto
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9; // 3 filas x 3 columnas
-  
+
   const topRecommendations = results.top_recommendations?.vehicles || [];
   const moreOptions = results.all_matches?.vehicles || [];
-  
+
   // Paginación para más opciones
   const totalPages = Math.ceil(moreOptions.length / itemsPerPage);
   const paginatedOptions = moreOptions.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-  
+
   const getMedalStyle = (rank: number) => {
     switch (rank) {
       case 1:
@@ -48,7 +48,7 @@ export function SubjectiveResults({ results, query, onFilterClick }: SubjectiveR
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-2">Top 3 Recomendaciones</h2>
           <p className="text-gray-600">Los vehículos que mejor se adaptan a lo que buscas</p>
-          
+
           {/* Mensaje de fallback aplicado */}
           {results.top_recommendations?.fallback_applied && (
             <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-2xl mx-auto">
@@ -67,10 +67,10 @@ export function SubjectiveResults({ results, query, onFilterClick }: SubjectiveR
               <div className={`absolute -top-3 left-4 z-10 px-3 py-1 rounded-full text-sm font-bold shadow-lg ${getMedalStyle(index + 1)}`}>
                 #{index + 1}
               </div>
-              
+
               {/* Affinity Badge */}
               <div className="absolute -top-3 right-4 z-10 px-3 py-1 rounded-full text-sm font-bold bg-wise text-white shadow-lg">
-                {vehicle.affinity}% match
+                {vehicle.matchPercentage}% match
               </div>
 
               <div className="pt-6">
@@ -78,14 +78,14 @@ export function SubjectiveResults({ results, query, onFilterClick }: SubjectiveR
                   vehicle={vehicle}
                   onExplore={(id) => window.location.href = `/vehicles/${id}`}
                   showAffinity={true}
-                  affinityScore={vehicle.affinity}
+                  affinityScore={vehicle.matchPercentage}
                   reasons={vehicle.reasons}
                 />
               </div>
             </div>
           ))}
         </div>
-        
+
         {/* Filter Buttons dentro de los resultados */}
         {onFilterClick && (
           <div className="mt-8 pt-6 border-t border-gray-200">
@@ -133,11 +133,11 @@ export function SubjectiveResults({ results, query, onFilterClick }: SubjectiveR
                     vehicle={vehicle}
                     onExplore={(id) => window.location.href = `/vehicles/${id}`}
                     showAffinity={true}
-                    affinityScore={vehicle.affinity}
+                    affinityScore={vehicle.matchPercentage}
                   />
                 ))}
               </div>
-              
+
               {/* Paginación */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-6">
@@ -149,7 +149,7 @@ export function SubjectiveResults({ results, query, onFilterClick }: SubjectiveR
                   >
                     Anterior
                   </Button>
-                  
+
                   <div className="flex items-center gap-2">
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                       <Button
@@ -163,7 +163,7 @@ export function SubjectiveResults({ results, query, onFilterClick }: SubjectiveR
                       </Button>
                     ))}
                   </div>
-                  
+
                   <Button
                     variant="outline"
                     size="sm"
@@ -182,8 +182,8 @@ export function SubjectiveResults({ results, query, onFilterClick }: SubjectiveR
       {/* Results Summary */}
       <div className="text-center text-sm text-gray-500 border-t pt-4">
         <p>
-          {results.total_matches} vehículos analizados • 
-          Procesado en {results.processing_time_ms}ms • 
+          {results.total_matches} vehículos analizados •
+          Procesado en {results.processing_time_ms}ms •
           Confianza: {Math.round(results.confidence * 100)}%
         </p>
       </div>

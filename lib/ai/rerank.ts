@@ -1,5 +1,4 @@
 // LLM Rerank final con contexto ultracompacto
-import type { VehicleIntent } from './nlu';
 import type { ScoredCandidate } from './scoring';
 import { createCompactPayload } from './scoring';
 
@@ -28,7 +27,7 @@ const rerankFunction = {
     properties: {
       recommendations: {
         type: 'array',
-        maxItems: 3,
+        maxItems: 12,
         items: {
           type: 'object',
           properties: {
@@ -51,7 +50,7 @@ const rerankFunction = {
 
 export async function rerankWithLLM(
   candidates: ScoredCandidate[],
-  intent: VehicleIntent,
+  subjectiveContext: string,
   originalPrompt: string
 ): Promise<FinalRecommendation[]> {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -59,19 +58,16 @@ export async function rerankWithLLM(
     // Si no hay API key, usar fallback determinístico para no romper UX
     return createFallbackRecommendations(candidates);
   }
-  
+
   // Crear payload ultracompacto
   const compactCandidates = createCompactPayload(candidates);
-  
-  // Construir contexto de intención
-  const intentContext = buildIntentContext(intent, originalPrompt);
-  
+
   const systemPrompt = `Eres un experto consultor automotriz en Colombia. Tu trabajo es reordenar vehículos y explicar por qué son recomendables.
 
 REGLAS CRÍTICAS:
 1. SOLO puedes recomendar vehículos de la lista proporcionada (usar sus IDs exactos)
 2. NO inventes modelos, marcas o características
-3. Máximo 3 recomendaciones
+3. Clasifica los mejores 10 vehículos (Top 10)
 4. Razones específicas y concisas (no genéricas)
 5. Considera el contexto colombiano/antioqueño
 
@@ -90,9 +86,10 @@ CATEGORÍAS WISEMOTORS:
 
 Interpreta y usa las categorías WiseMotors para hacer recomendaciones más precisas y personalizadas.`;
 
-  const userPrompt = `${intentContext}
+  const userPrompt = `BÚSQUEDA ORIGINAL: "${originalPrompt}"
+CONTEXTO SUBJETIVO: "${subjectiveContext}"
 
-CANDIDATOS DISPONIBLES:
+CANDIDATOS DISPONIBLES (Muestra Top 10):
 ${JSON.stringify(compactCandidates, null, 2)}
 
 Reordena estos vehículos priorizando los que mejor se ajusten a la intención. Proporciona razones específicas basadas en sus características reales.`;
@@ -122,83 +119,48 @@ Reordena estos vehículos priorizando los que mejor se ajusten a la intención. 
 
     const data = await response.json();
     const functionCall = data.choices[0]?.message?.function_call;
-    
+
     if (!functionCall || functionCall.name !== 'rerank_vehicles') {
       throw new Error('No se pudo obtener rerank del LLM');
     }
 
     const result = JSON.parse(functionCall.arguments);
     const recs = processLLMRerank(result.recommendations, candidates);
-    return ensureThree(recs, candidates);
-    
+    return ensureMinimum(recs, candidates, 10);
+
   } catch (error) {
     console.error('Error en LLM rerank:', error);
     // Fallback al scoring determinístico
-    return ensureThree(createFallbackRecommendations(candidates), candidates);
+    return ensureMinimum(createFallbackRecommendations(candidates), candidates, 10);
   }
-}
-
-// Construir contexto de intención para el LLM
-function buildIntentContext(intent: VehicleIntent, originalPrompt: string): string {
-  let context = `BÚSQUEDA ORIGINAL: "${originalPrompt}"\n\n`;
-  
-  if (intent.use_case) {
-    context += `CASO DE USO: ${intent.use_case}\n`;
-  }
-  
-  if (intent.locale.keywords.length > 0) {
-    context += `PALABRAS CLAVE: ${intent.locale.keywords.join(', ')}\n`;
-  }
-  
-  // Describir pesos más importantes
-  const weights = intent.soft_weights;
-  const importantWeights = Object.entries(weights)
-    .filter(([_, weight]) => weight > 0.3)
-    .sort(([_, a], [__, b]) => b - a)
-    .slice(0, 3);
-  
-  if (importantWeights.length > 0) {
-    context += `PRIORIDADES: ${importantWeights.map(([key, weight]) => 
-      `${key} (${Math.round(weight * 100)}%)`
-    ).join(', ')}\n`;
-  }
-  
-  if (intent.hard_filters) {
-    const filters = intent.hard_filters;
-    const activeFilters = [];
-    
-    if (filters.budget_max) activeFilters.push(`presupuesto máximo $${filters.budget_max.toLocaleString()}`);
-    if (filters.fuel_type) activeFilters.push(`combustible ${filters.fuel_type}`);
-    if (filters.body_type) activeFilters.push(`tipo ${filters.body_type}`);
-    
-    if (activeFilters.length > 0) {
-      context += `FILTROS: ${activeFilters.join(', ')}\n`;
-    }
-  }
-  
-  return context;
 }
 
 // Procesar respuesta del LLM y crear recomendaciones finales
 function processLLMRerank(
-  llmRecommendations: any[], 
+  llmRecommendations: any[],
   candidates: ScoredCandidate[]
 ): FinalRecommendation[] {
   const candidateMap = new Map(candidates.map(c => [c.id, c]));
   const recommendations: FinalRecommendation[] = [];
-  
-  for (let i = 0; i < Math.min(3, llmRecommendations.length); i++) {
+
+  // Procesar todas las recomendaciones que lleguen (hasta el límite de la función)
+  const limit = Math.min(12, llmRecommendations.length);
+
+  for (let i = 0; i < limit; i++) {
     const llmRec = llmRecommendations[i];
     const candidate = candidateMap.get(llmRec.id);
-    
+
     if (!candidate) {
       console.warn(`Vehículo no encontrado: ${llmRec.id}`);
       continue;
     }
-    
+
+    // Ensure match is strictly a number
+    const matchVal = typeof llmRec.match === 'number' ? llmRec.match : parseInt(llmRec.match) || 0;
+
     recommendations.push({
       rank: i + 1,
-      match: Math.max(0, Math.min(100, Math.round(llmRec.match || 0))),
+      match: Math.max(0, Math.min(100, Math.round(matchVal))),
       reasons: Array.isArray(llmRec.reasons) ? llmRec.reasons.slice(0, 3) : [],
       vehicle: {
         id: candidate.id,
@@ -212,23 +174,30 @@ function processLLMRerank(
       }
     });
   }
-  
+
   return recommendations;
 }
 
-// Asegurar que siempre haya 3 recomendaciones, completando desde mejores candidatos restantes
-function ensureThree(recs: FinalRecommendation[], candidates: ScoredCandidate[]): FinalRecommendation[] {
+// Asegurar que siempre haya N recomendaciones, completando desde mejores candidatos restantes
+function ensureMinimum(recs: FinalRecommendation[], candidates: ScoredCandidate[], minCount: number): FinalRecommendation[] {
   const have = new Set(recs.map(r => r.vehicle.id));
-  const missing = Math.max(0, 3 - recs.length);
-  if (missing === 0) return recs.slice(0, 3);
+  const missing = Math.max(0, minCount - recs.length);
+
+  // Si ya tenemos suficientes, devolvemos las que hay (hasta el max buffer)
+  if (missing === 0) return recs;
 
   const extras: FinalRecommendation[] = [];
   for (const c of candidates) {
     if (extras.length >= missing) break;
     if (have.has(c.id)) continue;
+
+    // Asignar score por defecto para los rellenados (o usar su score determinístico si existe algo)
+    // Para UX consistente, usar un match basado en orden relativo o fijo bajo
+    const fallbackMatch = Math.max(10, 50 - (extras.length * 5));
+
     extras.push({
       rank: recs.length + extras.length + 1,
-      match: Math.round(c.score * 100),
+      match: Math.round(fallbackMatch), // Asignar un % aunque sea bajo
       reasons: generateFallbackReasons(c),
       vehicle: {
         id: c.id,
@@ -243,14 +212,17 @@ function ensureThree(recs: FinalRecommendation[], candidates: ScoredCandidate[])
     });
   }
 
-  return [...recs, ...extras].slice(0, 3).map((r, i) => ({ ...r, rank: i + 1 }));
+  return [...recs, ...extras].map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
 // Fallback usando solo scoring determinístico
 function createFallbackRecommendations(candidates: ScoredCandidate[]): FinalRecommendation[] {
-  return candidates.slice(0, 3).map((candidate, index) => ({
+  // Retornar hasta 10 candidatos ordenados por el scoring original (que ahora es dummy 0, ojo)
+  // Como scoring.ts devuelve 0, el orden es el de la DB (normalmente por año reciente)
+  // TODO: Si scoring determinístico fue removido, el orden aquí es arbitrario.
+  return candidates.slice(0, 10).map((candidate, index) => ({
     rank: index + 1,
-    match: Math.round(candidate.score * 100),
+    match: Math.max(10, 90 - (index * 5)), // Fake decay score for fallback
     reasons: generateFallbackReasons(candidate),
     vehicle: {
       id: candidate.id,
@@ -269,31 +241,31 @@ function createFallbackRecommendations(candidates: ScoredCandidate[]): FinalReco
 function generateFallbackReasons(candidate: ScoredCandidate): string[] {
   const reasons: string[] = [];
   const features = candidate.features;
-  
+
   if (features.hill_climb_score > 0.7) {
     reasons.push('Excelente capacidad para subir pendientes');
   }
-  
+
   if (features.efficiency_norm > 0.7) {
     reasons.push('Muy eficiente en consumo de combustible');
   }
-  
+
   if (features.comfort_norm > 0.7) {
     reasons.push('Alto nivel de comodidad');
   }
-  
+
   if (features.potholes_score > 0.7) {
     reasons.push('Resistente para calles en mal estado');
   }
-  
+
   if (features.prestige_norm > 0.7) {
     reasons.push('Marca reconocida y prestigiosa');
   }
-  
+
   if (features.quality_price_ratio_norm > 0.7) {
     reasons.push('Excelente relación calidad-precio');
   }
-  
+
   // Si no hay razones específicas, usar genéricas
   if (reasons.length === 0) {
     reasons.push(
@@ -302,7 +274,6 @@ function generateFallbackReasons(candidate: ScoredCandidate): string[] {
       `Marca ${candidate.brand} reconocida en el mercado`
     );
   }
-  
+
   return reasons.slice(0, 3);
 }
-

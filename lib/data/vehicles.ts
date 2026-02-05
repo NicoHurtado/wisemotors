@@ -3,6 +3,9 @@ import { cache } from 'react';
 
 // Cachear la obtención de un vehículo para evitar dupicados en generateMetadata y page
 export const getVehicle = cache(async (id: string) => {
+  console.log(`[Perf] Fetching vehicle ${id}...`);
+  const start = performance.now();
+
   const vehicle = await prisma.vehicle.findUnique({
     where: { id },
     include: {
@@ -16,6 +19,7 @@ export const getVehicle = cache(async (id: string) => {
       }
     }
   });
+  console.log(`[Perf] Main vehicle query took ${(performance.now() - start).toFixed(2)}ms`);
 
   if (!vehicle) return null;
 
@@ -33,6 +37,8 @@ export const getVehicle = cache(async (id: string) => {
   const minPrice = vehicle.price * 0.7;
   const maxPrice = vehicle.price * 1.3;
 
+  console.log(`[Perf] Fetching similar vehicles...`);
+  const simStart = performance.now();
   // Queries optimized with indexes [status, price] and [type]
   const similarVehicles = await prisma.vehicle.findMany({
     where: {
@@ -62,6 +68,8 @@ export const getVehicle = cache(async (id: string) => {
     },
     take: 6
   });
+  console.log(`[Perf] Similar vehicles query took ${(performance.now() - simStart).toFixed(2)}ms`);
+
 
   const transformedSimilar = similarVehicles.map(v => {
     let vSpecs = v.specifications as any;
@@ -135,6 +143,8 @@ export interface GetVehiclesOptions {
 }
 
 export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
+  console.log('[Perf] Fetching vehicle list...', options);
+  const start = performance.now();
   const {
     search,
     category,
@@ -224,6 +234,7 @@ export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
     }),
     prisma.vehicle.count({ where })
   ]);
+  console.log(`[Perf] List query took ${(performance.now() - start).toFixed(2)}ms. Found ${total} vehicles.`);
 
   // If recommended, limit (Note: original API sliced array AFTER query, which is inefficient but consistent)
   // Better to use 'take' in query, but logic depends on 'recommended' flag being just a filter or a sort?

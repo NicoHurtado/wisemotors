@@ -16,16 +16,16 @@ interface HybridResultsProps {
 export function HybridResults({ results, query, onFilterClick }: HybridResultsProps) {
   const [showMore, setShowMore] = useState(false);
   const [sortBy, setSortBy] = useState<'affinity' | 'price-low' | 'price-high' | 'year-new'>('affinity');
-  
+
   const topRecommendations = results.top_recommendations?.vehicles || [];
   const moreOptions = results.all_matches?.vehicles || [];
   const filtersApplied = results.all_matches?.filters_applied || [];
-  
+
   // Sort more options based on selected criteria
   const sortedMoreOptions = [...moreOptions].sort((a, b) => {
     switch (sortBy) {
       case 'affinity':
-        return (b.affinity || 0) - (a.affinity || 0);
+        return (b.matchPercentage || 0) - (a.matchPercentage || 0);
       case 'price-low':
         return a.price - b.price;
       case 'price-high':
@@ -95,10 +95,10 @@ export function HybridResults({ results, query, onFilterClick }: HybridResultsPr
                 <div className={`absolute -top-3 left-4 z-10 px-3 py-1 rounded-full text-sm font-bold shadow-lg ${getMedalStyle(index + 1)}`}>
                   #{index + 1}
                 </div>
-                
+
                 {/* Affinity Badge */}
                 <div className="absolute -top-3 right-4 z-10 px-3 py-1 rounded-full text-sm font-bold bg-wise text-white shadow-lg">
-                  {vehicle.affinity}% match
+                  {vehicle.matchPercentage}% match
                 </div>
 
                 <div className="pt-6">
@@ -106,14 +106,14 @@ export function HybridResults({ results, query, onFilterClick }: HybridResultsPr
                     vehicle={vehicle}
                     onExplore={(id) => window.location.href = `/vehicles/${id}`}
                     showAffinity={true}
-                    affinityScore={vehicle.affinity}
+                    affinityScore={vehicle.matchPercentage}
                     reasons={vehicle.reasons}
                   />
                 </div>
               </div>
             ))}
           </div>
-        
+
           {/* Filter Buttons dentro de los resultados */}
           {onFilterClick && (
             <div className="mt-8 pt-6 border-t border-gray-200">
@@ -134,7 +134,7 @@ export function HybridResults({ results, query, onFilterClick }: HybridResultsPr
               <TrendingUp className="w-5 h-5 text-wise" />
               Más opciones ({moreOptions.length})
             </h3>
-            
+
             <div className="flex items-center gap-4">
               {/* Sort Options */}
               <select
@@ -176,7 +176,7 @@ export function HybridResults({ results, query, onFilterClick }: HybridResultsPr
                   vehicle={vehicle}
                   onExplore={(id) => window.location.href = `/vehicles/${id}`}
                   showAffinity={true}
-                  affinityScore={vehicle.affinity}
+                  affinityScore={vehicle.matchPercentage}
                 />
               ))}
             </div>
@@ -187,8 +187,8 @@ export function HybridResults({ results, query, onFilterClick }: HybridResultsPr
       {/* Results Summary */}
       <div className="text-center text-sm text-gray-500 border-t pt-4">
         <p>
-          {results.total_matches} vehículos encontrados y analizados • 
-          Procesado en {results.processing_time_ms}ms • 
+          {results.total_matches} vehículos encontrados y analizados •
+          Procesado en {results.processing_time_ms}ms •
           Confianza: {Math.round(results.confidence * 100)}%
         </p>
       </div>
