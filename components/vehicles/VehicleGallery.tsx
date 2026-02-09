@@ -73,9 +73,8 @@ export function VehicleGallery({ images, coverImage, vehicle, className = '' }: 
                     src={image}
                     alt={`Imagen ${(index % allImages.length) + 1}`}
                     fill
-                    quality={100}
-                    unoptimized={true}
                     className="object-cover rounded-lg transition-transform group-hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     onError={(e) => {
                       console.error('Error loading carousel image:', image);
                       e.currentTarget.style.display = 'none';
@@ -141,9 +140,9 @@ export function VehicleGallery({ images, coverImage, vehicle, className = '' }: 
                   src={allImages[currentIndex]}
                   alt={`Vehículo ${currentIndex + 1}`}
                   fill
-                  quality={100}
-                  unoptimized={true}
                   className="object-contain rounded-lg"
+                  sizes="100vw"
+                  priority={true}
                   onError={(e) => {
                     console.error('Error loading modal image:', allImages[currentIndex]);
                     e.currentTarget.style.display = 'none';

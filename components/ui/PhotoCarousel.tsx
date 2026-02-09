@@ -64,9 +64,8 @@ export function PhotoCarousel({
           src={images[0]}
           alt={alt}
           fill
-          quality={100}
-          unoptimized={true}
           className="object-cover"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           onError={(e) => {
             console.error('Error loading image:', images[0]);
             e.currentTarget.style.display = 'none';
@@ -83,9 +82,8 @@ export function PhotoCarousel({
         src={images[currentIndex]}
         alt={`${alt} - Imagen ${currentIndex + 1}`}
         fill
-        quality={100}
-        unoptimized={true}
         className="object-cover transition-transform duration-300 group-hover:scale-105"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         onError={(e) => {
           console.error('Error loading image:', images[currentIndex]);
           e.currentTarget.style.display = 'none';

@@ -3,10 +3,11 @@ import { cache } from 'react';
 
 // Cachear la obtención de un vehículo para evitar dupicados en generateMetadata y page
 export const getVehicle = cache(async (id: string) => {
-  console.log(`[Perf] Fetching vehicle ${id}...`);
-  const start = performance.now();
+  const startTotal = performance.now();
+  console.log(`[Perf] getVehicle(${id}) started`);
 
-  const vehicle = await prisma.vehicle.findUnique({
+  // 1. Fetch main vehicle with related data
+  const vehiclePromise = prisma.vehicle.findUnique({
     where: { id },
     include: {
       images: {
@@ -19,9 +20,18 @@ export const getVehicle = cache(async (id: string) => {
       }
     }
   });
-  console.log(`[Perf] Main vehicle query took ${(performance.now() - start).toFixed(2)}ms`);
 
-  if (!vehicle) return null;
+  // Wait for vehicle first to get type/price for similar vehicles query logic
+  // Optimizing strictly parallel is hard if similar depends on main vehicle data.
+  // BUT, we can at least measure the main vehicle fetch time.
+  const startMain = performance.now();
+  const vehicle = await vehiclePromise;
+  console.log(`[Perf] Main vehicle query took ${(performance.now() - startMain).toFixed(2)}ms`);
+
+  if (!vehicle) {
+    console.log(`[Perf] Vehicle not found. Total time: ${(performance.now() - startTotal).toFixed(2)}ms`);
+    return null;
+  }
 
   // Parse specifications safely
   let parsedSpecs = vehicle.specifications as any;
@@ -33,12 +43,13 @@ export const getVehicle = cache(async (id: string) => {
     }
   }
 
-  // Fetch similar vehicles efficiently
+  // 2. Fetch similar vehicles efficiently
   const minPrice = vehicle.price * 0.7;
   const maxPrice = vehicle.price * 1.3;
 
   console.log(`[Perf] Fetching similar vehicles...`);
   const simStart = performance.now();
+
   // Queries optimized with indexes [status, price] and [type]
   const similarVehicles = await prisma.vehicle.findMany({
     where: {
@@ -56,7 +67,7 @@ export const getVehicle = cache(async (id: string) => {
       fuelType: true, // Use raw field
       type: true,
       status: true,
-      specifications: true, // Needed if we parse it later, but for card usually not needed?
+      specifications: true,
       images: {
         take: 1,
         orderBy: { order: 'asc' },
@@ -66,7 +77,7 @@ export const getVehicle = cache(async (id: string) => {
     orderBy: {
       price: 'asc' // Use index
     },
-    take: 6
+    take: 1
   });
   console.log(`[Perf] Similar vehicles query took ${(performance.now() - simStart).toFixed(2)}ms`);
 
@@ -91,7 +102,7 @@ export const getVehicle = cache(async (id: string) => {
     };
   });
 
-  return {
+  const result = {
     ...vehicle,
     fuel: vehicle.fuelType.toUpperCase(),
     imageUrl: vehicle.images?.[0]?.url || null,
@@ -127,6 +138,9 @@ export const getVehicle = cache(async (id: string) => {
         { id: '3', label: 'Alto rendimiento', description: 'Rendimiento deportivo excepcional' }
       ]
   };
+
+  console.log(`[Perf] getVehicle total time: ${(performance.now() - startTotal).toFixed(2)}ms`);
+  return result;
 });
 
 export interface GetVehiclesOptions {
@@ -206,35 +220,43 @@ export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
     default: orderBy.createdAt = 'desc'; break;
   }
 
-  const [vehicles, total] = await Promise.all([
-    prisma.vehicle.findMany({
-      where,
-      skip,
-      take: pageSize,
-      orderBy,
-      select: {
-        id: true,
-        brand: true,
-        model: true,
-        year: true,
-        price: true,
-        fuelType: true,
-        type: true,
-        status: true,
-        images: {
-          orderBy: { order: 'asc' },
-          take: 5,
-          select: {
-            url: true,
-            type: true,
-            isThumbnail: true
-          }
+  // Consulta principal - SPLIT FOR DEBUGGING
+  console.log(`[Perf] API getVehicles: Starting findMany...`);
+  const startFind = performance.now();
+  const vehicles = await prisma.vehicle.findMany({
+    where,
+    skip,
+    take: pageSize,
+    orderBy,
+    select: {
+      id: true,
+      brand: true,
+      model: true,
+      year: true,
+      price: true,
+      fuelType: true,
+      type: true,
+      status: true,
+      images: {
+        orderBy: { order: 'asc' },
+        take: 1,
+        select: {
+          url: true,
+          type: true,
+          isThumbnail: true
         }
       }
-    }),
-    prisma.vehicle.count({ where })
-  ]);
-  console.log(`[Perf] List query took ${(performance.now() - start).toFixed(2)}ms. Found ${total} vehicles.`);
+    }
+  });
+  console.log(`[Perf] API getVehicles: findMany took ${(performance.now() - startFind).toFixed(2)}ms`);
+
+  console.log(`[Perf] API getVehicles: Starting count...`);
+  const startCount = performance.now();
+  const total = await prisma.vehicle.count({ where });
+  console.log(`[Perf] API getVehicles: count took ${(performance.now() - startCount).toFixed(2)}ms`);
+
+
+  console.log(`[Perf] API getVehicles Total query time: ${(performance.now() - start).toFixed(2)}ms. Found ${total} vehicles.`);
 
   // If recommended, limit (Note: original API sliced array AFTER query, which is inefficient but consistent)
   // Better to use 'take' in query, but logic depends on 'recommended' flag being just a filter or a sort?

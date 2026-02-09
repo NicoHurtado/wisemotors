@@ -95,8 +95,9 @@ export function VehicleCard({
   const displayThumbnail = useVehicleImage(displayThumbnailUrl, vehicle.brand, vehicle.model);
 
   // Si hay múltiples imágenes de galería, usar el carrusel, sino usar la imagen estática
+  // Optimization: limit the number of images passed to the carousel in the list view to 5
   const hasMultipleImages = vehicleImages.length > 1;
-  const displayImages = hasMultipleImages ? vehicleImages : [displayThumbnail];
+  const displayImages = hasMultipleImages ? vehicleImages.slice(0, 5) : [displayThumbnail];
 
   return (
     <Card
@@ -140,10 +141,10 @@ export function VehicleCard({
             <Badge
               variant="wise"
               className={`text-xs ${affinityScore >= 80
-                  ? 'bg-green-500 text-white'
-                  : affinityScore >= 60
-                    ? 'bg-yellow-500 text-white'
-                    : 'bg-red-500 text-white'
+                ? 'bg-green-500 text-white'
+                : affinityScore >= 60
+                  ? 'bg-yellow-500 text-white'
+                  : 'bg-red-500 text-white'
                 }`}
             >
               {affinityScore}% match
@@ -157,12 +158,12 @@ export function VehicleCard({
             <Badge
               variant="wise"
               className={`text-xs ${matchPercentage >= 90
-                  ? 'bg-green-500 text-white'
-                  : matchPercentage >= 75
-                    ? 'bg-blue-500 text-white'
-                    : matchPercentage >= 60
-                      ? 'bg-yellow-500 text-white'
-                      : 'bg-orange-500 text-white'
+                ? 'bg-green-500 text-white'
+                : matchPercentage >= 75
+                  ? 'bg-blue-500 text-white'
+                  : matchPercentage >= 60
+                    ? 'bg-yellow-500 text-white'
+                    : 'bg-orange-500 text-white'
                 }`}
             >
               {matchPercentage}% coincidencia

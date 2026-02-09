@@ -131,6 +131,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Consulta principal
+    console.log(`[Perf] API /api/vehicles query started`);
+    const start = performance.now();
     const [vehicles, total] = await Promise.all([
       prisma.vehicle.findMany({
         where,
@@ -148,7 +150,7 @@ export async function GET(request: NextRequest) {
           status: true,
           images: {
             orderBy: { order: 'asc' },
-            take: 5, // Limitamos a 5 imágenes para el carrusel de vista previa
+            take: 1, // Limitamos a 1 imagen para la vista de lista
             select: {
               url: true,
               type: true,
@@ -159,6 +161,7 @@ export async function GET(request: NextRequest) {
       }),
       prisma.vehicle.count({ where })
     ]);
+    console.log(`[Perf] API /api/vehicles query took ${(performance.now() - start).toFixed(2)}ms. Found ${vehicles.length} vehicles.`);
 
     // Si es recomendado, limitar a 3
     if (recommended === '1') {

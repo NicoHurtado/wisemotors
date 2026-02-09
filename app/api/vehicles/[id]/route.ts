@@ -82,7 +82,7 @@ export async function GET(
         // así que ordenamos por precio y luego reordenamos ligero en memoria si es necesario)
         price: 'asc'
       },
-      take: 6 // Limitar a 6 resultados directos
+      take: 1
     });
 
     // Parsear specifications de vehículos similares también
