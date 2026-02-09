@@ -1,23 +1,29 @@
 import { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://wisemotors.ai'
 
-  // Fetch all vehicles to create dynamic routes
-  const vehicles = await prisma.vehicle.findMany({
-    select: {
-      id: true,
-      updatedAt: true,
-    },
-  })
-
-  const vehicleUrls = vehicles.map((vehicle) => ({
-    url: `${baseUrl}/vehicles/${vehicle.id}`,
-    lastModified: vehicle.updatedAt,
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }))
+  let vehicleUrls: MetadataRoute.Sitemap = []
+  try {
+    // Fetch all vehicles to create dynamic routes (may fail during build if DB unreachable)
+    const vehicles = await prisma.vehicle.findMany({
+      select: {
+        id: true,
+        updatedAt: true,
+      },
+    })
+    vehicleUrls = vehicles.map((vehicle) => ({
+      url: `${baseUrl}/vehicles/${vehicle.id}`,
+      lastModified: vehicle.updatedAt,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }))
+  } catch {
+    // DB unreachable (e.g. during build) - use static URLs only
+  }
 
   const staticUrls = [
     {
