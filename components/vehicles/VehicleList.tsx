@@ -15,14 +15,18 @@ interface VehicleListProps {
   error?: string | null;
   sortBy?: string;
   onSortChange?: (sortBy: string) => void;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
 }
 
-export function VehicleList({ 
-  vehicles, 
-  loading = false, 
-  error = null, 
+export function VehicleList({
+  vehicles,
+  loading = false,
+  error = null,
   sortBy: externalSortBy = 'price-high',
-  onSortChange 
+  onSortChange,
+  hasMore = false,
+  onLoadMore
 }: VehicleListProps) {
   const router = useRouter();
   const [sortBy, setSortBy] = useState(externalSortBy);
@@ -40,7 +44,7 @@ export function VehicleList({
 
   const getSortedVehicles = () => {
     const sorted = [...vehicles];
-    
+
     switch (sortBy) {
       case 'price-low':
         return sorted.sort((a, b) => a.price - b.price);
@@ -60,7 +64,7 @@ export function VehicleList({
         <h1 className="text-3xl font-bold text-gray-900">
           Explora Nuestros Vehículos
         </h1>
-        
+
         {/* Sort Dropdown */}
         <div className="relative">
           <Button
@@ -71,7 +75,7 @@ export function VehicleList({
             Ordenar por: {SORT_OPTIONS.find(opt => opt.value === sortBy)?.label}
             <ChevronDown className="w-4 h-4 ml-2" />
           </Button>
-          
+
           {showSortDropdown && (
             <div className="absolute top-full right-0 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10">
               {SORT_OPTIONS.map((option) => (
@@ -83,9 +87,8 @@ export function VehicleList({
                     setShowSortDropdown(false);
                     onSortChange?.(newSortBy);
                   }}
-                  className={`w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors ${
-                    sortBy === option.value ? 'bg-wise/10 text-wise' : 'text-gray-700'
-                  }`}
+                  className={`w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors ${sortBy === option.value ? 'bg-wise/10 text-wise' : 'text-gray-700'
+                    }`}
                 >
                   {option.label}
                 </button>
@@ -149,9 +152,30 @@ export function VehicleList({
         </div>
       )}
 
-      {/* Results Count */}
-      <div className="text-sm text-gray-500 text-center">
-        Mostrando {sortedVehicles.length} vehículo{sortedVehicles.length !== 1 ? 's' : ''}
+      {/* Results Count and Load More */}
+      <div className="flex flex-col items-center gap-4 py-8">
+        <div className="text-sm text-gray-500">
+          Mostrando {vehicles.length} vehículo{vehicles.length !== 1 ? 's' : ''}
+        </div>
+
+        {hasMore && (
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={onLoadMore}
+            disabled={loading}
+            className="min-w-[200px] border-wise text-wise hover:bg-wise hover:text-white transition-all transform hover:scale-105 active:scale-95"
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                Cargando...
+              </>
+            ) : (
+              'Cargar más vehículos'
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );

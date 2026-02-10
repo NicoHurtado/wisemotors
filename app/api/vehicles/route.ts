@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
 
     // Paginación
     const pageNumber = parseInt(page);
-    const pageSize = limit ? parseInt(limit) : 12;
+    const pageSize = limit ? parseInt(limit) : 9;
     const skip = (pageNumber - 1) * pageSize;
 
     // Ordenamiento con conversión de parámetros del frontend
@@ -150,10 +150,11 @@ export async function GET(request: NextRequest) {
           status: true,
           images: {
             orderBy: { order: 'asc' },
-            take: 1, // Limitamos a 1 imagen para la vista de lista
+            take: 1, // Solo necesitamos saber cuántas hay o tener la referencia
             select: {
-              url: true,
+              id: true,
               type: true,
+              order: true,
               isThumbnail: true
             }
           }
@@ -263,7 +264,14 @@ export async function POST(request: NextRequest) {
     const createdVehicle = await prisma.vehicle.findUnique({
       where: { id: result.id },
       include: {
-        images: true,
+        images: {
+          select: {
+            id: true,
+            type: true,
+            order: true,
+            isThumbnail: true
+          }
+        },
         vehicleDealers: {
           include: {
             dealer: true

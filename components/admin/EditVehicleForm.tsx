@@ -466,8 +466,14 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
                 .sort((a: any, b: any) => a.order - b.order)
                 .findIndex((img: any) => img.id === thumbnailImg.id) : 0;
 
-            setCoverImage(coverImg?.url || '');
-            setGalleryImages(galleryImgs);
+            const galleryImagesData = vehicleData.images.filter((img: any) => img.type === 'gallery').sort((a: any, b: any) => a.order - b.order);
+            const coverIdx = vehicleData.images.indexOf(coverImg);
+
+            setCoverImage(coverImg ? `/api/vehicles/${vehicleId}/image?index=${coverIdx}` : '');
+            setGalleryImages(galleryImagesData.map((_: any, i: number) => {
+              const globalIdx = vehicleData.images.indexOf(galleryImagesData[i]);
+              return `/api/vehicles/${vehicleId}/image?index=${globalIdx}`;
+            }));
             setThumbnailIndex(thumbnailIdx >= 0 ? thumbnailIdx : 0);
           }
         }

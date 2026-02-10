@@ -24,7 +24,7 @@ export function VehicleGallery({ images, coverImage, vehicle, className = '' }: 
     finalImages = vehicle.images
       .filter((img: any) => img.type === 'gallery')
       .sort((a: any, b: any) => a.order - b.order)
-      .map((img: any) => img.url);
+      .map((img: any) => `/api/vehicles/${vehicle.id}/image?index=${img.order - 1}`);
   }
 
   // Usar solo las imágenes de galería

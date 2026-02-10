@@ -12,7 +12,13 @@ export async function GET(
       where: { id: params.id },
       include: {
         images: {
-          orderBy: { order: 'asc' }
+          orderBy: { order: 'asc' },
+          select: {
+            id: true,
+            type: true,
+            order: true,
+            isThumbnail: true
+          }
         },
         vehicleDealers: {
           include: {
@@ -72,8 +78,10 @@ export async function GET(
           take: 1, // Solo la primera imagen
           orderBy: { order: 'asc' },
           select: {
-            url: true,
-            type: true
+            id: true,
+            type: true,
+            order: true,
+            isThumbnail: true
           }
         }
       },
@@ -184,19 +192,42 @@ export async function PUT(
 
       // 3. Manejar imágenes si están presentes
       if (coverImage !== undefined || galleryImages !== undefined) {
-        // Eliminar imágenes existentes
+        // Obtener imágenes actuales para poder preservarlas
+        const existingImages = await tx.vehicleImage.findMany({
+          where: { vehicleId: params.id },
+          orderBy: { order: 'asc' }
+        });
+
+        // Eliminar imágenes existentes (se volverán a crear las que se preserven)
         await tx.vehicleImage.deleteMany({
           where: { vehicleId: params.id }
         });
+
+        // Función para obtener el contenido de una imagen existente por su URL de referencia
+        const getExistingImageUrl = (url: string): string | null => {
+          if (!url.startsWith('/api/vehicles/')) return null;
+
+          try {
+            const urlObj = new URL(url, 'http://localhost'); // base ignorada para parsing
+            const indexStr = urlObj.searchParams.get('index');
+            if (indexStr === null) return null;
+
+            const index = parseInt(indexStr);
+            return existingImages[index]?.url || null;
+          } catch (e) {
+            return null;
+          }
+        };
 
         // Crear nuevas imágenes
         const imagesToCreate = [];
 
         // Imagen de portada
         if (coverImage) {
+          const preservedUrl = getExistingImageUrl(coverImage);
           imagesToCreate.push({
             vehicleId: params.id,
-            url: coverImage,
+            url: preservedUrl || coverImage,
             type: 'cover',
             order: 0
           });
@@ -205,9 +236,10 @@ export async function PUT(
         // Imágenes de galería
         if (galleryImages && galleryImages.length > 0) {
           galleryImages.forEach((imageUrl, index) => {
+            const preservedUrl = getExistingImageUrl(imageUrl);
             imagesToCreate.push({
               vehicleId: params.id,
-              url: imageUrl,
+              url: preservedUrl || imageUrl,
               type: 'gallery',
               order: index + 1,
               isThumbnail: thumbnailIndex === index
@@ -230,7 +262,14 @@ export async function PUT(
     const updatedVehicle = await prisma.vehicle.findUnique({
       where: { id: params.id },
       include: {
-        images: true,
+        images: {
+          select: {
+            id: true,
+            type: true,
+            order: true,
+            isThumbnail: true
+          }
+        },
         vehicleDealers: {
           include: {
             dealer: true

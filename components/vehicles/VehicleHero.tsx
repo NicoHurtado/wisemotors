@@ -45,8 +45,7 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
       <div className="relative h-[50vh] sm:h-[60vh] md:h-[70vh] lg:h-screen overflow-hidden bg-gray-800">
         {(() => {
           // Para el detalle del vehículo, usar la imagen de portada (cover)
-          const coverImage = vehicle.images?.find((img: any) => img.type === 'cover')?.url ||
-            vehicle.imageUrl;
+          const coverImage = `/api/vehicles/${vehicle.id}/image?index=0`;
 
           return coverImage ? (
             <Image

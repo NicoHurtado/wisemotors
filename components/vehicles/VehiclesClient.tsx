@@ -13,9 +13,10 @@ import { VehicleCard as HookVehicleCard } from '@/hooks/useVehicles';
 
 interface VehiclesClientProps {
   initialVehicles: HookVehicleCard[];
+  initialTotal: number;
 }
 
-export default function VehiclesClient({ initialVehicles }: VehiclesClientProps) {
+export default function VehiclesClient({ initialVehicles, initialTotal }: VehiclesClientProps) {
   const [filters, setFilters] = useState({
     search: '',
     category: [] as string[],
@@ -25,14 +26,15 @@ export default function VehiclesClient({ initialVehicles }: VehiclesClientProps)
     sortBy: 'relevance'
   });
 
-  const { vehicles, loading, error } = useVehicles({
+  const { vehicles, loading, error, hasMore, loadMore } = useVehicles({
+    limit: 9,
     search: filters.search || undefined,
     category: filters.category.length > 0 ? filters.category : undefined,
     fuelType: filters.fuelType.length > 0 ? filters.fuelType : undefined,
     minPrice: filters.minPrice,
     maxPrice: filters.maxPrice,
     sortBy: filters.sortBy === 'relevance' ? undefined : filters.sortBy
-  }, initialVehicles);
+  }, initialVehicles, initialTotal);
 
   return (
     <div className="bg-gray-50">
@@ -57,6 +59,8 @@ export default function VehiclesClient({ initialVehicles }: VehiclesClientProps)
               error={error}
               sortBy={filters.sortBy}
               onSortChange={(sortBy) => setFilters(prev => ({ ...prev, sortBy }))}
+              hasMore={hasMore}
+              onLoadMore={loadMore}
             />
           </main>
         </div>

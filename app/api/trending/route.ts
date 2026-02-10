@@ -18,6 +18,12 @@ export async function GET() {
         images: {
           orderBy: {
             order: 'asc'
+          },
+          select: {
+            id: true,
+            type: true,
+            order: true,
+            isThumbnail: true
           }
         }
       }
@@ -40,7 +46,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const { vehicleIds } = await request.json();
-    
+
     if (!Array.isArray(vehicleIds) || vehicleIds.length > 6) {
       return NextResponse.json(
         { error: 'Máximo 6 vehículos trending permitidos' },
@@ -61,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     // Luego, agregar trending a los vehículos seleccionados
     if (vehicleIds.length > 0) {
-      const updatePromises = vehicleIds.map((vehicleId, index) => 
+      const updatePromises = vehicleIds.map((vehicleId, index) =>
         prisma.vehicle.update({
           where: { id: vehicleId },
           data: {

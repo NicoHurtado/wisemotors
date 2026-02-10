@@ -106,7 +106,9 @@ export function VehicleCard({
     >
       <div className="relative aspect-[4/3] overflow-hidden">
         <PhotoCarousel
-          images={displayImages}
+          images={hasMultipleImages
+            ? vehicle.images?.map((_, i) => `/api/vehicles/${vehicle.id}/image?index=${i}`) || []
+            : [`/api/vehicles/${vehicle.id}/image?index=0`]}
           alt={`${vehicle.brand} ${vehicle.model}`}
           className="w-full h-full"
           showNavigation={hasMultipleImages}

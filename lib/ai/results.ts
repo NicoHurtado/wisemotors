@@ -56,7 +56,17 @@ async function processSubjectiveQuery(intent: CategorizedIntent, startTime: numb
   const vehicles = await prisma.vehicle.findMany({
     take: 60, // Send a healthy batch to the LLM
     orderBy: { year: 'desc' },
-    include: { images: { take: 1 } }
+    include: {
+      images: {
+        take: 1,
+        select: {
+          id: true,
+          type: true,
+          order: true,
+          isThumbnail: true
+        }
+      }
+    }
   });
 
   const marketStats = await getMarketStats();
@@ -73,7 +83,7 @@ async function processSubjectiveQuery(intent: CategorizedIntent, startTime: numb
       fuelType: v.fuelType,
       type: v.type,
       vehicleType: v.vehicleType || 'Unknown',
-      imageUrl: getValidImageUrl(v.images?.[0]?.url) || createImagePlaceholder(v.brand, v.model),
+      imageUrl: `/api/vehicles/${v.id}/image?index=0`,
       score: 0,
       features,
       tags
@@ -150,7 +160,17 @@ async function processObjectiveQuery(intent: CategorizedIntent, startTime: numbe
 
   const vehicles = await prisma.vehicle.findMany({
     where,
-    include: { images: { take: 1 } },
+    include: {
+      images: {
+        take: 1,
+        select: {
+          id: true,
+          type: true,
+          order: true,
+          isThumbnail: true
+        }
+      }
+    },
     take: 100
   });
 
@@ -162,7 +182,7 @@ async function processObjectiveQuery(intent: CategorizedIntent, startTime: numbe
     price: v.price,
     fuelType: v.fuelType,
     type: v.type,
-    imageUrl: getValidImageUrl(v.images?.[0]?.url) || createImagePlaceholder(v.brand, v.model),
+    imageUrl: `/api/vehicles/${v.id}/image?index=0`,
     matchPercentage: 100,
     reasons: ['Coincide con tus filtros']
   }));
@@ -198,7 +218,17 @@ async function processHybridQuery(intent: CategorizedIntent, startTime: number):
 
   const vehicles = await prisma.vehicle.findMany({
     where,
-    include: { images: { take: 1 } },
+    include: {
+      images: {
+        take: 1,
+        select: {
+          id: true,
+          type: true,
+          order: true,
+          isThumbnail: true
+        }
+      }
+    },
     take: 100
   });
 
@@ -217,7 +247,7 @@ async function processHybridQuery(intent: CategorizedIntent, startTime: number):
       fuelType: v.fuelType,
       type: v.type,
       vehicleType: v.vehicleType || 'Unknown',
-      imageUrl: getValidImageUrl(v.images?.[0]?.url) || createImagePlaceholder(v.brand, v.model),
+      imageUrl: `/api/vehicles/${v.id}/image?index=0`,
       score: 0,
       features,
       tags

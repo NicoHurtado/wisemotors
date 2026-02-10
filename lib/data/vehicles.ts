@@ -11,7 +11,13 @@ export const getVehicle = cache(async (id: string) => {
     where: { id },
     include: {
       images: {
-        orderBy: { order: 'asc' }
+        orderBy: { order: 'asc' },
+        select: {
+          id: true,
+          type: true,
+          order: true,
+          isThumbnail: true
+        }
       },
       vehicleDealers: {
         include: {
@@ -71,7 +77,12 @@ export const getVehicle = cache(async (id: string) => {
       images: {
         take: 1,
         orderBy: { order: 'asc' },
-        select: { url: true }
+        select: {
+          id: true,
+          type: true,
+          order: true,
+          isThumbnail: true
+        }
       }
     },
     orderBy: {
@@ -94,7 +105,7 @@ export const getVehicle = cache(async (id: string) => {
       year: v.year,
       price: v.price,
       fuel: v.fuelType?.toUpperCase() || 'GASOLINA',
-      imageUrl: v.images?.[0]?.url || null,
+      imageUrl: `/api/vehicles/${v.id}/image?index=0`,
       category: v.type,
       status: v.status || 'NUEVO',
       type: v.type,
@@ -105,7 +116,7 @@ export const getVehicle = cache(async (id: string) => {
   const result = {
     ...vehicle,
     fuel: vehicle.fuelType.toUpperCase(),
-    imageUrl: vehicle.images?.[0]?.url || null,
+    imageUrl: `/api/vehicles/${vehicle.id}/image?index=0`,
     category: vehicle.type,
     status: vehicle.status || 'NUEVO',
     power: parsedSpecs?.powertrain?.potenciaMaxMotorTermico || parsedSpecs?.powertrain?.potenciaMaxEV,
@@ -166,7 +177,7 @@ export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
     minPrice,
     maxPrice,
     dealerId,
-    limit = 12,
+    limit = 9,
     page = 1,
     sortBy = 'createdAt',
     recommended
@@ -241,8 +252,9 @@ export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
         orderBy: { order: 'asc' },
         take: 1,
         select: {
-          url: true,
+          id: true,
           type: true,
+          order: true,
           isThumbnail: true
         }
       }
@@ -269,10 +281,6 @@ export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
 
   // Transform to match UI expectation (VehicleCard interface)
   const transformedVehicles = resultVehicles.map((vehicle: any) => {
-    const thumbnailImage = vehicle.images?.find((img: any) => img.isThumbnail)?.url ||
-      vehicle.images?.find((img: any) => img.type === 'gallery')?.url ||
-      vehicle.images?.[0]?.url || null;
-
     return {
       id: vehicle.id,
       brand: vehicle.brand,
@@ -280,10 +288,13 @@ export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
       year: vehicle.year,
       price: vehicle.price,
       fuel: vehicle.fuelType.toUpperCase(),
-      imageUrl: thumbnailImage,
+      imageUrl: `/api/vehicles/${vehicle.id}/image?index=0`,
       category: vehicle.type,
       status: vehicle.status || 'NUEVO',
-      images: vehicle.images || []
+      images: vehicle.images?.map((img: any, i: number) => ({
+        ...img,
+        url: `/api/vehicles/${vehicle.id}/image?index=${i}`
+      })) || []
     };
   });
 

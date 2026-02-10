@@ -65,17 +65,43 @@ interface UseVehiclesOptions {
   sortBy?: string;
 }
 
-export function useVehicles(options: UseVehiclesOptions = {}, initialData: VehicleCard[] | null = null) {
+export function useVehicles(
+  options: UseVehiclesOptions = {},
+  initialData: VehicleCard[] | null = null,
+  initialTotal: number = 0
+) {
   const [vehicles, setVehicles] = useState<VehicleCard[]>(initialData || []);
   const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(
+    initialData ? initialData.length < initialTotal : true
+  );
+  const [totalVehicles, setTotalVehicles] = useState(initialTotal);
   const isFirstRun = useRef(true);
+
+  // Reset page when filters change
+  useEffect(() => {
+    if (!isFirstRun.current) {
+      setPage(1);
+      setVehicles([]);
+      setHasMore(true);
+    }
+  }, [
+    options.search,
+    JSON.stringify(options.category),
+    JSON.stringify(options.fuelType),
+    options.minPrice,
+    options.maxPrice,
+    options.sortBy
+  ]);
 
   useEffect(() => {
     const fetchVehicles = async () => {
       // Skiping initial fetch if initialData provided
-      if (isFirstRun.current && initialData) {
+      if (isFirstRun.current && initialData && page === 1) {
         isFirstRun.current = false;
+        // Assume hasMore is true initially or we could check length vs limit
         return;
       }
       isFirstRun.current = false;
@@ -86,6 +112,7 @@ export function useVehicles(options: UseVehiclesOptions = {}, initialData: Vehic
 
         // Construir query params
         const params = new URLSearchParams();
+        params.append('page', page.toString());
         if (options.limit) params.append('limit', options.limit.toString());
         if (options.recommended) params.append('recommended', '1');
         if (options.dealerId) params.append('dealerId', options.dealerId);
@@ -123,10 +150,8 @@ export function useVehicles(options: UseVehiclesOptions = {}, initialData: Vehic
 
         // Transformar datos de la API al formato esperado por la UI
         const transformedVehicles: VehicleCard[] = data.vehicles.map((vehicle: any) => {
-          // Buscar imagen miniatura, si no existe usar la primera de galería
-          const thumbnailImage = vehicle.images?.find((img: any) => img.isThumbnail)?.url ||
-            vehicle.images?.find((img: any) => img.type === 'gallery')?.url ||
-            vehicle.images?.[0]?.url || null;
+          // Utilizar el nuevo endpoint de imágenes para el thumbnail
+          const imageUrl = `/api/vehicles/${vehicle.id}/image?index=0`;
 
           return {
             id: vehicle.id,
@@ -135,14 +160,27 @@ export function useVehicles(options: UseVehiclesOptions = {}, initialData: Vehic
             year: vehicle.year,
             price: vehicle.price,
             fuel: vehicle.fuelType.toUpperCase() as any,
-            imageUrl: thumbnailImage,
+            imageUrl: imageUrl,
             category: vehicle.type,
             status: vehicle.status || 'NUEVO',
             images: vehicle.images || [] // Pasar todas las imágenes
           };
         });
 
-        setVehicles(transformedVehicles);
+        if (page === 1) {
+          setVehicles(transformedVehicles);
+        } else {
+          setVehicles(prev => [...prev, ...transformedVehicles]);
+        }
+
+        setTotalVehicles(data.total || 0);
+        setHasMore(transformedVehicles.length > 0 && vehicles.length + transformedVehicles.length < (data.total || 0));
+
+        // If we got fewer than the limit, we probably hit the end
+        if (transformedVehicles.length < (options.limit || 9)) {
+          setHasMore(false);
+        }
+
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error desconocido');
         console.error('Error fetching vehicles:', err);
@@ -153,19 +191,25 @@ export function useVehicles(options: UseVehiclesOptions = {}, initialData: Vehic
 
     fetchVehicles();
   }, [
+    page,
     options.limit,
     options.recommended,
     options.dealerId,
     options.search,
-    JSON.stringify(options.category), // Fix for array dependency stability
-    JSON.stringify(options.fuelType), // Fix for array dependency stability
+    JSON.stringify(options.category),
+    JSON.stringify(options.fuelType),
     options.minPrice,
     options.maxPrice,
-    options.sortBy,
-    initialData // Add initialData to dependency to be safe, though mainly for the ref check
+    options.sortBy
   ]);
 
-  return { vehicles, loading, error };
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      setPage(prev => prev + 1);
+    }
+  };
+
+  return { vehicles, loading, error, hasMore, loadMore, totalVehicles };
 }
 
 

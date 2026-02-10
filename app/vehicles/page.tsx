@@ -14,10 +14,10 @@ export default async function VehiclesPage() {
   // The original page initializes with empty filters.
   // So we fetch the default list (relevance/latest).
 
-  const { vehicles } = await getVehicles({
-    limit: 12,
-    sortBy: 'createdAt' // 'relevance' maps to createdAt desc in API/lib
+  const { vehicles, pagination } = await getVehicles({
+    limit: 9,
+    sortBy: 'createdAt'
   });
 
-  return <VehiclesClient initialVehicles={vehicles} />;
+  return <VehiclesClient initialVehicles={vehicles} initialTotal={pagination.total} />;
 }
