@@ -29,38 +29,40 @@ export function ImageUpload({
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    const newImages = [...images];
     const remainingSlots = maxImages - images.length;
     const filesToProcess = Array.from(files).slice(0, remainingSlots);
 
     setUploading(true);
 
     try {
+      // Upload files to Cloudinary via API
+      const formData = new FormData();
       for (const file of filesToProcess) {
-        // Convertir a base64 para simular subida
-        const base64 = await convertToBase64(file);
-        newImages.push(base64);
+        formData.append('files', file);
       }
-      
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al subir las imágenes');
+      }
+
+      const data = await response.json();
+      const newImages = [...images, ...data.urls];
       onImagesChange(newImages);
     } catch (error) {
       console.error('Error uploading images:', error);
-      alert('Error al subir las imágenes');
+      alert(error instanceof Error ? error.message : 'Error al subir las imágenes');
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
-  };
-
-  const convertToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
   };
 
   const removeImage = (index: number) => {
@@ -95,7 +97,7 @@ export function ImageUpload({
           )}
           <p className="mt-2 text-sm text-gray-500">
             {uploading 
-              ? 'Subiendo...' 
+              ? 'Subiendo a Cloudinary...' 
               : `Haz clic para subir ${type === 'cover' ? 'foto de portada' : 'fotos de galería'}`
             }
           </p>
@@ -172,7 +174,7 @@ export function ImageUpload({
       {/* Información adicional */}
       <div className="text-xs text-gray-500">
         <p>Formatos soportados: JPG, PNG, WebP</p>
-        <p>Tamaño máximo: 5MB por imagen</p>
+        <p>Tamaño máximo: 10MB por imagen</p>
         {type === 'gallery' && (
           <p>Puedes subir hasta {maxImages} imágenes para la galería</p>
         )}
@@ -180,4 +182,3 @@ export function ImageUpload({
     </div>
   );
 }
-

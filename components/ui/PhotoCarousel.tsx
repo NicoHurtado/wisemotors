@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -13,7 +13,7 @@ interface PhotoCarouselProps {
   autoPlayInterval?: number;
 }
 
-export function PhotoCarousel({
+export const PhotoCarousel = React.memo(function PhotoCarousel({
   images,
   alt,
   className = '',
@@ -58,6 +58,7 @@ export function PhotoCarousel({
   }
 
   if (images.length === 1) {
+    const isExternal = images[0]?.startsWith('http');
     return (
       <div className={`relative overflow-hidden ${className}`}>
         <Image
@@ -66,8 +67,9 @@ export function PhotoCarousel({
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          unoptimized={!isExternal}
+          loading="lazy"
           onError={(e) => {
-            console.error('Error loading image:', images[0]);
             e.currentTarget.style.display = 'none';
           }}
         />
@@ -84,8 +86,9 @@ export function PhotoCarousel({
         fill
         className="object-cover transition-transform duration-300 group-hover:scale-105"
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        unoptimized={!images[currentIndex]?.startsWith('http')}
+        loading="lazy"
         onError={(e) => {
-          console.error('Error loading image:', images[currentIndex]);
           e.currentTarget.style.display = 'none';
         }}
       />
@@ -137,4 +140,4 @@ export function PhotoCarousel({
       )}
     </div>
   );
-}
+});

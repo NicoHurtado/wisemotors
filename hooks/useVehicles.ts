@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 
 export interface VehicleCard {
   id: string;
@@ -58,11 +58,18 @@ interface UseVehiclesOptions {
   recommended?: boolean;
   dealerId?: string;
   search?: string;
-  category?: string | string[]; // Ahora soporta múltiples categorías
-  fuelType?: string | string[]; // Ahora soporta múltiples tipos de combustible
+  category?: string | string[];
+  fuelType?: string | string[];
   minPrice?: number;
   maxPrice?: number;
   sortBy?: string;
+}
+
+// Stable serialization for array/string options
+function stableKey(val: string | string[] | undefined): string {
+  if (!val) return '';
+  if (Array.isArray(val)) return val.slice().sort().join(',');
+  return val;
 }
 
 export function useVehicles(
@@ -79,6 +86,12 @@ export function useVehicles(
   );
   const [totalVehicles, setTotalVehicles] = useState(initialTotal);
   const isFirstRun = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Create stable dependency keys
+  const categoryKey = stableKey(options.category);
+  const fuelTypeKey = stableKey(options.fuelType);
 
   // Reset page when filters change
   useEffect(() => {
@@ -89,19 +102,18 @@ export function useVehicles(
     }
   }, [
     options.search,
-    JSON.stringify(options.category),
-    JSON.stringify(options.fuelType),
+    categoryKey,
+    fuelTypeKey,
     options.minPrice,
     options.maxPrice,
     options.sortBy
   ]);
 
   useEffect(() => {
-    const fetchVehicles = async () => {
-      // Skiping initial fetch if initialData provided
+    const fetchVehicles = async (signal: AbortSignal) => {
+      // Skip initial fetch if initialData provided
       if (isFirstRun.current && initialData && page === 1) {
         isFirstRun.current = false;
-        // Assume hasMore is true initially or we could check length vs limit
         return;
       }
       isFirstRun.current = false;
@@ -110,7 +122,6 @@ export function useVehicles(
         setLoading(true);
         setError(null);
 
-        // Construir query params
         const params = new URLSearchParams();
         params.append('page', page.toString());
         if (options.limit) params.append('limit', options.limit.toString());
@@ -118,29 +129,21 @@ export function useVehicles(
         if (options.dealerId) params.append('dealerId', options.dealerId);
         if (options.search) params.append('search', options.search);
 
-        // Agregar múltiples categorías
         if (options.category) {
-          if (Array.isArray(options.category)) {
-            options.category.forEach(cat => params.append('category', cat));
-          } else {
-            params.append('category', options.category);
-          }
+          const cats = Array.isArray(options.category) ? options.category : [options.category];
+          cats.forEach(cat => params.append('category', cat));
         }
 
-        // Agregar múltiples tipos de combustible
         if (options.fuelType) {
-          if (Array.isArray(options.fuelType)) {
-            options.fuelType.forEach(fuel => params.append('fuelType', fuel));
-          } else {
-            params.append('fuelType', options.fuelType);
-          }
+          const fuels = Array.isArray(options.fuelType) ? options.fuelType : [options.fuelType];
+          fuels.forEach(fuel => params.append('fuelType', fuel));
         }
 
         if (options.minPrice) params.append('minPrice', options.minPrice.toString());
         if (options.maxPrice) params.append('maxPrice', options.maxPrice.toString());
         if (options.sortBy) params.append('sortBy', options.sortBy);
 
-        const response = await fetch(`/api/vehicles?${params.toString()}`);
+        const response = await fetch(`/api/vehicles?${params.toString()}`, { signal });
 
         if (!response.ok) {
           throw new Error('Error al cargar los vehículos');
@@ -148,10 +151,11 @@ export function useVehicles(
 
         const data = await response.json();
 
-        // Transformar datos de la API al formato esperado por la UI
         const transformedVehicles: VehicleCard[] = data.vehicles.map((vehicle: any) => {
-          // Utilizar el nuevo endpoint de imágenes para el thumbnail
-          const imageUrl = `/api/vehicles/${vehicle.id}/image?index=0`;
+          const firstImage = vehicle.images?.[0];
+          const imageUrl = firstImage?.url?.startsWith('http')
+            ? firstImage.url
+            : `/api/vehicles/${vehicle.id}/image?index=0`;
 
           return {
             id: vehicle.id,
@@ -160,10 +164,13 @@ export function useVehicles(
             year: vehicle.year,
             price: vehicle.price,
             fuel: vehicle.fuelType.toUpperCase() as any,
-            imageUrl: imageUrl,
+            imageUrl,
             category: vehicle.type,
             status: vehicle.status || 'NUEVO',
-            images: vehicle.images || [] // Pasar todas las imágenes
+            images: (vehicle.images || []).map((img: any) => ({
+              ...img,
+              url: img.url?.startsWith('http') ? img.url : `/api/vehicles/${vehicle.id}/image?index=${img.order}`
+            }))
           };
         });
 
@@ -173,41 +180,61 @@ export function useVehicles(
           setVehicles(prev => [...prev, ...transformedVehicles]);
         }
 
-        setTotalVehicles(data.total || 0);
-        setHasMore(transformedVehicles.length > 0 && vehicles.length + transformedVehicles.length < (data.total || 0));
-
-        // If we got fewer than the limit, we probably hit the end
-        if (transformedVehicles.length < (options.limit || 9)) {
-          setHasMore(false);
-        }
+        setTotalVehicles(data.pagination?.total || data.total || 0);
+        const newTotal = page === 1 ? transformedVehicles.length : vehicles.length + transformedVehicles.length;
+        setHasMore(transformedVehicles.length >= (options.limit || 9) && newTotal < (data.pagination?.total || data.total || 0));
 
       } catch (err) {
+        if ((err as Error).name === 'AbortError') return; // Cancelled, ignore
         setError(err instanceof Error ? err.message : 'Error desconocido');
-        console.error('Error fetching vehicles:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchVehicles();
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Debounce filter changes (not page changes)
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    // Immediate fetch for page changes, debounced for filter changes
+    const delay = page > 1 ? 0 : 150;
+    debounceTimerRef.current = setTimeout(() => {
+      fetchVehicles(controller.signal);
+    }, delay);
+
+    return () => {
+      controller.abort();
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [
     page,
     options.limit,
     options.recommended,
     options.dealerId,
     options.search,
-    JSON.stringify(options.category),
-    JSON.stringify(options.fuelType),
+    categoryKey,
+    fuelTypeKey,
     options.minPrice,
     options.maxPrice,
     options.sortBy
   ]);
 
-  const loadMore = () => {
+  const loadMore = useCallback(() => {
     if (!loading && hasMore) {
       setPage(prev => prev + 1);
     }
-  };
+  }, [loading, hasMore]);
 
   return { vehicles, loading, error, hasMore, loadMore, totalVehicles };
 }
@@ -219,12 +246,14 @@ export function useVehicle(id: string) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchVehicle = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/vehicles/${id}`);
+        const response = await fetch(`/api/vehicles/${id}`, { signal: controller.signal });
 
         if (!response.ok) {
           throw new Error('Error al cargar el vehículo');
@@ -232,15 +261,11 @@ export function useVehicle(id: string) {
 
         const data = await response.json();
 
-        // Transformar datos de la API al formato esperado por la UI
-
-        // Parsear specifications si es un string (ya viene parseado desde la API, pero asegurarse)
         let parsedSpecs = data.specifications;
         if (typeof parsedSpecs === 'string') {
           try {
             parsedSpecs = JSON.parse(parsedSpecs);
           } catch (e) {
-            console.error('Error parsing specifications:', e);
             parsedSpecs = {};
           }
         }
@@ -253,62 +278,43 @@ export function useVehicle(id: string) {
           price: data.price,
           fuel: data.fuelType.toUpperCase() as any,
           imageUrl: data.images?.[0]?.url || null,
-          images: data.images || [], // Agregar las imágenes completas
+          images: data.images || [],
           category: data.type,
           status: data.status || 'NUEVO',
           power: parsedSpecs?.powertrain?.potenciaMaxMotorTermico || parsedSpecs?.powertrain?.potenciaMaxEV,
           engine: parsedSpecs?.powertrain?.cilindrada,
           acceleration: parsedSpecs?.performance?.acceleration0to100,
           cityConsumption: parsedSpecs?.efficiency?.consumoCiudad,
-          rating: 4.3, // Valor por defecto
+          rating: 4.3,
           slogan: `${data.brand} ${data.model} - Experiencia de conducción excepcional`,
           dealerships: data.vehicleDealers?.map((vd: any) => ({
             id: vd.dealer.id,
             name: vd.dealer.name,
             location: vd.dealer.location
           })) || [],
-          // Pasar las specifications directamente sin transformar
           specifications: parsedSpecs || {},
           wisemetrics: parsedSpecs?.wisemetrics || null,
-          // Pasar también fuelType y vehicleType para uso en el componente
           fuelType: data.fuelType,
           vehicleType: data.vehicleType,
           type: data.type,
           reviewVideoUrl: data.reviewVideoUrl,
           categories: (() => {
-            // Si hay categorías personalizadas, usarlas
             if (data.wiseCategories) {
-              const customCategories = data.wiseCategories.split(',').map((cat: string, index: number) => ({
+              return data.wiseCategories.split(',').map((cat: string, index: number) => ({
                 id: (index + 1).toString(),
                 label: cat.trim(),
                 description: `Categoría personalizada: ${cat.trim()}`
               }));
-              return customCategories;
             }
-
-            // Categorías por defecto si no hay personalizadas
             return [
-              {
-                id: '1',
-                label: data.type || 'Automóvil',
-                description: 'Vehículo de alta calidad'
-              },
-              {
-                id: '2',
-                label: 'Excelente para diario',
-                description: 'Perfecto para uso diario'
-              },
-              {
-                id: '3',
-                label: 'Alto rendimiento',
-                description: 'Rendimiento deportivo excepcional'
-              }
+              { id: '1', label: data.type || 'Automóvil', description: 'Vehículo de alta calidad' },
+              { id: '2', label: 'Excelente para diario', description: 'Perfecto para uso diario' },
+              { id: '3', label: 'Alto rendimiento', description: 'Rendimiento deportivo excepcional' }
             ];
           })(),
           similarVehicles: []
         };
 
-        // Usar vehículos similares que ya vienen del API (algoritmo mejorado)
         if (data.similarVehicles && Array.isArray(data.similarVehicles)) {
           transformedVehicle.similarVehicles = data.similarVehicles.map((vehicle: any) => ({
             id: vehicle.id,
@@ -325,11 +331,10 @@ export function useVehicle(id: string) {
           }));
         }
 
-
         setVehicle(transformedVehicle);
       } catch (err) {
+        if ((err as Error).name === 'AbortError') return;
         setError(err instanceof Error ? err.message : 'Error desconocido');
-        console.error('Error fetching vehicle:', err);
       } finally {
         setLoading(false);
       }
@@ -338,6 +343,8 @@ export function useVehicle(id: string) {
     if (id) {
       fetchVehicle();
     }
+
+    return () => controller.abort();
   }, [id]);
 
   return { vehicle, loading, error };
@@ -350,28 +357,25 @@ export function useCategories() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchCategories = async () => {
       try {
         setLoading(true);
-        setError(null);
-
-        const response = await fetch('/api/vehicles?getCategories=true');
-
-        if (!response.ok) {
-          throw new Error('Error al cargar las categorías');
-        }
-
+        const response = await fetch('/api/vehicles?getCategories=true', { signal: controller.signal });
+        if (!response.ok) throw new Error('Error al cargar las categorías');
         const data = await response.json();
         setCategories(data.categories || []);
       } catch (err) {
+        if ((err as Error).name === 'AbortError') return;
         setError(err instanceof Error ? err.message : 'Error desconocido');
-        console.error('Error fetching categories:', err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCategories();
+    return () => controller.abort();
   }, []);
 
   return { categories, loading, error };
@@ -384,28 +388,25 @@ export function useFuelTypes() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchFuelTypes = async () => {
       try {
         setLoading(true);
-        setError(null);
-
-        const response = await fetch('/api/vehicles?getFuelTypes=true');
-
-        if (!response.ok) {
-          throw new Error('Error al cargar los tipos de combustible');
-        }
-
+        const response = await fetch('/api/vehicles?getFuelTypes=true', { signal: controller.signal });
+        if (!response.ok) throw new Error('Error al cargar los tipos de combustible');
         const data = await response.json();
         setFuelTypes(data.fuelTypes || []);
       } catch (err) {
+        if ((err as Error).name === 'AbortError') return;
         setError(err instanceof Error ? err.message : 'Error desconocido');
-        console.error('Error fetching fuel types:', err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchFuelTypes();
+    return () => controller.abort();
   }, []);
 
   return { fuelTypes, loading, error };

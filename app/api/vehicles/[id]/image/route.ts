@@ -22,6 +22,12 @@ export async function GET(
       return new NextResponse('Not Found', { status: 404 });
     }
 
+    // If it's a Cloudinary URL or any external URL, redirect to it
+    if (image.url.startsWith('http')) {
+      return NextResponse.redirect(image.url);
+    }
+
+    // Legacy support: serve base64 images stored in the database
     return serveBase64(image.url);
   } catch (error) {
     console.error('Error serving vehicle image:', error);
@@ -42,11 +48,6 @@ function serveBase64(dataUrl: string) {
         'Content-Length': buffer.length.toString(),
       },
     });
-  }
-
-  // Si no es base64 pero es una URL externa, redirigir
-  if (dataUrl.startsWith('http')) {
-    return NextResponse.redirect(dataUrl);
   }
 
   return new NextResponse('Invalid Image Data', { status: 500 });

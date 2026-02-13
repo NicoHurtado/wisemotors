@@ -131,7 +131,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Consulta principal
-    console.log(`[Perf] API /api/vehicles query started`);
     const start = performance.now();
     const [vehicles, total] = await Promise.all([
       prisma.vehicle.findMany({
@@ -150,9 +149,9 @@ export async function GET(request: NextRequest) {
           status: true,
           images: {
             orderBy: { order: 'asc' },
-            take: 1, // Solo necesitamos saber cuántas hay o tener la referencia
             select: {
               id: true,
+              url: true,
               type: true,
               order: true,
               isThumbnail: true
@@ -162,7 +161,6 @@ export async function GET(request: NextRequest) {
       }),
       prisma.vehicle.count({ where })
     ]);
-    console.log(`[Perf] API /api/vehicles query took ${(performance.now() - start).toFixed(2)}ms. Found ${vehicles.length} vehicles.`);
 
     // Si es recomendado, limitar a 3
     if (recommended === '1') {
@@ -179,7 +177,6 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Error fetching vehicles:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
@@ -267,6 +264,7 @@ export async function POST(request: NextRequest) {
         images: {
           select: {
             id: true,
+            url: true,
             type: true,
             order: true,
             isThumbnail: true
@@ -289,7 +287,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error('Error creating vehicle:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

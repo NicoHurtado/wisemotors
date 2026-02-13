@@ -1,7 +1,7 @@
 import { getVehicles } from '@/lib/data/vehicles';
 import VehiclesClient from '@/components/vehicles/VehiclesClient';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 30; // Revalidate every 30 seconds
 
 export const metadata = {
   title: 'Vehículos | WiseMotors',

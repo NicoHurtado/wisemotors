@@ -27,13 +27,8 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
     }
 
     try {
-      console.log('VehicleHero: Toggling favorite for vehicle:', vehicle.id);
-      console.log('VehicleHero: User:', user);
-      console.log('VehicleHero: Token exists:', !!localStorage.getItem('token'));
       await toggleFavorite(vehicle.id);
-      console.log('VehicleHero: Favorite toggled successfully');
     } catch (error) {
-      console.error('VehicleHero: Error toggling favorite:', error);
       // Mostrar error al usuario
       alert(error instanceof Error ? error.message : 'Error al agregar/quitar de favoritos');
     }
@@ -44,8 +39,8 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
       {/* Hero Image */}
       <div className="relative h-[50vh] sm:h-[60vh] md:h-[70vh] lg:h-screen overflow-hidden bg-gray-800">
         {(() => {
-          // Para el detalle del vehículo, usar la imagen de portada (cover)
-          const coverImage = `/api/vehicles/${vehicle.id}/image?index=0`;
+          // Use the Cloudinary URL directly from vehicle data, fallback to API endpoint
+          const coverImage = vehicle.imageUrl || `/api/vehicles/${vehicle.id}/image?index=0`;
 
           return coverImage ? (
             <Image
@@ -55,7 +50,7 @@ export function VehicleHero({ vehicle, onVideoClick }: VehicleHeroProps) {
               className="object-contain sm:object-contain md:object-cover"
               priority
               quality={100}
-              unoptimized={true}
+              unoptimized={coverImage.includes('res.cloudinary.com') ? false : true}
               sizes="100vw"
               style={{
                 objectPosition: 'center center',

@@ -15,6 +15,7 @@ export async function GET(
           orderBy: { order: 'asc' },
           select: {
             id: true,
+            url: true,
             type: true,
             order: true,
             isThumbnail: true
@@ -41,7 +42,6 @@ export async function GET(
       try {
         vehicleData.specifications = JSON.parse(vehicleData.specifications);
       } catch (parseError) {
-        console.error('Error parseando specifications:', parseError);
         vehicleData.specifications = '{}';
       }
     }
@@ -79,6 +79,7 @@ export async function GET(
           orderBy: { order: 'asc' },
           select: {
             id: true,
+            url: true,
             type: true,
             order: true,
             isThumbnail: true
@@ -111,7 +112,6 @@ export async function GET(
       similarVehicles: similarVehiclesWithParsedSpecs
     });
   } catch (error) {
-    console.error('Error fetching vehicle:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
@@ -153,7 +153,6 @@ export async function PUT(
       try {
         JSON.parse(vehicleData.specifications);
       } catch (parseError) {
-        console.error('❌ Specifications no es JSON válido:', parseError);
         return NextResponse.json(
           { error: 'Formato inválido de specifications' },
           { status: 400 }
@@ -205,6 +204,10 @@ export async function PUT(
 
         // Función para obtener el contenido de una imagen existente por su URL de referencia
         const getExistingImageUrl = (url: string): string | null => {
+          // If it's already a Cloudinary URL, keep it as-is
+          if (url.includes('res.cloudinary.com')) return url;
+
+          // Legacy: handle old /api/vehicles/ references
           if (!url.startsWith('/api/vehicles/')) return null;
 
           try {
@@ -265,6 +268,7 @@ export async function PUT(
         images: {
           select: {
             id: true,
+            url: true,
             type: true,
             order: true,
             isThumbnail: true
@@ -280,13 +284,7 @@ export async function PUT(
 
     return NextResponse.json(updatedVehicle);
   } catch (error: any) {
-    console.error('❌ Error completo:', error);
-    console.error('❌ Error name:', error.name);
-    console.error('❌ Error message:', error.message);
-    console.error('❌ Error stack:', error.stack);
-
     if (error.name === 'ZodError') {
-      console.error('❌ Error de validación Zod:', error.errors);
       return NextResponse.json(
         { error: 'Datos inválidos', details: error.errors },
         { status: 400 }
@@ -294,10 +292,8 @@ export async function PUT(
     }
 
     if (error.code) {
-      console.error('❌ Error de Prisma:', error.code);
     }
 
-    console.error('Error updating vehicle:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor', details: error.message },
       { status: 500 }
@@ -333,7 +329,6 @@ export async function DELETE(
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error deleting vehicle:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

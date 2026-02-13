@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import { VehicleCard as VehicleCardComponent } from '@/components/vehicle/VehicleCard';
@@ -38,13 +38,12 @@ export function VehicleList({
     setSortBy(externalSortBy);
   }, [externalSortBy]);
 
-  const handleExplore = (id: string) => {
+  const handleExplore = useCallback((id: string) => {
     router.push(`/vehicles/${id}`);
-  };
+  }, [router]);
 
-  const getSortedVehicles = () => {
+  const sortedVehicles = useMemo(() => {
     const sorted = [...vehicles];
-
     switch (sortBy) {
       case 'price-low':
         return sorted.sort((a, b) => a.price - b.price);
@@ -53,9 +52,7 @@ export function VehicleList({
       default:
         return sorted;
     }
-  };
-
-  const sortedVehicles = getSortedVehicles();
+  }, [vehicles, sortBy]);
 
   return (
     <div className="space-y-6">

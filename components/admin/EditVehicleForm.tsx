@@ -469,8 +469,10 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
             const galleryImagesData = vehicleData.images.filter((img: any) => img.type === 'gallery').sort((a: any, b: any) => a.order - b.order);
             const coverIdx = vehicleData.images.indexOf(coverImg);
 
-            setCoverImage(coverImg ? `/api/vehicles/${vehicleId}/image?index=${coverIdx}` : '');
-            setGalleryImages(galleryImagesData.map((_: any, i: number) => {
+            // Use Cloudinary URLs directly if available
+            setCoverImage(coverImg?.url?.startsWith('http') ? coverImg.url : (coverImg ? `/api/vehicles/${vehicleId}/image?index=${coverIdx}` : ''));
+            setGalleryImages(galleryImagesData.map((img: any, i: number) => {
+              if (img.url?.startsWith('http')) return img.url;
               const globalIdx = vehicleData.images.indexOf(galleryImagesData[i]);
               return `/api/vehicles/${vehicleId}/image?index=${globalIdx}`;
             }));

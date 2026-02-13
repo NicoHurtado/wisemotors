@@ -2,26 +2,30 @@
 export function isValidImageUrl(url: string | null | undefined): boolean {
   if (!url) return false;
   
-  // Si es Base64, es válida
+  // Si es Base64, es válida (legacy)
   if (url.startsWith('data:image/')) return true;
   
-  // Si es una URL externa válida
+  // Si es una URL externa válida (incluyendo Cloudinary)
   if (url.startsWith('http://') || url.startsWith('https://')) return true;
+
+  // URLs de API internas
+  if (url.startsWith('/api/')) return true;
   
-  // URLs locales como /images/... NO son válidas en nuestro caso
   return false;
 }
 
 export function getValidImageUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   
-  // Si es Base64, devolverla directamente
+  // Si es Base64, devolverla directamente (legacy)
   if (url.startsWith('data:image/')) return url;
   
-  // Si es URL externa, devolverla
+  // Si es URL externa (incluyendo Cloudinary), devolverla
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
+
+  // URLs de API internas
+  if (url.startsWith('/api/')) return url;
   
-  // URLs locales como /images/... no son válidas
   return null;
 }
 
@@ -73,4 +77,3 @@ export function useVehicleImage(imageUrl: string | null | undefined, brand: stri
   
   return createImagePlaceholder(brand, model);
 }
-

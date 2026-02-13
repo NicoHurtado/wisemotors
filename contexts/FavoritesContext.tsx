@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface FavoriteVehicle {
@@ -12,7 +12,7 @@ export interface FavoriteVehicle {
   fuelType: string;
   type: string;
   imageUrl: string | null;
-  specifications?: any; // Agregar specifications
+  specifications?: any;
   match?: number;
   reasons?: string[];
 }
@@ -36,7 +36,6 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Obtener token del localStorage
   const getToken = useCallback(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('token');
@@ -44,11 +43,12 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, []);
 
-  // Obtener favoritos
+  // Memoize the set of favorite IDs for O(1) lookup
+  const favoriteIds = useMemo(() => new Set(favorites.map(f => f.id)), [favorites]);
+
   const fetchFavorites = useCallback(async () => {
     const token = getToken();
     if (!user || !token) {
-      console.log('FavoritesContext: No user or token, clearing favorites');
       setFavorites([]);
       return;
     }
@@ -56,7 +56,6 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      console.log('FavoritesContext: Fetching favorites for user:', user.id);
 
       const response = await fetch('/api/favorites', {
         headers: {
@@ -64,10 +63,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         }
       });
 
-      console.log('FavoritesContext: Response status:', response.status);
-
       if (response.status === 401) {
-        console.warn('FavoritesContext: Token expired or invalid (401), logging out...');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.dispatchEvent(new CustomEvent('auth:logout'));
@@ -76,17 +72,12 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('FavoritesContext: Error response:', errorText);
         throw new Error('Error al cargar favoritos');
       }
 
       const data = await response.json();
-      console.log('FavoritesContext: Fetched data:', data);
 
-      // Transformar datos al formato esperado
       const transformedFavorites: FavoriteVehicle[] = data.favorites.map((fav: any) => {
-        // Buscar imagen miniatura, si no existe usar la primera de galería, NO la portada
         const thumbnailImage = fav.vehicle.images?.find((img: any) => img.isThumbnail)?.url ||
           fav.vehicle.images?.find((img: any) => img.type === 'gallery')?.url ||
           fav.vehicle.images?.[0]?.url || null;
@@ -104,17 +95,14 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         };
       });
 
-      console.log('FavoritesContext: Transformed favorites:', transformedFavorites);
       setFavorites(transformedFavorites);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
-      console.error('FavoritesContext: Error fetching favorites:', err);
     } finally {
       setLoading(false);
     }
   }, [user, getToken]);
 
-  // Añadir a favoritos
   const addToFavorites = useCallback(async (vehicleId: string) => {
     const token = getToken();
     if (!user || !token) {
@@ -122,7 +110,6 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log('FavoritesContext: Adding vehicle to favorites:', vehicleId);
       const response = await fetch('/api/favorites', {
         method: 'POST',
         headers: {
@@ -132,10 +119,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ vehicleId })
       });
 
-      console.log('FavoritesContext: Add response status:', response.status);
-
       if (response.status === 401) {
-        console.warn('FavoritesContext: Token expired or invalid (401) during add, logging out...');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.dispatchEvent(new CustomEvent('auth:logout'));
@@ -148,20 +132,14 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
           errorData = await response.json();
         } catch (e) {
           const errorText = await response.text();
-          console.error('FavoritesContext: Add error response (not JSON):', errorText);
           throw new Error(`Error ${response.status}: ${errorText || 'Error al añadir a favoritos'}`);
         }
-        console.error('FavoritesContext: Add error response:', errorData);
         throw new Error(errorData.error || `Error ${response.status}: Error al añadir a favoritos`);
       }
 
       const result = await response.json();
-      console.log('FavoritesContext: Add success result:', result);
-
-      // Actualizar estado local inmediatamente
       const newFavorite = result.favorite;
 
-      // Buscar imagen miniatura, si no existe usar la primera de galería, NO la portada
       const thumbnailImage = newFavorite.vehicle.images?.find((img: any) => img.isThumbnail)?.url ||
         newFavorite.vehicle.images?.find((img: any) => img.type === 'gallery')?.url ||
         newFavorite.vehicle.images?.[0]?.url || null;
@@ -177,15 +155,11 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         imageUrl: thumbnailImage,
         specifications: newFavorite.vehicle.specifications
       }]);
-
-      return;
     } catch (err) {
-      console.error('FavoritesContext: Error adding to favorites:', err);
       throw err;
     }
   }, [user, getToken]);
 
-  // Quitar de favoritos
   const removeFromFavorites = useCallback(async (vehicleId: string) => {
     const token = getToken();
     if (!user || !token) {
@@ -193,7 +167,6 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log('FavoritesContext: Removing vehicle from favorites:', vehicleId);
       const response = await fetch('/api/favorites', {
         method: 'DELETE',
         headers: {
@@ -203,10 +176,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ vehicleId })
       });
 
-      console.log('FavoritesContext: Remove response status:', response.status);
-
       if (response.status === 401) {
-        console.warn('FavoritesContext: Token expired or invalid (401) during remove, logging out...');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.dispatchEvent(new CustomEvent('auth:logout'));
@@ -219,70 +189,41 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
           errorData = await response.json();
         } catch (e) {
           const errorText = await response.text();
-          console.error('FavoritesContext: Remove error response (not JSON):', errorText);
           throw new Error(`Error ${response.status}: ${errorText || 'Error al quitar de favoritos'}`);
         }
-        console.error('FavoritesContext: Remove error response:', errorData);
         throw new Error(errorData.error || `Error ${response.status}: Error al quitar de favoritos`);
       }
 
-      const result = await response.json();
-      console.log('FavoritesContext: Remove success result:', result);
-
-      // Actualizar estado local inmediatamente
+      // Optimistic update - remove immediately
       setFavorites(prev => prev.filter(fav => fav.id !== vehicleId));
-
-      return;
     } catch (err) {
-      console.error('FavoritesContext: Error removing from favorites:', err);
       throw err;
     }
   }, [user, getToken]);
 
-  // Verificar si un vehículo está en favoritos
   const isFavorite = useCallback((vehicleId: string) => {
-    const result = favorites.some(fav => fav.id === vehicleId);
-    console.log('FavoritesContext: Checking if vehicle is favorite:', vehicleId, 'Result:', result);
-    return result;
-  }, [favorites]);
+    return favoriteIds.has(vehicleId);
+  }, [favoriteIds]);
 
-  // Toggle favorito
   const toggleFavorite = useCallback(async (vehicleId: string) => {
-    try {
-      const token = getToken();
-      console.log('FavoritesContext: Toggling favorite for vehicle:', vehicleId);
-      console.log('FavoritesContext: User:', user?.id);
-      console.log('FavoritesContext: Token exists:', !!token);
-      console.log('FavoritesContext: Current favorites:', favorites.map(f => f.id));
-
-      if (isFavorite(vehicleId)) {
-        console.log('FavoritesContext: Vehicle is favorite, removing...');
-        await removeFromFavorites(vehicleId);
-      } else {
-        console.log('FavoritesContext: Vehicle is not favorite, adding...');
-        await addToFavorites(vehicleId);
-      }
-    } catch (err) {
-      console.error('FavoritesContext: Error toggling favorite:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      console.error('FavoritesContext: Error details:', {
-        message: errorMessage,
-        vehicleId,
-        user: user?.id,
-        hasToken: !!getToken()
-      });
-      throw err;
+    if (isFavorite(vehicleId)) {
+      await removeFromFavorites(vehicleId);
+    } else {
+      await addToFavorites(vehicleId);
     }
-  }, [isFavorite, addToFavorites, removeFromFavorites, user, getToken, favorites]);
+  }, [isFavorite, addToFavorites, removeFromFavorites]);
 
-  // Cargar favoritos al montar el componente
+  // Only fetch when user changes (login/logout)
   useEffect(() => {
-    const token = getToken();
-    console.log('FavoritesContext: useEffect triggered, user:', user?.id, 'token:', !!token);
-    fetchFavorites();
-  }, [fetchFavorites, getToken]);
+    if (user) {
+      fetchFavorites();
+    } else {
+      setFavorites([]);
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const value: FavoritesContextType = {
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo<FavoritesContextType>(() => ({
     favorites,
     loading,
     error,
@@ -291,7 +232,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     toggleFavorite,
     isFavorite,
     refetch: fetchFavorites
-  };
+  }), [favorites, loading, error, addToFavorites, removeFromFavorites, toggleFavorite, isFavorite, fetchFavorites]);
 
   return (
     <FavoritesContext.Provider value={value}>

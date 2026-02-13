@@ -24,7 +24,7 @@ export function VehicleGallery({ images, coverImage, vehicle, className = '' }: 
     finalImages = vehicle.images
       .filter((img: any) => img.type === 'gallery')
       .sort((a: any, b: any) => a.order - b.order)
-      .map((img: any) => `/api/vehicles/${vehicle.id}/image?index=${img.order - 1}`);
+      .map((img: any) => img.url?.startsWith('http') ? img.url : `/api/vehicles/${vehicle.id}/image?index=${img.order - 1}`);
   }
 
   // Usar solo las imágenes de galería
@@ -75,6 +75,7 @@ export function VehicleGallery({ images, coverImage, vehicle, className = '' }: 
                     fill
                     className="object-cover rounded-lg transition-transform group-hover:scale-105"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    unoptimized={!image.includes('res.cloudinary.com')}
                     onError={(e) => {
                       console.error('Error loading carousel image:', image);
                       e.currentTarget.style.display = 'none';
@@ -143,6 +144,7 @@ export function VehicleGallery({ images, coverImage, vehicle, className = '' }: 
                   className="object-contain rounded-lg"
                   sizes="100vw"
                   priority={true}
+                  unoptimized={!allImages[currentIndex]?.includes('res.cloudinary.com')}
                   onError={(e) => {
                     console.error('Error loading modal image:', allImages[currentIndex]);
                     e.currentTarget.style.display = 'none';

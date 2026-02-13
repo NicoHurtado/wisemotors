@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Heart } from 'lucide-react';
@@ -25,7 +26,7 @@ interface VehicleCardProps {
   matchPercentage?: number;
 }
 
-export function VehicleCard({
+export const VehicleCard = React.memo(function VehicleCard({
   vehicle,
   isFavorite: externalIsFavorite,
   onToggleFavorite: externalOnToggleFavorite,
@@ -43,61 +44,55 @@ export function VehicleCard({
   // Usar el estado interno de favoritos si no se proporciona externamente
   const isFav = externalIsFavorite !== undefined ? externalIsFavorite : isFavorite(vehicle.id);
 
-  const handleFavoriteClick = async (e: React.MouseEvent) => {
-    // Prevenir que el click en favoritos abra el detalle del vehículo
+  const handleFavoriteClick = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
-
     if (!user) {
-      // Redirigir al login si no está autenticado
       router.push('/login');
       return;
     }
-
     try {
       if (externalOnToggleFavorite) {
-        // Si se proporciona un handler externo, usarlo
         externalOnToggleFavorite(vehicle.id);
       } else {
-        // Usar el hook interno
         await toggleFavorite(vehicle.id);
       }
     } catch (error) {
-      console.error('VehicleCard: Error toggling favorite:', error);
+      // silently handle
     }
-  };
+  }, [user, router, vehicle.id, externalOnToggleFavorite, toggleFavorite]);
 
-  const handleCardClick = () => {
+  const handleCardClick = useCallback(() => {
     if (onExplore) {
       onExplore(vehicle.id);
     } else {
-      // Navegación por defecto si no se proporciona onExplore
       router.push(`/vehicles/${vehicle.id}`);
     }
-  };
+  }, [onExplore, vehicle.id, router]);
 
-  const handleButtonClick = (e: React.MouseEvent) => {
-    // Prevenir que el click en el botón active también el click de la tarjeta
+  const handleButtonClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     handleCardClick();
-  };
+  }, [handleCardClick]);
 
-  // Obtener solo las imágenes de galería (NO la portada)
-  const galleryImages = vehicle.images?.filter((img: any) => img.type === 'gallery') || [];
+  // Memoize image computations
+  const { vehicleImages, displayThumbnailUrl, hasMultipleImages } = useMemo(() => {
+    const allImages = (vehicle.images || []).sort((a: any, b: any) => a.order - b.order);
+    const cover = allImages.find((img: any) => img.type === 'cover');
+    const gallery = allImages.filter((img: any) => img.type === 'gallery');
 
-  // Ordenar todas las imágenes de galería por orden
-  const orderedGalleryImages = galleryImages.sort((a: any, b: any) => a.order - b.order);
+    const images = [
+      ...(cover ? [cover.url] : []),
+      ...gallery.map((img: any) => img.url)
+    ].filter(Boolean);
 
-  // Obtener URLs de las imágenes ordenadas
-  const vehicleImages = orderedGalleryImages.map((img: any) => img.url);
+    return {
+      vehicleImages: images,
+      displayThumbnailUrl: cover?.url || gallery[0]?.url || vehicle.imageUrl,
+      hasMultipleImages: images.length > 1
+    };
+  }, [vehicle.images, vehicle.imageUrl]);
 
-  // Para el thumbnail estático, usar siempre la primera imagen de galería
-  const displayThumbnailUrl = galleryImages[0]?.url || vehicle.imageUrl;
   const displayThumbnail = useVehicleImage(displayThumbnailUrl, vehicle.brand, vehicle.model);
-
-  // Si hay múltiples imágenes de galería, usar el carrusel, sino usar la imagen estática
-  // Optimization: limit the number of images passed to the carousel in the list view to 5
-  const hasMultipleImages = vehicleImages.length > 1;
-  const displayImages = hasMultipleImages ? vehicleImages.slice(0, 5) : [displayThumbnail];
 
   return (
     <Card
@@ -107,8 +102,8 @@ export function VehicleCard({
       <div className="relative aspect-[4/3] overflow-hidden">
         <PhotoCarousel
           images={hasMultipleImages
-            ? vehicle.images?.map((_, i) => `/api/vehicles/${vehicle.id}/image?index=${i}`) || []
-            : [`/api/vehicles/${vehicle.id}/image?index=0`]}
+            ? vehicleImages.slice(0, 5)
+            : [displayThumbnail]}
           alt={`${vehicle.brand} ${vehicle.model}`}
           className="w-full h-full"
           showNavigation={hasMultipleImages}
@@ -215,4 +210,4 @@ export function VehicleCard({
       </CardFooter>
     </Card>
   );
-}
+});

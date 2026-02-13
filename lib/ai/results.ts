@@ -61,6 +61,7 @@ async function processSubjectiveQuery(intent: CategorizedIntent, startTime: numb
         take: 1,
         select: {
           id: true,
+          url: true,
           type: true,
           order: true,
           isThumbnail: true
@@ -74,6 +75,10 @@ async function processSubjectiveQuery(intent: CategorizedIntent, startTime: numb
   const candidates: ScoredCandidate[] = vehicles.map(v => {
     const features = computeVehicleFeatures(v, marketStats);
     const tags = generateVehicleTags(v, features);
+    const firstImage = (v as any).images?.[0];
+    const imageUrl = firstImage?.url?.startsWith('http')
+      ? firstImage.url
+      : `/api/vehicles/${v.id}/image?index=0`;
     return {
       id: v.id,
       brand: v.brand,
@@ -83,7 +88,7 @@ async function processSubjectiveQuery(intent: CategorizedIntent, startTime: numb
       fuelType: v.fuelType,
       type: v.type,
       vehicleType: v.vehicleType || 'Unknown',
-      imageUrl: `/api/vehicles/${v.id}/image?index=0`,
+      imageUrl,
       score: 0,
       features,
       tags
@@ -165,6 +170,7 @@ async function processObjectiveQuery(intent: CategorizedIntent, startTime: numbe
         take: 1,
         select: {
           id: true,
+          url: true,
           type: true,
           order: true,
           isThumbnail: true
@@ -174,18 +180,24 @@ async function processObjectiveQuery(intent: CategorizedIntent, startTime: numbe
     take: 100
   });
 
-  const formattedVehicles = vehicles.map(v => ({
-    id: v.id,
-    brand: v.brand,
-    model: v.model,
-    year: v.year,
-    price: v.price,
-    fuelType: v.fuelType,
-    type: v.type,
-    imageUrl: `/api/vehicles/${v.id}/image?index=0`,
-    matchPercentage: 100,
-    reasons: ['Coincide con tus filtros']
-  }));
+  const formattedVehicles = vehicles.map(v => {
+    const firstImage = (v as any).images?.[0];
+    const imageUrl = firstImage?.url?.startsWith('http')
+      ? firstImage.url
+      : `/api/vehicles/${v.id}/image?index=0`;
+    return {
+      id: v.id,
+      brand: v.brand,
+      model: v.model,
+      year: v.year,
+      price: v.price,
+      fuelType: v.fuelType,
+      type: v.type,
+      imageUrl,
+      matchPercentage: 100,
+      reasons: ['Coincide con tus filtros']
+    };
+  });
 
   return {
     query_type: QueryType.OBJECTIVE_FEATURE,
@@ -223,6 +235,7 @@ async function processHybridQuery(intent: CategorizedIntent, startTime: number):
         take: 1,
         select: {
           id: true,
+          url: true,
           type: true,
           order: true,
           isThumbnail: true
@@ -238,6 +251,10 @@ async function processHybridQuery(intent: CategorizedIntent, startTime: number):
   const candidates: ScoredCandidate[] = vehicles.map(v => {
     const features = computeVehicleFeatures(v, marketStats);
     const tags = generateVehicleTags(v, features);
+    const firstImage = (v as any).images?.[0];
+    const imageUrl = firstImage?.url?.startsWith('http')
+      ? firstImage.url
+      : `/api/vehicles/${v.id}/image?index=0`;
     return {
       id: v.id,
       brand: v.brand,
@@ -247,7 +264,7 @@ async function processHybridQuery(intent: CategorizedIntent, startTime: number):
       fuelType: v.fuelType,
       type: v.type,
       vehicleType: v.vehicleType || 'Unknown',
-      imageUrl: `/api/vehicles/${v.id}/image?index=0`,
+      imageUrl,
       score: 0,
       features,
       tags

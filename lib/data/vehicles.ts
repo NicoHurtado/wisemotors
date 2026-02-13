@@ -4,7 +4,6 @@ import { cache } from 'react';
 // Cachear la obtención de un vehículo para evitar dupicados en generateMetadata y page
 export const getVehicle = cache(async (id: string) => {
   const startTotal = performance.now();
-  console.log(`[Perf] getVehicle(${id}) started`);
 
   // 1. Fetch main vehicle with related data
   const vehiclePromise = prisma.vehicle.findUnique({
@@ -14,6 +13,7 @@ export const getVehicle = cache(async (id: string) => {
         orderBy: { order: 'asc' },
         select: {
           id: true,
+          url: true,
           type: true,
           order: true,
           isThumbnail: true
@@ -32,10 +32,8 @@ export const getVehicle = cache(async (id: string) => {
   // BUT, we can at least measure the main vehicle fetch time.
   const startMain = performance.now();
   const vehicle = await vehiclePromise;
-  console.log(`[Perf] Main vehicle query took ${(performance.now() - startMain).toFixed(2)}ms`);
 
   if (!vehicle) {
-    console.log(`[Perf] Vehicle not found. Total time: ${(performance.now() - startTotal).toFixed(2)}ms`);
     return null;
   }
 
@@ -53,7 +51,6 @@ export const getVehicle = cache(async (id: string) => {
   const minPrice = vehicle.price * 0.7;
   const maxPrice = vehicle.price * 1.3;
 
-  console.log(`[Perf] Fetching similar vehicles...`);
   const simStart = performance.now();
 
   // Queries optimized with indexes [status, price] and [type]
@@ -79,6 +76,7 @@ export const getVehicle = cache(async (id: string) => {
         orderBy: { order: 'asc' },
         select: {
           id: true,
+          url: true,
           type: true,
           order: true,
           isThumbnail: true
@@ -90,14 +88,16 @@ export const getVehicle = cache(async (id: string) => {
     },
     take: 1
   });
-  console.log(`[Perf] Similar vehicles query took ${(performance.now() - simStart).toFixed(2)}ms`);
-
 
   const transformedSimilar = similarVehicles.map(v => {
     let vSpecs = v.specifications as any;
     if (typeof vSpecs === 'string') {
       try { vSpecs = JSON.parse(vSpecs); } catch (e) { vSpecs = {}; }
     }
+    const firstImage = v.images?.[0];
+    const imageUrl = firstImage?.url?.startsWith('http') 
+      ? firstImage.url 
+      : `/api/vehicles/${v.id}/image?index=0`;
     return {
       id: v.id,
       brand: v.brand,
@@ -105,7 +105,7 @@ export const getVehicle = cache(async (id: string) => {
       year: v.year,
       price: v.price,
       fuel: v.fuelType?.toUpperCase() || 'GASOLINA',
-      imageUrl: `/api/vehicles/${v.id}/image?index=0`,
+      imageUrl,
       category: v.type,
       status: v.status || 'NUEVO',
       type: v.type,
@@ -113,10 +113,17 @@ export const getVehicle = cache(async (id: string) => {
     };
   });
 
+  // Get the cover image URL directly from Cloudinary if available
+  const coverImg = vehicle.images?.find((img: any) => img.type === 'cover');
+  const firstImg = vehicle.images?.[0];
+  const mainImageUrl = (coverImg?.url || firstImg?.url)?.startsWith('http')
+    ? (coverImg?.url || firstImg?.url)
+    : `/api/vehicles/${vehicle.id}/image?index=0`;
+
   const result = {
     ...vehicle,
     fuel: vehicle.fuelType.toUpperCase(),
-    imageUrl: `/api/vehicles/${vehicle.id}/image?index=0`,
+    imageUrl: mainImageUrl,
     category: vehicle.type,
     status: vehicle.status || 'NUEVO',
     power: parsedSpecs?.powertrain?.potenciaMaxMotorTermico || parsedSpecs?.powertrain?.potenciaMaxEV,
@@ -150,7 +157,6 @@ export const getVehicle = cache(async (id: string) => {
       ]
   };
 
-  console.log(`[Perf] getVehicle total time: ${(performance.now() - startTotal).toFixed(2)}ms`);
   return result;
 });
 
@@ -168,7 +174,6 @@ export interface GetVehiclesOptions {
 }
 
 export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
-  console.log('[Perf] Fetching vehicle list...', options);
   const start = performance.now();
   const {
     search,
@@ -232,7 +237,6 @@ export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
   }
 
   // Consulta principal - SPLIT FOR DEBUGGING
-  console.log(`[Perf] API getVehicles: Starting findMany...`);
   const startFind = performance.now();
   const vehicles = await prisma.vehicle.findMany({
     where,
@@ -250,9 +254,9 @@ export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
       status: true,
       images: {
         orderBy: { order: 'asc' },
-        take: 1,
         select: {
           id: true,
+          url: true,
           type: true,
           order: true,
           isThumbnail: true
@@ -260,15 +264,10 @@ export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
       }
     }
   });
-  console.log(`[Perf] API getVehicles: findMany took ${(performance.now() - startFind).toFixed(2)}ms`);
 
-  console.log(`[Perf] API getVehicles: Starting count...`);
   const startCount = performance.now();
   const total = await prisma.vehicle.count({ where });
-  console.log(`[Perf] API getVehicles: count took ${(performance.now() - startCount).toFixed(2)}ms`);
 
-
-  console.log(`[Perf] API getVehicles Total query time: ${(performance.now() - start).toFixed(2)}ms. Found ${total} vehicles.`);
 
   // If recommended, limit (Note: original API sliced array AFTER query, which is inefficient but consistent)
   // Better to use 'take' in query, but logic depends on 'recommended' flag being just a filter or a sort?
@@ -281,6 +280,10 @@ export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
 
   // Transform to match UI expectation (VehicleCard interface)
   const transformedVehicles = resultVehicles.map((vehicle: any) => {
+    const firstImage = vehicle.images?.[0];
+    const imageUrl = firstImage?.url?.startsWith('http')
+      ? firstImage.url
+      : `/api/vehicles/${vehicle.id}/image?index=0`;
     return {
       id: vehicle.id,
       brand: vehicle.brand,
@@ -288,12 +291,12 @@ export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
       year: vehicle.year,
       price: vehicle.price,
       fuel: vehicle.fuelType.toUpperCase(),
-      imageUrl: `/api/vehicles/${vehicle.id}/image?index=0`,
+      imageUrl,
       category: vehicle.type,
       status: vehicle.status || 'NUEVO',
-      images: vehicle.images?.map((img: any, i: number) => ({
+      images: vehicle.images?.map((img: any) => ({
         ...img,
-        url: `/api/vehicles/${vehicle.id}/image?index=${i}`
+        url: img.url?.startsWith('http') ? img.url : `/api/vehicles/${vehicle.id}/image?index=${img.order}`
       })) || []
     };
   });
