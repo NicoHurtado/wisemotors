@@ -31,7 +31,7 @@ export function VehiclesTable() {
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
-        const response = await fetch('/api/vehicles');
+        const response = await fetch('/api/vehicles?limit=1000');
         if (response.ok) {
           const data = await response.json();
           setVehicles(data.vehicles || []);

@@ -907,6 +907,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
         if (combustible) {
           if (apl === 'EV' && combustible === 'Eléctrico') return true;
           if (apl === 'EV/PHEV' && (combustible === 'Eléctrico' || combustible === 'Híbrido Enchufable')) return true;
+          if (apl === 'EV/HEV/PHEV' && (combustible === 'Eléctrico' || combustible === 'Híbrido' || combustible === 'Híbrido Enchufable')) return true;
           if (apl === 'EV/Premium' && combustible === 'Eléctrico') return true;
           if (apl === 'ICE/HEV/PHE' && (combustible === 'Gasolina' || combustible === 'Diésel' || combustible === 'GNV' || combustible === 'Etanol' || combustible === 'Híbrido' || combustible === 'Híbrido Enchufable')) return true;
           if (apl === 'ICE/HEV' && (combustible === 'Gasolina' || combustible === 'Diésel' || combustible === 'GNV' || combustible === 'Etanol' || combustible === 'Híbrido')) return true;
@@ -950,6 +951,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
       if (combustible) {
         if (apl === 'EV' && combustible === 'Eléctrico') return true;
         if (apl === 'EV/PHEV' && (combustible === 'Eléctrico' || combustible === 'Híbrido Enchufable')) return true;
+        if (apl === 'EV/HEV/PHEV' && (combustible === 'Eléctrico' || combustible === 'Híbrido' || combustible === 'Híbrido Enchufable')) return true;
         // EV/Premium: requiere que sea Eléctrico (Premium se muestra siempre)
         if (apl === 'EV/Premium' && combustible === 'Eléctrico') return true;
         if (apl === 'ICE/HEV/PHE' && (combustible === 'Gasolina' || combustible === 'Diésel' || combustible === 'GNV' || combustible === 'Etanol' || combustible === 'Híbrido' || combustible === 'Híbrido Enchufable')) return true;
@@ -1156,10 +1158,10 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {renderField('consumoMixto', 'Consumo mixto', 'number', undefined, 'L/100 km; kWh/100 km')}
           {renderField('capacidadTanque', 'Capacidad de tanque combustible', 'number', undefined, 'L', 'ICE/HEV/PHE')}
-          {renderField('autonomiaOficial', 'Autonomía oficial', 'number', undefined, 'km', 'EV/PHEV')}
-          {renderField('costoEnergia100km', 'Costo de energía por 100 km', 'text', undefined, '$')}
+          {renderField('autonomiaOficial', 'Autonomía oficial', 'number', undefined, 'km', 'EV/HEV/PHEV')}
+          {renderField('costoEnergia100km', 'Costo de energía por 100 km', 'text', undefined, '$', 'EV/HEV/PHEV')}
           {renderField('ahorro5Anos', 'Ahorro a 3 años', 'text', undefined, '$')}
-          {renderField('mpgeCombinado', 'KMGe combinado', 'number', undefined, 'kmge')}
+          {renderField('mpgeCombinado', 'KMGe combinado', 'number', undefined, 'kmge', 'EV/HEV/PHEV')}
           {renderField('motorAutostop', 'Motor autostop', 'checkbox', undefined, undefined, 'Todos')}
         </div>
       </div>
