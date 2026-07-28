@@ -19,22 +19,14 @@ export function AdminGuard({ children }: AdminGuardProps) {
       return;
     }
 
-    if (isAuthenticated && isFullyAuthorized) {
-      setIsAuthorized(true);
-    } else if (isAuthenticated && !isFullyAuthorized) {
-      // Usuario está logueado pero no es admin completamente autorizado
-      // Verificar si es admin pero le falta la contraseña
-      if (user?.email === 'adminwise@wisemotors.co') {
-        // Es admin pero no tiene la contraseña correcta guardada
-        // Redirigir a home en lugar de login
-        router.push('/');
-      } else {
-        // No es admin, redirigir a home
-        router.push('/');
-      }
-    } else {
-      // No hay usuario logueado, redirigir a login
+    // Esto solo evita mostrar una pantalla que no corresponde. Quien llame la API
+    // directamente se topa con requireAdmin en el servidor, que es la barrera real.
+    if (!isAuthenticated) {
       router.push('/login');
+    } else if (isFullyAuthorized) {
+      setIsAuthorized(true);
+    } else {
+      router.push('/');
     }
   }, [isFullyAuthorized, isAuthenticated, isChecking, user, router]);
 

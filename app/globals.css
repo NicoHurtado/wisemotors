@@ -2,6 +2,107 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ════════════════════════════════════════════════════════════════════════
+   Sistema de movimiento (plan §7.3)
+   Regla dura: solo se animan transform y opacity. Nunca width/height/top.
+   ════════════════════════════════════════════════════════════════════════ */
+:root {
+  --motion-instant: 120ms;
+  /* hover, focus, feedback táctil */
+  --motion-quick: 240ms;
+  /* aparición de elementos, tooltips */
+  --motion-smooth: 400ms;
+  /* transiciones de sección */
+  --motion-hero: 700ms;
+  /* entrada de la ficha, revelaciones */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --wise-glow: 136, 28, 183;
+  /* #881cb7 en RGB, para usarlo como luz */
+}
+
+/* Cascada de entrada de resultados: stagger de 40ms vía --enter-delay */
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.card-enter {
+  animation: card-enter var(--motion-smooth) var(--ease-out-soft) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+/* ── Glow reactivo al cursor: el morado como luz, no como relleno ──
+   El spotlight sigue al mouse vía --mx/--my (custom props que setea la
+   tarjeta). Solo se anima opacity: el gradiente ya está pintado. */
+.card-glow {
+  position: relative;
+}
+
+.card-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--motion-quick) ease;
+  background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 40%),
+      rgba(var(--wise-glow), 0.13), transparent 65%);
+  z-index: 2;
+}
+
+/* Borde y sombra que se encienden — pre-pintados, solo cambia opacity */
+.card-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--motion-quick) ease;
+  box-shadow:
+    0 0 0 1px rgba(var(--wise-glow), 0.35),
+    0 18px 40px -18px rgba(var(--wise-glow), 0.45);
+  z-index: 2;
+}
+
+.card-glow:hover::before,
+.card-glow:focus-within::before,
+.card-glow:hover::after,
+.card-glow:focus-within::after {
+  opacity: 1;
+}
+
+/* Accesibilidad: si la persona pidió menos movimiento, se le respeta TODO */
+@media (prefers-reduced-motion: reduce) {
+
+  .card-enter,
+  .highlight-animation,
+  .shine-overlay {
+    animation: none !important;
+  }
+
+  .card-glow::before,
+  .card-glow::after {
+    transition: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Animación de brillo metálico para tarjetas de especificaciones */
 @keyframes shine {
   0% {

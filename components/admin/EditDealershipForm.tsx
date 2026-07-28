@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save, X, Loader2, Building2 } from 'lucide-react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface Dealership {
   id: string;
@@ -78,7 +79,7 @@ export function EditDealershipForm({ dealershipId }: EditDealershipFormProps) {
     setLoading(true);
 
     try {
-      const response = await fetch(`/api/dealers/${dealershipId}`, {
+      const response = await adminFetch(`/api/dealers/${dealershipId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

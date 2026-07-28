@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { CategorizedIntent, QueryType } from './categorization';
 import { getValidImageUrl, createImagePlaceholder } from '@/lib/utils/imageUtils';
 import { rerankWithLLM } from './rerank';
-import { ScoredCandidate } from './scoring';
+import { ScoredCandidate, scoreCandidates } from './scoring';
 import { computeVehicleFeatures, getMarketStats, generateVehicleTags } from './features';
 
 export interface ProcessedResults {
@@ -95,9 +95,14 @@ async function processSubjectiveQuery(intent: CategorizedIntent, startTime: numb
     };
   });
 
-  // 2. Ask LLM to rank them based on the Subjective Context
-  const rawRecommended = await rerankWithLLM(
+  // 2. Orden base determinístico (reproducible); el LLM afina y explica ese orden
+  const { ranked } = scoreCandidates(
     candidates,
+    `${intent.original_query} ${intent.subjective_context ?? ''}`
+  );
+
+  const rawRecommended = await rerankWithLLM(
+    ranked,
     intent.subjective_context || intent.original_query,
     intent.original_query
   );
@@ -150,18 +155,7 @@ async function processSubjectiveQuery(intent: CategorizedIntent, startTime: numb
 // OBJECTIVE QUERY: Strict Database Filtering
 // ============================================================================
 async function processObjectiveQuery(intent: CategorizedIntent, startTime: number): Promise<ProcessedResults> {
-  const whereRaw = buildObjectiveWhereClause(intent);
-
-  // Clean up where clause
-  const where: any = {};
-  if (whereRaw.brand) where.brand = whereRaw.brand;
-  if (whereRaw.type) where.type = whereRaw.type;
-  if (whereRaw.fuelType) where.fuelType = whereRaw.fuelType;
-  if (whereRaw.year) where.year = whereRaw.year;
-  if (whereRaw.price) where.price = whereRaw.price;
-  if (whereRaw.transmission) where.transmission = whereRaw.transmission;
-  if (whereRaw.doors) where.doors = whereRaw.doors;
-  if (whereRaw.seats) where.seats = whereRaw.seats;
+  const where = sanitizeWhereClause(buildObjectiveWhereClause(intent));
 
   const vehicles = await prisma.vehicle.findMany({
     where,
@@ -216,17 +210,8 @@ async function processObjectiveQuery(intent: CategorizedIntent, startTime: numbe
 // HYBRID QUERY: Filter (Objective) -> Rank (Subjective)
 // ============================================================================
 async function processHybridQuery(intent: CategorizedIntent, startTime: number): Promise<ProcessedResults> {
-  // 1. Apply Objective Filters 
-  const whereRaw = buildObjectiveWhereClause(intent);
-  const where: any = {};
-  if (whereRaw.brand) where.brand = whereRaw.brand;
-  if (whereRaw.type) where.type = whereRaw.type;
-  if (whereRaw.fuelType) where.fuelType = whereRaw.fuelType;
-  if (whereRaw.year) where.year = whereRaw.year;
-  if (whereRaw.price) where.price = whereRaw.price;
-  if (whereRaw.transmission) where.transmission = whereRaw.transmission;
-  if (whereRaw.doors) where.doors = whereRaw.doors;
-  if (whereRaw.seats) where.seats = whereRaw.seats;
+  // 1. Apply Objective Filters
+  const where = sanitizeWhereClause(buildObjectiveWhereClause(intent));
 
   const vehicles = await prisma.vehicle.findMany({
     where,
@@ -275,8 +260,14 @@ async function processHybridQuery(intent: CategorizedIntent, startTime: number):
   // 3. Rank utilizing Subjective Context
   let allRanked: any[] = [];
   if (candidates.length > 0) {
-    const rawRecommended = await rerankWithLLM(
+    // Orden base determinístico también en la ruta híbrida
+    const { ranked } = scoreCandidates(
       candidates,
+      `${intent.original_query} ${intent.subjective_context ?? ''}`
+    );
+
+    const rawRecommended = await rerankWithLLM(
+      ranked,
       intent.subjective_context || intent.original_query,
       intent.original_query
     );
@@ -326,6 +317,19 @@ async function processHybridQuery(intent: CategorizedIntent, startTime: number):
   };
 }
 
+// Helper: Keep only keys that exist as real Prisma columns (or valid operators).
+// FIX bug #7: `AND` (features dentro del JSON de specs) se descartaba en silencio.
+// FIX bug #8: `doors`/`seats`/`transmission` no son columnas y tumbaban findMany con 500.
+const PRISMA_SAFE_KEYS = ['brand', 'type', 'fuelType', 'year', 'price', 'AND'] as const;
+
+function sanitizeWhereClause(whereRaw: any): any {
+  const where: any = {};
+  for (const key of PRISMA_SAFE_KEYS) {
+    if (whereRaw[key] !== undefined) where[key] = whereRaw[key];
+  }
+  return where;
+}
+
 // Helper: Build Prisma Where Clause from Objective Filters
 function buildObjectiveWhereClause(intent: CategorizedIntent): any {
   const where: any = {};
@@ -360,8 +364,9 @@ function buildObjectiveWhereClause(intent: CategorizedIntent): any {
     if (max) where.price = { ...where.price, lte: max };
   }
 
-  if (filters.door_count) where.doors = { equals: filters.door_count };
-  if (filters.seat_count) where.seats = { equals: filters.seat_count };
+  // door_count / seat_count NO tienen columna en Prisma ni campo confiable en el
+  // JSON de specs (el schema solo tiene seatRows/heatedSeats). Hasta que exista el
+  // Registro de Atributos, se ignoran de forma explícita en vez de romper la consulta.
 
   // Filter by technical features (Turbo, 4x4, etc.) in the specifications JSON string
   if (filters.features && filters.features.length > 0) {

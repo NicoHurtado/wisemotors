@@ -6,6 +6,7 @@ import { Car, Save, X, Download } from 'lucide-react';
 import { ImageUpload } from './ImageUpload';
 import { WiseMetricsForm } from './WiseMetricsForm';
 import { getTangData, getSongPlusData } from '@/lib/vehicle-data';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface Dealer {
   id: string;
@@ -607,7 +608,7 @@ export function AddVehicleForm() {
         thumbnailIndex
       };
 
-      const response = await fetch('/api/vehicles', {
+      const response = await adminFetch('/api/vehicles', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

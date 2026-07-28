@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { vehicleSchema } from '@/lib/schemas/vehicle';
+import { requireAdmin } from '@/lib/api-auth';
 
 // GET /api/vehicles - Obtener vehículos con filtros
 export async function GET(request: NextRequest) {
@@ -68,8 +69,8 @@ export async function GET(request: NextRequest) {
     // Filtro de búsqueda
     if (search) {
       where.OR = [
-        { brand: { contains: search } },
-        { model: { contains: search } }
+        { brand: { contains: search, mode: 'insensitive' } },
+        { model: { contains: search, mode: 'insensitive' } }
       ];
     }
 
@@ -101,8 +102,10 @@ export async function GET(request: NextRequest) {
 
     // Paginación
     const pageNumber = parseInt(page);
-    const pageSize = limit ? parseInt(limit) : 9;
-    const skip = (pageNumber - 1) * pageSize;
+    // recommended=1 limita en la consulta (antes se traían pageSize filas y se
+    // recortaban con splice en memoria, y el total devuelto no correspondía)
+    const pageSize = recommended === '1' ? 3 : (limit ? parseInt(limit) : 9);
+    const skip = recommended === '1' ? 0 : (pageNumber - 1) * pageSize;
 
     // Ordenamiento con conversión de parámetros del frontend
     const orderBy: any = {};
@@ -162,11 +165,6 @@ export async function GET(request: NextRequest) {
       prisma.vehicle.count({ where })
     ]);
 
-    // Si es recomendado, limitar a 3
-    if (recommended === '1') {
-      vehicles.splice(3);
-    }
-
     return NextResponse.json({
       vehicles,
       pagination: {
@@ -185,6 +183,9 @@ export async function GET(request: NextRequest) {
 }
 // POST /api/vehicles - Crear nuevo vehículo
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
 

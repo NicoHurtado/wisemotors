@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Edit, Trash2, Eye, Car } from 'lucide-react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 // Tipos para los datos de la API
 interface Vehicle {
@@ -49,7 +50,7 @@ export function VehiclesTable() {
   const handleDelete = async (id: string) => {
     if (confirm('¿Estás seguro de que quieres eliminar este vehículo?')) {
       try {
-        const response = await fetch(`/api/vehicles/${id}`, {
+        const response = await adminFetch(`/api/vehicles/${id}`, {
           method: 'DELETE'
         });
         

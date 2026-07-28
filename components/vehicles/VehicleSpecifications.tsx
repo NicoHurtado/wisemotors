@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { Liquid } from '@/components/ui/liquid-button';
 import { formatPrice } from '@/lib/utils';
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -272,7 +273,9 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                   </div>
                   <div className="flex-1">
                     <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Precio</div>
-                    <div className="text-2xl font-bold text-gray-900">{formatPrice(vehicle.price)}</div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      <AnimatedNumber value={vehicle.price} format={formatPrice} durationMs={700} />
+                    </div>
                   </div>
                 </div>
               )}

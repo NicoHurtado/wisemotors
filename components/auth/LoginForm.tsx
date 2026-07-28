@@ -52,19 +52,9 @@ export function LoginForm() {
       if (response.ok) {
         // Login exitoso
         
-        // Asignar rol según el email
-        const userWithRole = {
-          ...data.user,
-          role: data.user.email === 'adminwise@wisemotors.co' ? 'admin' : 'user'
-        };
-        
-        // Si es admin, guardar la contraseña para verificación posterior
-        if (userWithRole.email === 'adminwise@wisemotors.co') {
-          localStorage.setItem('adminPassword', formData.password);
-        }
-        
-        // Actualizar el estado de autenticación
-        login(userWithRole, data.token);
+        // El rol lo define el servidor (columna User.role); el cliente no lo deriva
+        // del email ni lo puede ascender por su cuenta.
+        login(data.user, data.token);
         
         // Esperar a que el estado se actualice
         await new Promise(resolve => setTimeout(resolve, 50));

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 export interface WhatsAppLead {
   id: string;
@@ -106,7 +107,7 @@ export function useWhatsAppLeads() {
       if (params?.status) searchParams.set('status', params.status);
       if (params?.dealershipId) searchParams.set('dealershipId', params.dealershipId);
 
-      const response = await fetch(`/api/whatsapp-leads?${searchParams.toString()}`);
+      const response = await adminFetch(`/api/whatsapp-leads?${searchParams.toString()}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -131,7 +132,7 @@ export function useWhatsAppLeads() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/whatsapp-leads/${leadId}`, {
+      const response = await adminFetch(`/api/whatsapp-leads/${leadId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -164,7 +165,7 @@ export function useWhatsAppLeads() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/whatsapp-leads/${leadId}`, {
+      const response = await adminFetch(`/api/whatsapp-leads/${leadId}`, {
         method: 'DELETE',
       });
 
@@ -199,7 +200,7 @@ export function useWhatsAppLeads() {
       if (params?.startDate) searchParams.set('startDate', params.startDate);
       if (params?.endDate) searchParams.set('endDate', params.endDate);
 
-      const response = await fetch(`/api/whatsapp-leads/export?${searchParams.toString()}`);
+      const response = await adminFetch(`/api/whatsapp-leads/export?${searchParams.toString()}`);
       
       if (!response.ok) {
         const errorData = await response.json();

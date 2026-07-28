@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/api-auth';
 
 export const runtime = 'nodejs';
 
@@ -21,6 +22,7 @@ export async function GET() {
           },
           select: {
             id: true,
+            url: true,
             type: true,
             order: true,
             isThumbnail: true
@@ -44,6 +46,9 @@ export async function GET() {
 
 // POST - Actualizar vehículos trending (solo admin)
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { vehicleIds } = await request.json();
 

@@ -140,12 +140,13 @@ export function ObjectiveResults({ results, query }: ObjectiveResultsProps) {
       {/* Results Grid */}
       {sortedVehicles.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedVehicles.map((vehicle: any) => (
+          {sortedVehicles.map((vehicle: any, index: number) => (
             <VehicleCard
               key={vehicle.id}
               vehicle={vehicle}
               onExplore={(id) => window.location.href = `/vehicles/${id}`}
               matchPercentage={vehicle.matchPercentage}
+              index={index}
             />
           ))}
         </div>

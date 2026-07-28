@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { requireAdmin } from '@/lib/api-auth';
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const formData = await request.formData();
     const files = formData.getAll('files') as File[];

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save, X } from 'lucide-react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 export function AddDealershipForm() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export function AddDealershipForm() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/dealers', {
+      const response = await adminFetch('/api/dealers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

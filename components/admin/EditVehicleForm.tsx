@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Car, Save, X } from 'lucide-react';
 import { ImageUpload } from './ImageUpload';
 import { WiseMetricsForm } from './WiseMetricsForm';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface Dealer {
   id: string;
@@ -838,7 +839,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
         thumbnailIndex
       };
 
-      const response = await fetch(`/api/vehicles/${vehicleId}`, {
+      const response = await adminFetch(`/api/vehicles/${vehicleId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

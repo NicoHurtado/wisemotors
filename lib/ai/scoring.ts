@@ -1,10 +1,39 @@
 // Helper types and functions for candidate scoring and payload generation
 import type { VehicleCandidate } from './features';
-import { getValidImageUrl, createImagePlaceholder } from '@/lib/utils/imageUtils';
+import {
+  detectQueryProfile,
+  scoreDeterministically,
+  rankCandidates,
+  type QueryProfile,
+} from './deterministic';
 
 export interface ScoredCandidate extends VehicleCandidate {
+  /** Puntaje determinístico 0-100 (percentil winsorizado × pesos del perfil). */
   score: number;
-  breakdown?: Record<string, number>; // Optional now
+  /** Contribución por feature — con esto se explica por qué quedó donde quedó. */
+  breakdown?: Record<string, number>;
+}
+
+/**
+ * Puntúa y ordena los candidatos de forma determinística. Este orden es el
+ * ranking base del producto: el LLM después lo afina y lo explica, pero si el
+ * LLM falla o no hay API key, este orden ES el resultado — correcto aunque sin
+ * prosa, no una ficción de porcentajes inventados.
+ */
+export function scoreCandidates(
+  candidates: VehicleCandidate[],
+  query: string
+): { ranked: ScoredCandidate[]; profile: QueryProfile } {
+  const profile = detectQueryProfile(query);
+  const results = scoreDeterministically(candidates, profile);
+
+  const scored: ScoredCandidate[] = candidates.map(c => ({
+    ...c,
+    score: results.get(c.id)?.score ?? 0,
+    breakdown: results.get(c.id)?.breakdown,
+  }));
+
+  return { ranked: rankCandidates(scored), profile };
 }
 
 // Crear payload ultracompacto para el LLM de rerank
@@ -31,7 +60,8 @@ export function createCompactPayload(candidates: ScoredCandidate[]): any[] {
     // Tags descriptivos (incluye WiseMotors originales)
     tags: candidate.tags.slice(0, 8),
 
-    // Score determinístico para referencia (placeholder)
-    det_score: 0
+    // Puntaje determinístico real: el orden base que el LLM debe respetar
+    // salvo que el contexto subjetivo justifique moverlo.
+    det_score: candidate.score
   }));
 }

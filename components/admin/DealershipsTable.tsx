@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Edit, Trash2, Eye, Building2, MapPin } from 'lucide-react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 // Tipos para los datos de la API
 interface Dealer {
@@ -46,7 +47,7 @@ export function DealershipsTable() {
   const handleDelete = async (id: string) => {
     if (confirm('¿Estás seguro de que quieres eliminar este concesionario?')) {
       try {
-        const response = await fetch(`/api/dealers/${id}`, {
+        const response = await adminFetch(`/api/dealers/${id}`, {
           method: 'DELETE'
         });
         

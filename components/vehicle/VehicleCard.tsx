@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Heart } from 'lucide-react';
@@ -24,6 +24,8 @@ interface VehicleCardProps {
   reasons?: string[];
   compact?: boolean;
   matchPercentage?: number;
+  /** Posición en la grilla: controla el retraso de la cascada de entrada (40ms por tarjeta). */
+  index?: number;
 }
 
 export const VehicleCard = React.memo(function VehicleCard({
@@ -35,9 +37,26 @@ export const VehicleCard = React.memo(function VehicleCard({
   affinityScore,
   reasons,
   compact = false,
-  matchPercentage
+  matchPercentage,
+  index
 }: VehicleCardProps) {
   const router = useRouter();
+  const glowFrame = useRef<number | null>(null);
+
+  // Spotlight que sigue al cursor: actualiza --mx/--my con rAF para no
+  // disparar más de un cálculo por frame. El pintado es solo opacity (CSS).
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    if (glowFrame.current !== null) return;
+    glowFrame.current = requestAnimationFrame(() => {
+      el.style.setProperty('--mx', `${x}px`);
+      el.style.setProperty('--my', `${y}px`);
+      glowFrame.current = null;
+    });
+  }, []);
   const { user } = useAuth();
   const { isFavorite, toggleFavorite, loading: favoriteLoading } = useFavorites();
 
@@ -96,8 +115,12 @@ export const VehicleCard = React.memo(function VehicleCard({
 
   return (
     <Card
-      className="group overflow-hidden transition-all duration-300 hover:shadow-soft hover:-translate-y-1 cursor-pointer"
+      className="group overflow-hidden card-glow card-enter transition-transform duration-300 hover:-translate-y-1 cursor-pointer"
       onClick={handleCardClick}
+      onMouseMove={handleMouseMove}
+      style={index !== undefined
+        ? ({ '--enter-delay': `${Math.min(index, 12) * 40}ms` } as React.CSSProperties)
+        : undefined}
     >
       <div className="relative aspect-[4/3] overflow-hidden">
         <PhotoCarousel

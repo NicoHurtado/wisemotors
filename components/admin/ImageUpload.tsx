@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface ImageUploadProps {
   images: string[];
@@ -41,7 +42,7 @@ export function ImageUpload({
         formData.append('files', file);
       }
 
-      const response = await fetch('/api/upload', {
+      const response = await adminFetch('/api/upload', {
         method: 'POST',
         body: formData,
       });

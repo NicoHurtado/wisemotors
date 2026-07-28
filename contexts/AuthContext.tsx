@@ -32,21 +32,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (token && userData) {
       try {
         const parsedUser = JSON.parse(userData);
-        
-        // El usuario ya tiene username del API
-        
+
         setUser(parsedUser);
-        
-        // Si es admin, verificar que la contraseña esté guardada
-        if (parsedUser.email === 'adminwise@wisemotors.co') {
-          const adminPassword = localStorage.getItem('adminPassword');
-          if (!adminPassword) {
-            // Si no hay contraseña admin guardada, limpiar todo
-            logout();
-            return false;
-          }
-        }
-        
+
         return true;
       } catch (error) {
         console.error('Error parsing user data:', error);
@@ -78,8 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Limpiar localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    localStorage.removeItem('adminPassword'); // Limpiar contraseña admin
-    
+    // Rezago del esquema viejo: se borra por si quedó guardada de una sesión anterior.
+    localStorage.removeItem('adminPassword');
+
     // Limpiar estado
     setUser(null);
     
@@ -119,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     isAuthenticated: !!user,
-    isAdmin: user?.email === 'adminwise@wisemotors.co',
+    isAdmin: user?.role === 'admin',
   };
 
   return (

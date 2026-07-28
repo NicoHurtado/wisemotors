@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { vehicleUpdateSchema } from '@/lib/schemas/vehicle';
+import { requireAdmin } from '@/lib/api-auth';
 
 // GET /api/vehicles/[id] - Obtener vehículo por ID
 export async function GET(
@@ -124,6 +125,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
 
@@ -306,6 +310,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     // Verificar que el vehículo existe
     const existingVehicle = await prisma.vehicle.findUnique({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { dealerUpdateSchema } from '@/lib/schemas/dealer';
+import { requireAdmin } from '@/lib/api-auth';
 
 // GET /api/dealers/[id] - Obtener concesionario por ID
 export async function GET(
@@ -46,6 +47,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
     
@@ -92,6 +96,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     // Verificar que el concesionario existe
     const existingDealer = await prisma.dealer.findUnique({

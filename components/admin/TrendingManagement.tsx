@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Check, X, Star, StarOff, Search, Filter } from 'lucide-react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface Vehicle {
   id: string;
@@ -81,7 +82,7 @@ export function TrendingManagement({ onClose }: TrendingManagementProps) {
     try {
       const vehicleIds = trendingVehicles.map(v => v.id);
       
-      const response = await fetch('/api/trending', {
+      const response = await adminFetch('/api/trending', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

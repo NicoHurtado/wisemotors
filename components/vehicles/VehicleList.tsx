@@ -121,11 +121,12 @@ export function VehicleList({
       {/* Vehicle Grid */}
       {!loading && !error && sortedVehicles.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedVehicles.map((vehicle) => (
+          {sortedVehicles.map((vehicle, index) => (
             <VehicleCardComponent
               key={vehicle.id}
               vehicle={vehicle}
               onExplore={handleExplore}
+              index={index}
             />
           ))}
         </div>

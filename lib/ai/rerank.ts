@@ -70,6 +70,9 @@ REGLAS CRÍTICAS:
 3. Clasifica los mejores 10 vehículos (Top 10)
 4. Razones específicas y concisas (no genéricas)
 5. Considera el contexto colombiano/antioqueño
+6. Cada candidato trae "det_score": un ranking base calculado con datos reales.
+   La lista YA VIENE ordenada por él. Respétalo como punto de partida y solo
+   mueve un vehículo si el contexto subjetivo lo justifica claramente.
 
 Contexto regional:
 - "Palmas" = zona montañosa, requiere potencia
@@ -191,9 +194,8 @@ function ensureMinimum(recs: FinalRecommendation[], candidates: ScoredCandidate[
     if (extras.length >= missing) break;
     if (have.has(c.id)) continue;
 
-    // Asignar score por defecto para los rellenados (o usar su score determinístico si existe algo)
-    // Para UX consistente, usar un match basado en orden relativo o fijo bajo
-    const fallbackMatch = Math.max(10, 50 - (extras.length * 5));
+    // Usar el score determinístico real del candidato, no un número inventado
+    const fallbackMatch = Math.max(1, Math.min(100, Math.round(c.score)));
 
     extras.push({
       rank: recs.length + extras.length + 1,
@@ -217,12 +219,13 @@ function ensureMinimum(recs: FinalRecommendation[], candidates: ScoredCandidate[
 
 // Fallback usando solo scoring determinístico
 function createFallbackRecommendations(candidates: ScoredCandidate[]): FinalRecommendation[] {
-  // Retornar hasta 10 candidatos ordenados por el scoring original (que ahora es dummy 0, ojo)
-  // Como scoring.ts devuelve 0, el orden es el de la DB (normalmente por año reciente)
-  // TODO: Si scoring determinístico fue removido, el orden aquí es arbitrario.
+  // Los candidatos llegan ordenados por el scoring determinístico real
+  // (percentiles winsorizados × pesos del perfil). Si el LLM no está, este
+  // orden ES el resultado: correcto aunque sin prosa — degradación real,
+  // no la ficción anterior del 90-85-80 inventado.
   return candidates.slice(0, 10).map((candidate, index) => ({
     rank: index + 1,
-    match: Math.max(10, 90 - (index * 5)), // Fake decay score for fallback
+    match: Math.max(1, Math.min(100, Math.round(candidate.score))),
     reasons: generateFallbackReasons(candidate),
     vehicle: {
       id: candidate.id,

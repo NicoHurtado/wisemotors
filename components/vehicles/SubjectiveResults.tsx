@@ -80,6 +80,7 @@ export function SubjectiveResults({ results, query, onFilterClick }: SubjectiveR
                   showAffinity={true}
                   affinityScore={vehicle.matchPercentage}
                   reasons={vehicle.reasons}
+                  index={index}
                 />
               </div>
             </div>
@@ -127,13 +128,14 @@ export function SubjectiveResults({ results, query, onFilterClick }: SubjectiveR
           {showMore && (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {paginatedOptions.map((vehicle: any) => (
+                {paginatedOptions.map((vehicle: any, index: number) => (
                   <VehicleCard
                     key={vehicle.id}
                     vehicle={vehicle}
                     onExplore={(id) => window.location.href = `/vehicles/${id}`}
                     showAffinity={true}
                     affinityScore={vehicle.matchPercentage}
+                    index={index}
                   />
                 ))}
               </div>

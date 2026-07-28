@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, Edit, ArrowLeft, Trash2, Car, MapPin, Phone, Mail } from 'lucide-react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface Dealership {
   id: string;
@@ -74,7 +75,7 @@ export function DealershipDetail({ dealershipId }: DealershipDetailProps) {
 
     if (confirm('¿Estás seguro de que quieres eliminar este concesionario?')) {
       try {
-        const response = await fetch(`/api/dealers/${dealershipId}`, {
+        const response = await adminFetch(`/api/dealers/${dealershipId}`, {
           method: 'DELETE'
         });
         

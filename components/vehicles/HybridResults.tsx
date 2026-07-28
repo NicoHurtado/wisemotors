@@ -108,6 +108,7 @@ export function HybridResults({ results, query, onFilterClick }: HybridResultsPr
                     showAffinity={true}
                     affinityScore={vehicle.matchPercentage}
                     reasons={vehicle.reasons}
+                    index={index}
                   />
                 </div>
               </div>
@@ -170,13 +171,14 @@ export function HybridResults({ results, query, onFilterClick }: HybridResultsPr
 
           {showMore && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sortedMoreOptions.map((vehicle: any) => (
+              {sortedMoreOptions.map((vehicle: any, index: number) => (
                 <VehicleCard
                   key={vehicle.id}
                   vehicle={vehicle}
                   onExplore={(id) => window.location.href = `/vehicles/${id}`}
                   showAffinity={true}
                   affinityScore={vehicle.matchPercentage}
+                  index={index}
                 />
               ))}
             </div>

@@ -54,13 +54,8 @@ export function RegisterForm() {
 
       if (response.ok) {
         // Registro exitoso - iniciar sesión automáticamente
-        const userWithRole = {
-          ...data.user,
-          role: data.user.email === 'adminwise@wisemotors.co' ? 'admin' : 'user'
-        };
-        
-        // Iniciar sesión automáticamente
-        login(userWithRole, data.token);
+        // El rol viene del servidor: registrarse con cierto email ya no otorga admin.
+        login(data.user, data.token);
         
         // Redirigir a la página principal
         window.location.href = '/';

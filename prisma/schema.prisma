@@ -55,6 +55,9 @@ model Vehicle {
   status         String          @default("Disponible")
   isTrending     Boolean         @default(false)
   trendingOrder  Int?
+  // Cobertura de datos (se recalcula al migrar/ingestar atributos)
+  coverageGlobal    Float?
+  coverageByDimension String?    // JSON: { "desempeño": 0.8, "seguridad": 0.6, ... }
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   favorites      Favorite[]
@@ -62,11 +65,88 @@ model Vehicle {
   images         VehicleImage[]
   dealers        Dealer[]        @relation("DealerVehicles")
   whatsappLeads  WhatsAppLead[]
+  attributes     VehicleAttribute[]
 
   @@index([status, type, price])
   @@index([status, price])
   @@index([brand, model])
   @@map("vehicles")
+}
+
+// ============================================================================
+// REGISTRO DE ATRIBUTOS — reemplaza progresivamente el JSON `specifications`.
+// Agregar un campo = insertar una fila aquí. Nada de tocar 4 formularios.
+// ============================================================================
+model AttributeDefinition {
+  key             String   @id // canónico y namespaced, ej. 'combustion.maxTorque'
+  labelEs         String
+  unit            String?
+  dataType        String   // numeric | boolean | text | enum
+  direction       String   @default("neutral") // higher_better | lower_better | neutral
+  appliesTo       String   @default("*") // CSV de fuelTypes aplicables, o '*'
+  displayGroup    String   // grupo visual en la ficha
+  dimension       String   // dimensión de cobertura: desempeño, seguridad, confort...
+  displayPriority Int      @default(50) // 0-100, qué tan arriba va
+  cardEligible    Boolean  @default(false) // ¿puede salir en tarjeta de catálogo?
+  coAvailability  String   @default("common") // common | rare | never_published
+  comparable      Boolean  @default(true)
+  expectedMin     Float?   // validación física para la ingesta
+  expectedMax     Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  values          VehicleAttribute[]
+
+  @@index([dimension])
+  @@map("attribute_definitions")
+}
+
+// Un hecho observado sobre un vehículo, con fuente y confianza.
+model VehicleAttribute {
+  id           String   @id @default(cuid())
+  vehicleId    String
+  attributeKey String
+  valueNum     Float?
+  valueText    String?
+  valueBool    Boolean?
+  confidence   Float    @default(1.0) // 0-1
+  sourceTier   Int      @default(1) // 1 fabricante CO, 2 prensa/global, 3 comunidad
+  sourceUrl    String?
+  extractedAt  DateTime @default(now())
+  verifiedBy   String? // userId del auditor humano
+  verifiedAt   DateTime?
+  vehicle      Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  definition   AttributeDefinition @relation(fields: [attributeKey], references: [key])
+
+  @@unique([vehicleId, attributeKey])
+  @@index([attributeKey, valueNum]) // por fin: filtrar por spec en SQL
+  @@index([vehicleId])
+  @@map("vehicle_attributes")
+}
+
+// Bandas de precio Colombia, con vigencia. Se recalibran cada semestre.
+model PriceBand {
+  id        String    @id @default(cuid())
+  key       String // entrada | popular | media | media_alta | premium | lujo
+  labelEs   String
+  minPrice  Float // COP
+  maxPrice  Float? // null = sin techo
+  validFrom DateTime  @default(now())
+  validTo   DateTime? // null = vigente
+
+  @@index([validTo])
+  @@map("price_bands")
+}
+
+// Percepción de marca calibrada a Colombia. Curada a mano — es criterio, no fórmula.
+model BrandPerception {
+  brand             String   @id
+  prestige          Int // 0-100 percepción social CO
+  reliability       Int // 0-100 confiabilidad percibida
+  partsAvailability Int // 0-100 facilidad de repuestos CO
+  notes             String?
+  updatedAt         DateTime @updatedAt
+
+  @@map("brand_perception_co")
 }
 
 model VehicleImage {

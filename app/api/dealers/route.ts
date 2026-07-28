@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { dealerSchema } from '@/lib/schemas/dealer';
+import { requireAdmin } from '@/lib/api-auth';
 
 // GET /api/dealers - Obtener todos los concesionarios
 export async function GET(request: NextRequest) {
@@ -48,6 +49,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/dealers - Crear nuevo concesionario
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
     

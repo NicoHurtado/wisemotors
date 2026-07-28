@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Car, Edit, ArrowLeft, Trash2 } from 'lucide-react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface Vehicle {
   id: string;
@@ -57,7 +58,7 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
   const handleDelete = async () => {
     if (confirm('¿Estás seguro de que quieres eliminar este vehículo?')) {
       try {
-        const response = await fetch(`/api/vehicles/${vehicleId}`, {
+        const response = await adminFetch(`/api/vehicles/${vehicleId}`, {
           method: 'DELETE'
         });
         
