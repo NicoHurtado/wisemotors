@@ -333,9 +333,20 @@ const phev: AttributeDef[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// COMERCIAL — dimensión: costo (datos de mercado, no de la máquina)
+// ---------------------------------------------------------------------------
+const G_COM = { displayGroup: 'Comercial', dimension: 'costo' };
+const commercial: AttributeDef[] = [
+  num('commercial.priceCop', 'Precio de lista (Colombia)', { ...G_COM, unit: 'COP', direction: 'lower_better', displayPriority: 95, cardEligible: true, expectedMin: 30_000_000, expectedMax: 3_000_000_000 }),
+  num('commercial.warrantyYears', 'Garantía', { ...G_COM, unit: 'años', direction: 'higher_better', displayPriority: 60, expectedMin: 1, expectedMax: 10 }),
+  num('commercial.warrantyKm', 'Garantía en km', { ...G_COM, unit: 'km', direction: 'higher_better', displayPriority: 55, expectedMin: 20_000, expectedMax: 1_000_000 }),
+];
+
+// ---------------------------------------------------------------------------
 // REGISTRO COMPLETO
 // ---------------------------------------------------------------------------
 export const ATTRIBUTE_REGISTRY: AttributeDef[] = [
+  ...commercial,
   ...performance,
   ...chassis,
   ...offRoad,

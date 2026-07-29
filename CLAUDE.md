@@ -75,17 +75,30 @@ cobertura, migración, seeds, motor de cohortes.
   `AnimatedNumber` (viewport + ease-out, usado en precio de la ficha),
   `prefers-reduced-motion` global.
 
-**BLOQUEADO — necesita al humano:**
-1. Credenciales de Neon VENCIDAS en `.env` y `.env.local` (auth failed contra
-   `ep-snowy-dawn-ad1ay939`). Renovar en console.neon.tech.
-2. `JWT_SECRET` NUNCA existió en los .env — el fallback inseguro era el que firmaba.
-   Generar (`openssl rand -base64 48`), ponerlo en `.env.local` y Vercel. Invalida sesiones.
-3. Con BD viva: `npx prisma db push` → `npx tsx scripts/migrate-attributes.ts` (dry-run,
-   luego `--write`) → `npx tsx scripts/seed-colombia.ts --write` →
-   `node --env-file=.env.local scripts/set-admin.js adminwise@wisemotors.co`.
-4. NADA commiteado (ni lo del 27 ni lo del 28). Commitear por bloques.
-
-`tsx` ya corre (npm install reparó el esbuild de plataforma equivocada). `npx tsc --noEmit` = 0 errores.
+**28-jul tarde — BD NUEVA + INGESTA CON IA (backlog #5) FUNCIONANDO:**
+- La BD anterior se perdió; hay Neon nuevo (`ep-morning-snow-axszv58y`, us-east-2) ya
+  configurado en `.env`/`.env.local` con `JWT_SECRET` generado. Schema aplicado, 156
+  definiciones + bandas + percepción sembradas. Falta replicar env vars en Vercel.
+- Cuenta admin: adminwise@wisemotors.co con contraseña temporal (la tiene el equipo
+  del 28-jul) — CAMBIARLA. El rol vive en User.role.
+- **Pipeline de ingesta** (`lib/ingest/`): identidad canónica → fuentes por tier
+  (prensa CO con búsqueda WordPress + Wikipedia + dominios de fabricante en
+  `sources.ts`) → fetch educado (robots.txt, cache, UA de navegador porque los WAF
+  bloquean UAs "Bot" con 403) → extracción function-calling CONTRA EL REGISTRO con
+  cita textual obligatoria → reconciliación por tier con conflictos >10% marcados →
+  validación física → precio de fuente o ESTIMADO con razonamiento (decisión de
+  producto 28-jul: estimar se permite, marcado + aprobación humana; nunca supera 0.6
+  de confianza). UI en `/admin/ingest` (`IngestStudio.tsx`): aceptar/rechazar/editar
+  campo por campo, ver fuente/cita/alternativas, publicar.
+- Publicación (`/api/admin/ingest/publish`): crea Vehicle + VehicleAttribute
+  (verifiedBy = revisor) + specifications JSON compatible + cobertura calculada.
+  Rechaza duplicados exactos con 409.
+- **Probado E2E por la UI real:** Corolla Cross 2025 ingestado (25 hechos, 5
+  conflictos detectados — mezcla de versiones híbrida/gasolina —, precio $133M de
+  Autos de Primera) → publicado → la búsqueda "una SUV para la familia que no gaste
+  mucho" lo devuelve #1 con razones. Scoring determinístico + rerank funcionando.
+- Pendiente de ingesta v2: fotos (Cloudinary), asociar concesionario, cola de
+  auditoría, `maxDuration: 60` puede quedar corto en Vercel para 6 fuentes (~45s local).
 
 ## Backlog en orden (del plan, secciones 8-9)
 

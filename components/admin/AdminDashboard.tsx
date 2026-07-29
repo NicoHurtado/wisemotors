@@ -24,11 +24,18 @@ export function AdminDashboard() {
             </h1>
             <div className="flex space-x-4">
               <button
-                onClick={() => router.push('/admin/vehicles/new')}
+                onClick={() => router.push('/admin/ingest')}
                 className="inline-flex items-center px-4 py-2 bg-wise text-white rounded-lg hover:bg-wise-dark transition-colors"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Nuevo Vehículo
+                Subir con IA
+              </button>
+              <button
+                onClick={() => router.push('/admin/vehicles/new')}
+                className="inline-flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Manual
               </button>
               <button
                 onClick={() => router.push('/admin/dealerships/new')}
