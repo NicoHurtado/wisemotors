@@ -16,8 +16,72 @@
   --motion-hero: 700ms;
   /* entrada de la ficha, revelaciones */
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
   --wise-glow: 136, 28, 183;
   /* #881cb7 en RGB, para usarlo como luz */
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   LIQUID GLASS (versión clara)
+   La refracción de borde es lo que lo separa del glassmorphism genérico:
+   brillo especular arriba, sombra teñida de morado abajo. Blur máximo 20px,
+   más que eso castiga a Safari.
+   ════════════════════════════════════════════════════════════════════════ */
+.glass {
+  background: color-mix(in oklab, #ffffff 55%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(var(--wise-glow), 0.07),
+    0 20px 44px -26px rgba(var(--wise-glow), 0.3);
+}
+
+/* Variante para barras y superficies pegadas al borde superior */
+.glass-bar {
+  background: color-mix(in oklab, #ffffff 72%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(var(--wise-glow), 0.09);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 12px 32px -22px rgba(var(--wise-glow), 0.35);
+}
+
+/* Sin backdrop-filter el panel queda sólido y legible, nunca translúcido roto */
+@supports not (backdrop-filter: blur(1px)) {
+
+  .glass,
+  .glass-bar {
+    background: #ffffff;
+  }
+}
+
+/* ── Revelado al recorrer la página ──
+   Una sola vez por elemento, 420ms, solo transform y opacity. */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 420ms var(--ease-out-strong),
+    transform 420ms var(--ease-out-strong);
+}
+
+.reveal[data-shown='true'] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Barras de métricas: se dibujan al entrar en pantalla */
+.metric-bar {
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 700ms var(--ease-out-strong);
+}
+
+.metric-bar[data-shown='true'] {
+  transform: scaleX(1);
 }
 
 /* Cascada de entrada de resultados: stagger de 40ms vía --enter-delay */
@@ -91,6 +155,17 @@
 
   .card-glow::before,
   .card-glow::after {
+    transition: none;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .metric-bar {
+    transform: scaleX(1);
     transition: none;
   }
 
@@ -220,9 +295,24 @@
   }
 }
 
-/* Custom background with subtle radial gradient */
+/* ── Luz ambiental ──
+   El vidrio necesita algo detrás que refractar: sobre blanco plano es
+   invisible. Tres focos morados muy suaves, fijos, sin animación. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(58% 42% at 10% 4%, rgba(136, 28, 183, 0.10), transparent 62%),
+    radial-gradient(48% 38% at 92% 18%, rgba(120, 80, 220, 0.09), transparent 64%),
+    radial-gradient(52% 44% at 72% 86%, rgba(136, 28, 183, 0.07), transparent 66%);
+}
+
+/* El héroe deja pasar la luz ambiental en vez de taparla con blanco */
 .bg-hero {
-  background: radial-gradient(ellipse at center, rgba(136, 28, 183, 0.03) 0%, rgba(255, 255, 255, 1) 70%);
+  background: transparent;
 }
 
 /* Hero image overlay for better text contrast */
@@ -300,6 +390,22 @@
   div {
     font-size: 16px;
     line-height: 1.5;
+  }
+
+  /* ...pero un span dentro de un titular debe heredar el tamaño del titular.
+     Sin esto, "WiseMotors" dentro del h1 caía a 16px y partía la portada. */
+  h1 span,
+  h2 span,
+  h3 span,
+  h4 span,
+  h5 span,
+  h6 span,
+  button span,
+  h1 div,
+  h2 div,
+  h3 div {
+    font-size: inherit;
+    line-height: inherit;
   }
 
   /* Better container padding for mobile */

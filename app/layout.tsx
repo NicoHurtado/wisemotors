@@ -1,12 +1,17 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Outfit, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { FavoritesProvider } from '@/contexts/FavoritesContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 
-const inter = Inter({ subsets: ['latin'] })
+// Outfit tiene carácter geométrico propio; Inter es la fuente por defecto de
+// medio internet y no aporta identidad.
+const outfit = Outfit({ subsets: ['latin'], variable: '--font-sans', display: 'swap' })
+
+// Monoespaciada solo para cifras reales: precios, potencias, puntajes.
+const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' })
 
 export const metadata: Metadata = {
   title: {
@@ -64,7 +69,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className={inter.className}>
+      <body className={`${outfit.variable} ${mono.variable} font-sans`}>
         <AuthProvider>
           <FavoritesProvider>
             <div className="min-h-screen flex flex-col">

@@ -143,22 +143,23 @@ export function HeroSearch({ initialQuery, showFilters = false }: HeroSearchProp
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto text-center space-y-8">
-      {/* Hero Title */}
-      <div className="space-y-4">
-        <h1 className="text-4xl md:text-6xl font-bold text-foreground leading-tight">
+    <div className="w-full max-w-[1180px] mx-auto space-y-9">
+      {/* Titular a la izquierda, no centrado: la composición deja de ser simétrica */}
+      <div className="grid grid-cols-1 gap-x-12 gap-y-5 md:grid-cols-12 md:items-end">
+        <h1 className="md:col-span-7 text-[2.6rem] md:text-[3.9rem] font-semibold leading-[1.03] tracking-[-0.035em] text-foreground">
           Encuentra tu vehículo ideal con{' '}
           <span className="text-wise">Wise</span>
           <span className="text-foreground">Motors</span>
         </h1>
 
-        <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-          Describe lo que quieres con tus palabras y te encontramos las mejores opciones en segundos
+        <p className="md:col-span-5 text-[17px] md:text-[18px] text-muted-foreground leading-relaxed md:pb-2">
+          Describe lo que quieres con tus palabras y te encontramos las mejores opciones
+          en segundos.
         </p>
       </div>
 
       {/* Search Input */}
-      <div className="relative max-w-4xl mx-auto">
+      <div className="relative">
         <div className="flex items-center gap-3">
           <div className="relative w-full">
             <Input
@@ -167,7 +168,7 @@ export function HeroSearch({ initialQuery, showFilters = false }: HeroSearchProp
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyPress={handleKeyPress}
-              className="h-14 text-base pr-20 bg-white/80 backdrop-blur-sm border-2 border-wise/20 focus:border-wise focus:ring-2 focus:ring-wise/20 transition-all duration-300"
+              className="glass h-16 rounded-2xl text-base md:text-[17px] px-5 border-0 focus-visible:ring-2 focus-visible:ring-wise/40"
               aria-label="Buscar vehículos"
               aria-describedby="search-description"
             />
@@ -183,7 +184,7 @@ export function HeroSearch({ initialQuery, showFilters = false }: HeroSearchProp
             onClick={handleSearch}
             disabled={!query.trim() || isSearching}
             size="icon"
-            className="h-14 w-14 bg-wise hover:bg-wise-dark transition-colors"
+            className="h-16 w-16 shrink-0 rounded-2xl bg-wise hover:bg-wise-dark shadow-lg shadow-wise/25 transition-colors"
             aria-label="Buscar"
           >
             {isSearching ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Search className="w-6 h-6" />}
@@ -196,10 +197,10 @@ export function HeroSearch({ initialQuery, showFilters = false }: HeroSearchProp
 
       </div>
 
-      {/* AI Badge */}
-      <div className="flex items-center justify-center gap-2">
-        <Badge variant="secondary" className="text-sm px-4 py-2">
-          <Brain className="w-4 h-4 mr-2" />
+      {/* AI Badge, alineado con el titular */}
+      <div className="flex items-center gap-2">
+        <Badge variant="secondary" className="glass rounded-full text-[13px] px-4 py-2 font-medium">
+          <Brain className="w-4 h-4 mr-2" strokeWidth={1.75} />
           Impulsado por inteligencia artificial
         </Badge>
       </div>

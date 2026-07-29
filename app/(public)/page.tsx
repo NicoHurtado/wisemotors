@@ -11,6 +11,7 @@ import { AdaptiveResults } from '@/components/vehicles/AdaptiveResults';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FilterButtons } from '@/components/landing/FilterButtons';
 import { AdminQuickAccess } from '@/components/admin/AdminQuickAccess';
+import { Reveal } from '@/components/ui/Reveal';
 
 function HomePageContent() {
   const router = useRouter();
@@ -51,7 +52,7 @@ function HomePageContent() {
   return (
     <>
       {/* Hero Section */}
-      <section className="py-20 bg-hero">
+      <section className="py-20 md:py-28 bg-hero">
         <div className="container mx-auto px-4">
           <HeroSearch 
             initialQuery={query} 
@@ -98,21 +99,40 @@ function HomePageContent() {
       <HowItWorks />
 
       {/* CTA Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 text-center">
-          <div className="max-w-2xl mx-auto space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-              ¿Listo para encontrar tu vehículo ideal?
-            </h2>
-            <p className="text-muted-foreground text-lg">
-              Explora nuestro catálogo completo y encuentra la opción perfecta para ti
-            </p>
-            <Button asChild size="lg" variant="wise" className="text-lg px-8 py-4">
-              <a href={routes.vehicles}>
-                Ver todos los vehículos
-              </a>
-            </Button>
-          </div>
+      <section className="py-24">
+        <div className="container mx-auto max-w-[1180px] px-4">
+          <Reveal>
+            <div className="glass relative overflow-hidden rounded-[2rem] px-8 py-14 md:px-14">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full"
+                style={{
+                  background:
+                    'radial-gradient(circle, rgba(136,28,183,0.16) 0%, transparent 70%)',
+                }}
+              />
+              <div className="relative grid grid-cols-1 gap-8 md:grid-cols-12 md:items-end">
+                <div className="md:col-span-7">
+                  <h2 className="text-[2.1rem] md:text-[2.6rem] font-semibold leading-[1.05] tracking-[-0.03em] text-foreground">
+                    ¿Listo para encontrar tu vehículo ideal?
+                  </h2>
+                  <p className="mt-3 max-w-[56ch] text-[17px] leading-relaxed text-muted-foreground">
+                    Explora el catálogo completo y encuentra la opción que de verdad te sirve.
+                  </p>
+                </div>
+                <div className="md:col-span-4 md:col-start-9 md:justify-self-end">
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="wise"
+                    className="rounded-full px-8 text-[16px] shadow-lg shadow-wise/25"
+                  >
+                    <a href={routes.vehicles}>Ver todos los vehículos</a>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Reveal>
         </div>
       </section>
       
