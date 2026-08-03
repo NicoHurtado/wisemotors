@@ -150,7 +150,7 @@ export function VehicleFilters({ filters, onFiltersChange }: VehicleFiltersProps
   const hasSelections = localFilters.categories.length + localFilters.engineTypes.length > 0 || !!localFilters.priceRange.min || !!localFilters.priceRange.max;
 
   return (
-    <Card className="shadow-soft lg:sticky lg:top-24 border-gray-100/70">
+    <Card className="glass rounded-2xl border-0 lg:sticky lg:top-24">
       <CardHeader className="flex flex-row items-center justify-between pb-4">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-full bg-wise/10 text-wise flex items-center justify-center">

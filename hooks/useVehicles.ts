@@ -167,6 +167,17 @@ export function useVehicles(
             imageUrl,
             category: vehicle.type,
             status: vehicle.status || 'NUEVO',
+            // Las tarjetas muestran potencia, 0-100 y consumo desde aquí
+            specifications:
+              typeof vehicle.specifications === 'string'
+                ? (() => {
+                    try {
+                      return JSON.parse(vehicle.specifications);
+                    } catch {
+                      return {};
+                    }
+                  })()
+                : vehicle.specifications || {},
             images: (vehicle.images || []).map((img: any) => ({
               ...img,
               url: img.url?.startsWith('http') ? img.url : `/api/vehicles/${vehicle.id}/image?index=${img.order}`

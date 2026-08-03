@@ -113,9 +113,58 @@ export const VehicleCard = React.memo(function VehicleCard({
 
   const displayThumbnail = useVehicleImage(displayThumbnailUrl, vehicle.brand, vehicle.model);
 
+  // Tres cifras de cabecera sacadas de las especificaciones reales. Solo se
+  // muestran las que existen: un dato ausente no se rellena con un guion.
+  const especificaciones = useMemo(() => {
+    // Llega como objeto desde getVehicles y como string desde /api/vehicles:
+    // se normaliza aquí en vez de confiar en que todas las rutas coincidan.
+    let specs = (vehicle as any).specifications;
+    if (typeof specs === 'string') {
+      try {
+        specs = JSON.parse(specs);
+      } catch {
+        return [];
+      }
+    }
+    if (!specs || typeof specs !== 'object') return [];
+
+    const num = (...candidatos: any[]) => {
+      for (const c of candidatos) {
+        const n = parseFloat(c);
+        if (Number.isFinite(n) && n > 0) return n;
+      }
+      return null;
+    };
+
+    const potencia = num(
+      specs.powertrain?.potenciaMaxMotorTermico,
+      specs.powertrain?.potenciaMaxSistemaHibrido,
+      specs.powertrain?.potenciaMaxEV,
+      specs.performance?.maxPower,
+      specs.combustion?.maxPower,
+      specs.electric?.maxPower,
+      specs.hybrid?.maxPower
+    );
+    const aceleracion = num(specs.performance?.acceleration0to100);
+    const consumo = num(
+      specs.combustion?.cityConsumption,
+      specs.hybrid?.cityConsumption,
+      specs.phev?.cityConsumption
+    );
+    const autonomia = num(specs.electric?.range, specs.electric?.autonomy);
+
+    const filas: { etiqueta: string; valor: string }[] = [];
+    if (potencia) filas.push({ etiqueta: 'Potencia', valor: `${Math.round(potencia)} HP` });
+    if (aceleracion) filas.push({ etiqueta: '0–100', valor: `${aceleracion.toFixed(1).replace('.', ',')} s` });
+    if (autonomia) filas.push({ etiqueta: 'Autonomía', valor: `${Math.round(autonomia)} km` });
+    else if (consumo) filas.push({ etiqueta: 'Consumo', valor: `${consumo.toFixed(1).replace('.', ',')} L` });
+
+    return filas.slice(0, 3);
+  }, [vehicle]);
+
   return (
     <Card
-      className="group overflow-hidden card-glow card-enter transition-transform duration-300 hover:-translate-y-1 cursor-pointer"
+      className="glass group overflow-hidden rounded-2xl border-0 card-glow card-enter transition-transform duration-300 hover:-translate-y-1 cursor-pointer"
       onClick={handleCardClick}
       onMouseMove={handleMouseMove}
       style={index !== undefined
@@ -202,9 +251,25 @@ export const VehicleCard = React.memo(function VehicleCard({
             {getFuelLabel(vehicle.fuel)} • {vehicle.status || 'Nuevo'} • {vehicle.year}
           </p>
 
-          <p className="text-xl font-bold text-foreground">
+          <p className="font-mono text-xl font-bold tabular-nums text-foreground">
             {formatPrice(vehicle.price)}
           </p>
+
+          {/* Cifras de cabecera: lo que un comprador mira antes de entrar */}
+          {especificaciones.length > 0 && (
+            <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-foreground/[0.07] pt-3">
+              {especificaciones.map(fila => (
+                <div key={fila.etiqueta}>
+                  <dt className="text-[10px] font-medium uppercase tracking-[0.07em] text-muted-foreground">
+                    {fila.etiqueta}
+                  </dt>
+                  <dd className="mt-0.5 font-mono text-[14px] font-semibold tabular-nums text-foreground">
+                    {fila.valor}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          )}
 
           {/* AI Reasons */}
           {reasons && reasons.length > 0 && (

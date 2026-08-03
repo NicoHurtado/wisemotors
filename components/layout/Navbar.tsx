@@ -66,19 +66,17 @@ export function Navbar() {
     href === '/' ? pathname === '/' : pathname.startsWith(href);
 
   return (
-    <nav className="sticky top-0 z-40">
-      {/* Capa de vidrio independiente: solo se anima su opacidad */}
+    <nav className="sticky top-0 z-40 px-3 pt-3 md:px-6 md:pt-4">
+      {/* Barra flotante: vidrio siempre presente. Al bajar se estrecha y la
+          sombra se profundiza, así el cambio se siente sin que rebote. */}
       <div
-        aria-hidden
-        className="glass-bar absolute inset-0"
+        className="glass-bar relative mx-auto rounded-2xl px-4 md:px-6"
         style={{
-          opacity: condensada ? 1 : 0,
-          transition: 'opacity var(--motion-quick) var(--ease-out-strong)',
+          maxWidth: condensada ? '1080px' : '1400px',
+          transition: 'max-width 420ms var(--ease-out-strong)',
         }}
-      />
-
-      <div className="relative mx-auto max-w-[1400px] px-4 md:px-8">
-        <div className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-4">
+      >
+        <div className="grid h-14 grid-cols-[auto_1fr_auto] items-center gap-4 md:h-16">
           <Link href="/" className="text-[22px] font-semibold tracking-tight">
             <span className="text-wise">Wise</span>
             <span className="text-foreground">Motors</span>
@@ -170,10 +168,11 @@ export function Navbar() {
         </div>
       </div>
 
+
       {/* Menú móvil: también sobre vidrio */}
       {menuAbierto && (
-        <div className="glass-bar relative md:hidden">
-          <div className="mx-auto max-w-[1400px] space-y-1 px-4 py-4">
+        <div className="glass-bar relative mt-2 rounded-2xl md:hidden">
+          <div className="space-y-1 p-3">
             {[...enlaces, ...enlacesAdmin].map(enlace => {
               const Icono = enlace.icono;
               const activo = esActivo(enlace.href);

@@ -252,6 +252,8 @@ export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
       fuelType: true,
       type: true,
       status: true,
+      // Las tarjetas del catálogo muestran potencia, 0-100 y consumo
+      specifications: true,
       images: {
         orderBy: { order: 'asc' },
         select: {
@@ -294,6 +296,7 @@ export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
       imageUrl,
       category: vehicle.type,
       status: vehicle.status || 'NUEVO',
+      specifications: vehicle.specifications,
       images: vehicle.images?.map((img: any) => ({
         ...img,
         url: img.url?.startsWith('http') ? img.url : `/api/vehicles/${vehicle.id}/image?index=${img.order}`

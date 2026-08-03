@@ -5,6 +5,7 @@ import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { FavoritesProvider } from '@/contexts/FavoritesContext'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { CursorLight } from '@/components/ui/CursorLight'
 
 // Outfit tiene carácter geométrico propio; Inter es la fuente por defecto de
 // medio internet y no aporta identidad.
@@ -70,6 +71,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${outfit.variable} ${mono.variable} font-sans`}>
+        <CursorLight />
         <AuthProvider>
           <FavoritesProvider>
             <div className="min-h-screen flex flex-col">

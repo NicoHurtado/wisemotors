@@ -150,6 +150,9 @@ export async function GET(request: NextRequest) {
           fuelType: true,
           type: true,
           status: true,
+          // Las tarjetas del catálogo muestran potencia, 0-100 y consumo:
+          // sin este campo llegaban sin cifras y la grilla quedaba muda.
+          specifications: true,
           images: {
             orderBy: { order: 'asc' },
             select: {
