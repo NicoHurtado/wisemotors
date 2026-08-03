@@ -27,8 +27,8 @@ const CONTACTO = [
 
 export function Footer() {
   return (
-    <footer className="relative mt-24 overflow-hidden px-3 pb-3 md:px-6 md:pb-6">
-      <div className="glass relative mx-auto max-w-[1400px] overflow-hidden rounded-[2rem] px-6 pt-14 md:px-12">
+    <footer className="relative mt-16 overflow-hidden px-3 pb-3 md:px-6 md:pb-4">
+      <div className="glass relative mx-auto max-w-[1400px] overflow-hidden rounded-[1.75rem] px-6 pt-9 md:px-10">
         {/* Luz de acento: le da al vidrio algo que refractar en la esquina */}
         <div
           aria-hidden
@@ -38,14 +38,14 @@ export function Footer() {
           }}
         />
 
-        <div className="relative grid grid-cols-1 gap-10 md:grid-cols-12">
+        <div className="relative grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-12 md:gap-8">
           {/* Marca y propuesta */}
-          <div className="md:col-span-5">
-            <span className="text-[28px] font-semibold tracking-tight">
+          <div className="col-span-2 md:col-span-5">
+            <span className="text-[24px] font-semibold tracking-tight">
               <span className="text-wise">Wise</span>
               <span className="text-foreground">Motors</span>
             </span>
-            <p className="mt-3 max-w-[38ch] text-[15px] leading-relaxed text-muted-foreground">
+            <p className="mt-2 max-w-[38ch] text-[14px] leading-relaxed text-muted-foreground">
               Carros nuevos medidos contra el mercado colombiano, no contra el catálogo
               mundial.
             </p>
@@ -54,7 +54,7 @@ export function Footer() {
               href="https://instagram.com/wisemotors.co"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-6 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-wise/10 text-wise hover:bg-wise hover:text-white"
+              className="mt-4 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-wise/10 text-wise hover:bg-wise hover:text-white"
               style={{
                 transition:
                   'background-color var(--motion-instant) ease, color var(--motion-instant) ease',
@@ -68,10 +68,10 @@ export function Footer() {
           {/* Columnas de enlaces */}
           {COLUMNAS.map(columna => (
             <nav key={columna.titulo} className="md:col-span-2">
-              <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.09em] text-muted-foreground">
+              <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.09em] text-muted-foreground">
                 {columna.titulo}
               </h3>
-              <ul className="space-y-2.5">
+              <ul className="space-y-2">
                 {columna.enlaces.map(enlace => (
                   <li key={enlace.href}>
                     <Link
@@ -88,7 +88,7 @@ export function Footer() {
           ))}
 
           {/* Contacto */}
-          <div className="md:col-span-3">
+          <div className="col-span-2 md:col-span-3">
             <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.09em] text-muted-foreground">
               Contacto
             </h3>
@@ -118,19 +118,21 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="relative mt-14 flex flex-col gap-2 border-t border-foreground/[0.07] py-6 text-[13px] text-muted-foreground md:flex-row md:items-center md:justify-between">
-          <p>© 2026 WiseMotors. Todos los derechos reservados.</p>
-          <p>Precios y fichas verificados contra la fuente del fabricante.</p>
-        </div>
-
-        {/* Wordmark grande, recortado por el borde inferior */}
-        <div aria-hidden className="pointer-events-none select-none overflow-hidden">
+        {/* Barra inferior con el wordmark de marca de agua detrás, en vez de
+            una franja aparte: ahorra una banda entera de alto. */}
+        <div className="relative mt-8 border-t border-foreground/[0.07]">
           <span
-            className="block whitespace-nowrap text-center font-semibold leading-[0.76] tracking-[-0.05em] text-wise/[0.07]"
-            style={{ fontSize: 'clamp(3.5rem, 15vw, 12rem)', marginBottom: '-0.2em' }}
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 -bottom-2 select-none whitespace-nowrap text-center font-semibold leading-none tracking-[-0.05em] text-wise/[0.06]"
+            style={{ fontSize: 'clamp(2.5rem, 9vw, 6rem)' }}
           >
             WiseMotors
           </span>
+
+          <div className="relative flex flex-col gap-1 py-5 text-[12px] text-muted-foreground md:flex-row md:items-center md:justify-between">
+            <p>© 2026 WiseMotors. Todos los derechos reservados.</p>
+            <p>Precios verificados contra la fuente del fabricante.</p>
+          </div>
         </div>
       </div>
     </footer>
