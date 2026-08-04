@@ -78,3 +78,33 @@ El script genera un vehículo con:
 
 
 
+
+## seed-users.ts
+
+Crea (o resetea) la cuenta de administración y una cuenta normal de prueba.
+
+```bash
+npx tsx scripts/seed-users.ts          # crea las que falten
+npx tsx scripts/seed-users.ts --reset  # además resetea contraseñas
+```
+
+Las contraseñas se generan aleatorias y se imprimen **una sola vez**: no quedan
+en el repo. Si se pierden, se corre otra vez con `--reset`.
+
+- `adminwise@wisemotors.co` — rol `admin`: panel, ingesta y publicación.
+- `prueba@wisemotors.co` — rol `user`: favoritos y comparación, sin permisos.
+
+El rol vive en `User.role` y `lib/api-auth.ts` lo relee de la base en cada
+petición, así que quitarle el rol a alguien surte efecto de inmediato. Para
+cambiar un rol suelto: `node --env-file=.env.local scripts/set-admin.js <email>`.
+
+## reverify-prices.ts
+
+Re-verifica los precios **estimados** ya publicados contra el catálogo real y
+las bandas de precio vigentes (`lib/ingest/price-check.ts`). Los precios con
+fuente no se tocan.
+
+```bash
+npx tsx scripts/reverify-prices.ts          # simulación, no guarda nada
+npx tsx scripts/reverify-prices.ts --write  # aplica las correcciones
+```
