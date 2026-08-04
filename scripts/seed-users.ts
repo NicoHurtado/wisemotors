@@ -52,7 +52,7 @@ function generarPassword(): string {
 }
 
 async function main() {
-  const creadas: { email: string; password: string; role: string; nota: string }[] = [];
+  const creadas: { email: string; password: string; role: string; para: string; nota: string }[] = [];
 
   for (const cuenta of CUENTAS) {
     const existente = await prisma.user.findUnique({

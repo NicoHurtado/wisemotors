@@ -109,6 +109,21 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       throw new Error('Debes estar registrado para añadir favoritos');
     }
 
+    // Marcado optimista: la base está en otro continente y la respuesta tarda
+    // 1-2 s. Sin esto el corazón se queda gris después del clic y parece roto,
+    // aunque el favorito sí se guarde. Si el servidor falla, se revierte abajo.
+    const provisional: FavoriteVehicle = {
+      id: vehicleId,
+      brand: '',
+      model: '',
+      year: 0,
+      price: 0,
+      fuelType: '',
+      type: '',
+      imageUrl: null,
+    };
+    setFavorites(prev => (prev.some(f => f.id === vehicleId) ? prev : [...prev, provisional]));
+
     try {
       const response = await fetch('/api/favorites', {
         method: 'POST',
@@ -144,7 +159,8 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         newFavorite.vehicle.images?.find((img: any) => img.type === 'gallery')?.url ||
         newFavorite.vehicle.images?.[0]?.url || null;
 
-      setFavorites(prev => [...prev, {
+      // Se reemplaza el provisional por el vehículo real que devolvió el servidor
+      const real: FavoriteVehicle = {
         id: newFavorite.vehicle.id,
         brand: newFavorite.vehicle.brand,
         model: newFavorite.vehicle.model,
@@ -154,8 +170,11 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         type: newFavorite.vehicle.type,
         imageUrl: thumbnailImage,
         specifications: newFavorite.vehicle.specifications
-      }]);
+      };
+      setFavorites(prev => prev.map(f => (f.id === vehicleId ? real : f)));
     } catch (err) {
+      // Se deshace el marcado optimista: mentirle al usuario es peor que la espera
+      setFavorites(prev => prev.filter(f => f.id !== vehicleId));
       throw err;
     }
   }, [user, getToken]);
@@ -165,6 +184,10 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     if (!user || !token) {
       throw new Error('Debes estar registrado para gestionar favoritos');
     }
+
+    // Igual que al agregar: se quita ya y se restaura si el servidor falla
+    const anteriores = favorites;
+    setFavorites(prev => prev.filter(fav => fav.id !== vehicleId));
 
     try {
       const response = await fetch('/api/favorites', {
@@ -193,13 +216,11 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         }
         throw new Error(errorData.error || `Error ${response.status}: Error al quitar de favoritos`);
       }
-
-      // Optimistic update - remove immediately
-      setFavorites(prev => prev.filter(fav => fav.id !== vehicleId));
     } catch (err) {
+      setFavorites(anteriores);
       throw err;
     }
-  }, [user, getToken]);
+  }, [user, getToken, favorites]);
 
   const isFavorite = useCallback((vehicleId: string) => {
     return favoriteIds.has(vehicleId);

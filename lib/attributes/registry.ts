@@ -46,6 +46,11 @@ function def(
   return {
     key,
     labelEs,
+    // `unit` se declara en casi todas las definiciones pero no se estaba
+    // copiando: las 156 salían sin unidad, así que la UI mostraba "190" donde
+    // debía decir "190 HP" y el extractor recibía un catálogo sin unidades
+    // (justo el dato que evita confundir kW con HP).
+    unit: o.unit,
     dataType,
     direction: o.direction ?? 'neutral',
     appliesTo: o.appliesTo ?? ALL,

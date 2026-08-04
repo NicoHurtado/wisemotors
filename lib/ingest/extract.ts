@@ -63,7 +63,8 @@ REGLAS ABSOLUTAS:
 3. Números en la unidad del catálogo: convierte si el texto usa otra (kW→HP: ×1.341; kgf·m→Nm: ×9.807; km/L→L/100km: 100÷valor). La conversión de unidades mal hecha es la fuente #1 de basura en datos automotores — verifica cada una.
 4. Cada valor lleva su cita textual. Sin cita, no reportes el dato.
 5. Si el texto da rangos o varias versiones, usa la versión de entrada (base) salvo que el contexto pida otra.
-6. Precios en COP: repórtalos SOLO en la key 'commercial.priceCop' si el texto trae precio para Colombia. Un precio en USD o de otro país NO se reporta.`;
+6. Precios en COP: repórtalos SOLO en la key 'commercial.priceCop' si el texto trae precio para Colombia. Un precio en USD o de otro país NO se reporta.
+7. Que el texto NO mencione algo NO significa que el carro no lo tenga. Si no encuentras un dato, OMITE la key. Jamás reportes false ni 0 para decir "no aparece": eso afirma que el carro carece del equipamiento, que es una mentira distinta a no saberlo.`;
 
 export async function extractFromPage(
   pageText: string,
@@ -129,9 +130,17 @@ Extrae las especificaciones del vehículo objetivo presentes en el texto. Si el 
     if (def.dataType === 'numeric') {
       const n = typeof value === 'number' ? value : parseFloat(String(value).replace(',', '.'));
       if (!Number.isFinite(n)) continue;
+      // Un 0 casi nunca es un dato leído: es el modelo rellenando el catálogo
+      // cuando la página no traía especificaciones. Un carro con 0 airbags o
+      // 0 estrellas NCAP es una afirmación grave, y ninguna ficha real la hace.
+      if (n === 0) continue;
       value = n;
     } else if (def.dataType === 'boolean') {
-      value = value === true || value === 'true' || value === 'Sí' || value === 'si';
+      // Mismo criterio: "no lo encontré" NO es "no lo tiene". La ausencia se
+      // representa con el hecho inexistente (eso es lo que mide la cobertura);
+      // publicar `false` la convierte en una negación que nadie verificó.
+      if (value !== true && value !== 'true' && value !== 'Sí' && value !== 'si') continue;
+      value = true;
     } else {
       value = String(value).slice(0, 200);
     }

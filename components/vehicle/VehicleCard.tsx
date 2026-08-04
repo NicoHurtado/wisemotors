@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Heart } from 'lucide-react';
@@ -42,6 +42,7 @@ export const VehicleCard = React.memo(function VehicleCard({
 }: VehicleCardProps) {
   const router = useRouter();
   const glowFrame = useRef<number | null>(null);
+  const [latido, setLatido] = useState(false);
 
   // Spotlight que sigue al cursor: actualiza --mx/--my con rAF para no
   // disparar más de un cálculo por frame. El pintado es solo opacity (CSS).
@@ -58,7 +59,9 @@ export const VehicleCard = React.memo(function VehicleCard({
     });
   }, []);
   const { user } = useAuth();
-  const { isFavorite, toggleFavorite, loading: favoriteLoading } = useFavorites();
+  // `loading` del contexto NO se usa para deshabilitar: es global, así que un
+  // refetch de favoritos apagaba el corazón de TODAS las tarjetas a la vez.
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   // Usar el estado interno de favoritos si no se proporciona externamente
   const isFav = externalIsFavorite !== undefined ? externalIsFavorite : isFavorite(vehicle.id);
@@ -69,6 +72,10 @@ export const VehicleCard = React.memo(function VehicleCard({
       router.push('/login');
       return;
     }
+    // El latido se dispara con el clic, no con la respuesta: es la confirmación
+    // inmediata de que el gesto se registró.
+    setLatido(true);
+    window.setTimeout(() => setLatido(false), 420);
     try {
       if (externalOnToggleFavorite) {
         externalOnToggleFavorite(vehicle.id);
@@ -76,7 +83,9 @@ export const VehicleCard = React.memo(function VehicleCard({
         await toggleFavorite(vehicle.id);
       }
     } catch (error) {
-      // silently handle
+      // El estado ya se revirtió en el contexto; se registra para no perder el
+      // rastro (antes esto se tragaba en silencio y el fallo era invisible).
+      console.error('No se pudo actualizar el favorito:', error);
     }
   }, [user, router, vehicle.id, externalOnToggleFavorite, toggleFavorite]);
 
@@ -164,7 +173,10 @@ export const VehicleCard = React.memo(function VehicleCard({
 
   return (
     <Card
-      className="glass group overflow-hidden rounded-2xl border-0 card-glow card-enter transition-transform duration-300 hover:-translate-y-1 cursor-pointer"
+      // flex-col + h-full: sin esto la tarjeta es un bloque y el botón queda a
+      // distinta altura en cada una según cuántos datos tenga, que es lo que
+      // hace que la grilla se vea despareja aunque las cajas midan igual.
+      className="glass group flex h-full flex-col overflow-hidden rounded-2xl border-0 card-glow card-enter transition-transform duration-300 hover:-translate-y-1 cursor-pointer"
       onClick={handleCardClick}
       onMouseMove={handleMouseMove}
       style={index !== undefined
@@ -185,14 +197,16 @@ export const VehicleCard = React.memo(function VehicleCard({
         {/* Favorite button */}
         <button
           onClick={handleFavoriteClick}
-          disabled={favoriteLoading}
-          className="absolute top-3 right-3 p-2 rounded-full bg-white/90 backdrop-blur-sm shadow-soft transition-all duration-200 hover:bg-white hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="like-btn absolute top-3 right-3 p-2 rounded-full bg-white/90 backdrop-blur-sm shadow-soft transition-transform duration-200 hover:bg-white hover:scale-110"
           aria-label={isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+          aria-pressed={isFav}
+          data-latido={latido}
         >
           <Heart
-            className={`w-4 h-4 transition-colors ${isFav ? 'fill-wise text-wise' : 'text-gray-400'
-              }`}
+            className={`like-heart w-4 h-4 ${isFav ? 'fill-wise text-wise' : 'text-gray-400'}`}
           />
+          {/* Onda que sale del corazón al marcarlo: solo transform y opacity */}
+          <span className="like-onda" aria-hidden="true" />
         </button>
 
         {/* Category badge */}
@@ -241,7 +255,7 @@ export const VehicleCard = React.memo(function VehicleCard({
         )}
       </div>
 
-      <CardContent className="p-4">
+      <CardContent className="flex-1 p-4">
         <div className="space-y-2">
           <h3 className="font-semibold text-lg text-foreground">
             {vehicle.brand} {vehicle.model}

@@ -293,6 +293,82 @@
   opacity: 1;
 }
 
+/* ── Botón de favorito ──
+   El clic tiene que sentirse ANTES de que responda el servidor: el latido se
+   dispara con el gesto, no con la red. */
+.like-btn {
+  position: relative;
+  overflow: visible;
+}
+
+.like-heart {
+  display: block;
+  transition:
+    transform 260ms var(--ease-out-strong),
+    fill 200ms ease,
+    color 200ms ease;
+}
+
+.like-btn[data-latido='true'] .like-heart {
+  animation: like-latido 420ms var(--ease-out-strong);
+}
+
+@keyframes like-latido {
+  0% {
+    transform: scale(1);
+  }
+
+  35% {
+    transform: scale(1.42);
+  }
+
+  60% {
+    transform: scale(0.92);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Onda expansiva: pre-pintada, solo se anima al marcar */
+.like-onda {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+  opacity: 0;
+  border: 1.5px solid rgb(var(--wise-glow));
+}
+
+.like-btn[data-latido='true'] .like-onda {
+  animation: like-onda 520ms var(--ease-out-strong);
+}
+
+@keyframes like-onda {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .like-btn[data-latido='true'] .like-heart,
+  .like-btn[data-latido='true'] .like-onda {
+    animation: none;
+  }
+
+  .like-heart {
+    transition: fill 200ms ease, color 200ms ease;
+  }
+}
+
 /* ════════════════════════════════════════════════════════════════════════
    PODIO DE RESULTADOS.
    La jerarquía no se comunica con una medalla: se comunica con LUZ, ESCALA
