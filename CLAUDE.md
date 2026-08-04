@@ -104,7 +104,7 @@ cobertura, migración, seeds, motor de cohortes.
 
 1. **Fase 0 — SEGURIDAD (pospuesta por decisión del usuario, pero es LEGALMENTE urgente):**
    `GET /api/whatsapp-leads` es PÚBLICO (datos personales, Ley 1581); contraseña admin
-   hardcodeada en `hooks/useAdmin.ts` (`'OlartePedroNico'` en el bundle); 14 de 15 rutas
+   hardcodeada en `hooks/useAdmin.ts` (literal en el bundle del cliente); 14 de 15 rutas
    API sin auth server-side (el patrón correcto ya existe en `/api/favorites`);
    `JWT_SECRET` con fallback inseguro; `/api/upload` y `/api/test/create-vehicle` abiertos.
 2. Scoring determinístico: `lib/ai/scoring.ts` devuelve `det_score: 0` — el ranking

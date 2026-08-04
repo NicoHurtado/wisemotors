@@ -5,11 +5,14 @@
 // normal para probar favoritos, comparación y el flujo de compra sin permisos.
 //
 // Uso:
-//   npx tsx scripts/seed-users.ts            # crea los que falten
-//   npx tsx scripts/seed-users.ts --reset    # además, resetea contraseñas
+//   npx tsx scripts/seed-users.ts                      # crea los que falten
+//   npx tsx scripts/seed-users.ts --reset              # resetea con clave aleatoria
+//   npx tsx scripts/seed-users.ts --reset --password=X # resetea con una clave elegida
 //
-// Las contraseñas se generan aleatorias y se imprimen UNA sola vez: no quedan
-// en el código ni en el repo. Si se pierden, se corre otra vez con --reset.
+// Sin --password las contraseñas se generan aleatorias y se imprimen UNA sola
+// vez: no quedan en el código ni en el repo. La contraseña elegida se pasa por
+// argumento a propósito — escribirla en este archivo la publicaría en git, que
+// es justo el agujero que se cerró en la Fase 0.
 //
 // El rol vive en User.role, no en el email ni en una contraseña del bundle
 // (ver lib/api-auth.ts). Un usuario normal creado aquí NO puede publicar
@@ -21,6 +24,12 @@ import { prisma } from '../lib/prisma';
 import { hashPassword } from '../lib/auth';
 
 const RESET = process.argv.includes('--reset');
+const ELEGIDA = process.argv.find(a => a.startsWith('--password='))?.slice('--password='.length);
+
+if (ELEGIDA !== undefined && ELEGIDA.length < 6) {
+  console.error('La contraseña debe tener al menos 6 caracteres (mismo mínimo que el registro).');
+  process.exit(1);
+}
 
 const CUENTAS = [
   {
@@ -37,9 +46,9 @@ const CUENTAS = [
   },
 ];
 
-/** Contraseña legible pero no adivinable: 18 caracteres base64url. */
+/** La elegida por quien corre el script, o una legible pero no adivinable. */
 function generarPassword(): string {
-  return randomBytes(14).toString('base64url');
+  return ELEGIDA ?? randomBytes(14).toString('base64url');
 }
 
 async function main() {
