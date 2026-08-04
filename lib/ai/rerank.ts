@@ -1,5 +1,6 @@
 // LLM Rerank final con contexto ultracompacto
 import type { ScoredCandidate } from './scoring';
+import type { VehicleFeatures } from './features';
 import { createCompactPayload } from './scoring';
 
 export interface FinalRecommendation {
@@ -15,6 +16,8 @@ export interface FinalRecommendation {
     fuelType: string;
     type: string;
     imageUrl: string | null;
+    /** Aptitudes normalizadas (0-1) ya calculadas: la ficha del podio las dibuja. */
+    features: VehicleFeatures;
   };
 }
 
@@ -173,7 +176,8 @@ function processLLMRerank(
         price: candidate.price,
         fuelType: candidate.fuelType,
         type: candidate.type,
-        imageUrl: candidate.imageUrl
+        imageUrl: candidate.imageUrl,
+        features: candidate.features
       }
     });
   }
@@ -210,6 +214,7 @@ function ensureMinimum(recs: FinalRecommendation[], candidates: ScoredCandidate[
         fuelType: c.fuelType,
         type: c.type,
         imageUrl: c.imageUrl,
+        features: c.features,
       }
     });
   }
@@ -235,7 +240,8 @@ function createFallbackRecommendations(candidates: ScoredCandidate[]): FinalReco
       price: candidate.price,
       fuelType: candidate.fuelType,
       type: candidate.type,
-      imageUrl: candidate.imageUrl
+      imageUrl: candidate.imageUrl,
+      features: candidate.features
     }
   }));
 }

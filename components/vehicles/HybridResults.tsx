@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronUp, Brain, Filter, TrendingUp } from 'lucide-react';
 import { FilterButtons } from '@/components/landing/FilterButtons';
+import { PodiumResults } from './PodiumResults';
 
 interface HybridResultsProps {
   results: any;
@@ -37,19 +38,6 @@ export function HybridResults({ results, query, onFilterClick }: HybridResultsPr
     }
   });
 
-  const getMedalStyle = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return 'bg-gradient-to-r from-yellow-400 to-amber-500 text-white';
-      case 2:
-        return 'bg-gradient-to-r from-slate-300 to-slate-400 text-slate-800';
-      case 3:
-        return 'bg-gradient-to-r from-orange-300 to-orange-500 text-white';
-      default:
-        return 'bg-gray-200 text-gray-800';
-    }
-  };
-
   return (
     <div className="w-full space-y-8">
       {/* Query Type Indicator */}
@@ -78,42 +66,13 @@ export function HybridResults({ results, query, onFilterClick }: HybridResultsPr
         </div>
       )}
 
-      {/* Top 3 Recommendations */}
+      {/* Top 3: podio con jerarquía real (el #1 no es una tarjeta más) */}
       {topRecommendations.length > 0 && (
         <div className="space-y-6">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">Top 3 Recomendaciones</h2>
-            <p className="text-gray-600">
-              Los mejores entre {results.total_matches} vehículos que cumplen tus criterios
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {topRecommendations.map((vehicle: any, index: number) => (
-              <div key={vehicle.id} className="relative">
-                {/* Rank Badge */}
-                <div className={`absolute -top-3 left-4 z-10 px-3 py-1 rounded-full text-sm font-bold shadow-lg ${getMedalStyle(index + 1)}`}>
-                  #{index + 1}
-                </div>
-
-                {/* Affinity Badge */}
-                <div className="absolute -top-3 right-4 z-10 px-3 py-1 rounded-full text-sm font-bold bg-wise text-white shadow-lg">
-                  {vehicle.matchPercentage}% match
-                </div>
-
-                <div className="pt-6">
-                  <VehicleCard
-                    vehicle={vehicle}
-                    onExplore={(id) => window.location.href = `/vehicles/${id}`}
-                    showAffinity={true}
-                    affinityScore={vehicle.matchPercentage}
-                    reasons={vehicle.reasons}
-                    index={index}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+          <PodiumResults
+            vehicles={topRecommendations}
+            subtitulo={`Los mejores entre ${results.total_matches} vehículos que cumplen tus criterios.`}
+          />
 
           {/* Filter Buttons dentro de los resultados */}
           {onFilterClick && (

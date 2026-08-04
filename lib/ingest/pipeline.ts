@@ -11,6 +11,7 @@ import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
 import { fetchPageText } from './fetcher';
 import { discoverSources } from './sources';
 import { extractFromPage, resolveIdentity } from './extract';
+import { normalizarCop, verificarPrecio } from './price-check';
 import type { DraftFact, PriceDraft, RawFact, VehicleDraft } from './types';
 
 const PRICE_KEY = 'commercial.priceCop';
@@ -164,11 +165,15 @@ Ancla el razonamiento en rivales directos que SÍ se venden en Colombia y sus pr
     if (!response.ok) return { price: null, remainingFacts };
     const data = await response.json();
     const args = JSON.parse(data.choices?.[0]?.message?.function_call?.arguments ?? '{}');
-    if (!args.priceCop || !Number.isFinite(args.priceCop)) return { price: null, remainingFacts };
+
+    // El modelo a veces contesta "85" por 85 millones: sin este saneo se
+    // publicaría un carro de $85 pesos sin que nada chille.
+    const valor = normalizarCop(args.priceCop);
+    if (valor === null) return { price: null, remainingFacts };
 
     return {
       price: {
-        value: Math.round(args.priceCop),
+        value: valor,
         estimated: true,
         reasoningEs: String(args.reasoning ?? 'Sin razonamiento — revisar manualmente.'),
         confidence: Math.min(0.6, Number(args.confidence) || 0.4), // una estimación nunca supera 0.6
@@ -240,10 +245,24 @@ export async function runIngestPipeline(input: {
   const impossible = allFacts.filter(f => f.outOfRange).length;
   if (impossible > 0) warningsEs.push(`${impossible} campos quedaron fuera del rango físico esperado (desmarcados por defecto).`);
 
-  // 6. Precio
-  const { price, remainingFacts } = await resolvePrice(allFacts, { ...identity, year: input.year });
+  // 6. Precio, con verificación contra el catálogo real
+  const { price: precioCrudo, remainingFacts } = await resolvePrice(allFacts, {
+    ...identity,
+    year: input.year,
+  });
+
+  let price = precioCrudo;
+  let comparablesPrecio: { etiqueta: string; precio: number }[] = [];
+
+  if (precioCrudo) {
+    const revision = await verificarPrecio(precioCrudo, { ...identity, year: input.year });
+    price = revision.price;
+    comparablesPrecio = revision.comparables;
+    if (revision.notaEs) warningsEs.push(revision.notaEs);
+  }
+
   if (price?.estimated) {
-    warningsEs.push('El precio es una ESTIMACIÓN (ninguna fuente lo traía). Verificar antes de publicar.');
+    warningsEs.push('El precio es una ESTIMACIÓN. Verificar contra el concesionario antes de publicar.');
   } else if (!price) {
     warningsEs.push('Sin precio: ni encontrado ni estimable. Hay que ponerlo a mano.');
   }
@@ -257,6 +276,7 @@ export async function runIngestPipeline(input: {
     vehicleType: identity.vehicleType,
     fuelType: identity.fuelType,
     price,
+    priceComparables: comparablesPrecio,
     facts: remainingFacts,
     sourcesReport,
     warningsEs,

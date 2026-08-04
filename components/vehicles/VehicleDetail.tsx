@@ -12,6 +12,7 @@ import { useWhatsAppLeads } from '@/hooks/useWhatsAppLeads';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { VehicleSpecsBento } from './VehicleSpecsBento';
+import { DataProvenance } from './DataProvenance';
 import {
   ChevronDown,
   FileText,
@@ -456,6 +457,18 @@ export function VehicleDetail({ vehicle }: VehicleDetailProps) {
 
         {/* Section 3: Bento Grid Specifications */}
         <VehicleSpecsBento vehicle={vehicle} />
+
+        {/* Procedencia: fuentes por dato y aviso de precio estimado */}
+        <section className="mb-16">
+          <div className="max-w-7xl mx-auto">
+            <DataProvenance
+              vehicleId={vehicle.id}
+              precioEstimado={Boolean(commercial.priceEstimated)}
+              razonamientoPrecio={commercial.priceReasoningEs}
+              coberturaGlobal={vehicle.coverageGlobal ?? null}
+            />
+          </div>
+        </section>
 
         {/* Test Drive Button */}
         <section className="mb-16">

@@ -293,8 +293,122 @@
   opacity: 1;
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   PODIO DE RESULTADOS.
+   La jerarquía no se comunica con una medalla: se comunica con LUZ, ESCALA
+   y PROFUNDIDAD. El #1 flota sobre el plano (aura + sombra larga), el #2 y
+   el #3 quedan apoyados en él. Todo se pinta con transform/opacity.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* Aura del ganador: la fuente de luz que separa el #1 del fondo */
+.podio-aura {
+  position: absolute;
+  inset: -14% -6% -22%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(52% 62% at 22% 32%, rgba(var(--wise-glow), 0.30), transparent 68%),
+    radial-gradient(46% 58% at 82% 68%, rgba(var(--wise-glow), 0.20), transparent 70%);
+  filter: blur(46px);
+  opacity: 0;
+  transform: scale(0.94);
+  transition:
+    opacity 900ms var(--ease-out-strong),
+    transform 900ms var(--ease-out-strong);
+}
+
+.podio-aura[data-shown='true'] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Panel del ganador: sombra en tres capas = distancia real al fondo */
+.podio-primero {
+  position: relative;
+  z-index: 1;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 0 rgba(var(--wise-glow), 0.14),
+    0 2px 6px -2px rgba(var(--wise-glow), 0.18),
+    0 22px 44px -22px rgba(var(--wise-glow), 0.42),
+    0 54px 96px -46px rgba(15, 12, 24, 0.40);
+  transition: transform var(--motion-smooth) var(--ease-out-strong);
+}
+
+.podio-primero:hover {
+  transform: translateY(-3px);
+}
+
+/* Cifra fantasma del puesto: escala tipográfica como jerarquía, no un badge */
+.podio-cifra {
+  font-variant-numeric: tabular-nums;
+  line-height: 0.78;
+  letter-spacing: -0.05em;
+  background: linear-gradient(180deg,
+      rgba(var(--wise-glow), 0.26),
+      rgba(var(--wise-glow), 0.04));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  user-select: none;
+}
+
+/* Escoltas: apoyados un escalón más abajo, se enderezan al pasar el cursor */
+.podio-escolta {
+  position: relative;
+  transform: translateY(6px) scale(0.985);
+  transition: transform var(--motion-smooth) var(--ease-out-strong);
+}
+
+.podio-escolta:hover {
+  transform: translateY(0) scale(1);
+}
+
+/* Anillo de afinidad: se dibuja al entrar en pantalla */
+.podio-anillo circle.valor {
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  stroke-dasharray: var(--circunferencia);
+  stroke-dashoffset: var(--circunferencia);
+  transition: stroke-dashoffset 1100ms var(--ease-out-strong);
+}
+
+.podio-anillo[data-shown='true'] circle.valor {
+  stroke-dashoffset: var(--resto);
+}
+
+/* Imagen del ganador: leve acercamiento al pasar el cursor por el panel */
+.podio-foto {
+  transition: transform 620ms var(--ease-out-strong);
+}
+
+.podio-primero:hover .podio-foto {
+  transform: scale(1.035);
+}
+
 /* Accesibilidad: si la persona pidió menos movimiento, se le respeta TODO */
 @media (prefers-reduced-motion: reduce) {
+
+  .podio-aura {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .podio-primero,
+  .podio-primero:hover,
+  .podio-escolta,
+  .podio-escolta:hover,
+  .podio-foto,
+  .podio-primero:hover .podio-foto,
+  .podio-anillo circle.valor {
+    transform: none;
+    transition: none;
+  }
+
+  .podio-anillo circle.valor {
+    stroke-dashoffset: var(--resto);
+  }
 
   .card-enter,
   .highlight-animation,

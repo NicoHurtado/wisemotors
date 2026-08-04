@@ -67,6 +67,8 @@ export interface VehicleDraft {
   vehicleType: string;
   fuelType: string;
   price: PriceDraft | null;
+  /** Vehículos del catálogo contra los que se contrastó el precio estimado. */
+  priceComparables: { etiqueta: string; precio: number }[];
   facts: DraftFact[];
   /** Fuentes consultadas, con resultado, para transparencia total. */
   sourcesReport: { url: string; nameEs: string; tier: SourceTier; ok: boolean; note?: string }[];
