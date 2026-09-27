@@ -18,9 +18,9 @@
 
 import { execSync } from 'node:child_process';
 import { PrismaClient } from '@prisma/client';
-import { VAR_BD, VAR_BD_DIRECTA, urlBaseDatos, urlBaseDatosDirecta } from '../lib/db/url';
+import { VAR_BD, VAR_BD_DIRECTA, fuenteBaseDatos, fuenteBaseDatosDirecta } from '../lib/db/url';
 import { sembrarBandas, sembrarDefiniciones, sembrarPercepcion } from '../lib/db/semillas';
-import { hashPassword } from '../lib/auth';
+import { crearAdminInicial } from '../lib/db/admin-inicial';
 
 async function main() {
   const produccion = process.env.VERCEL_ENV === 'production';
@@ -29,12 +29,21 @@ async function main() {
     return;
   }
 
-  const url = urlBaseDatos();
-  const directa = urlBaseDatosDirecta();
-  if (!url || !directa) {
-    console.warn(`[preparar-bd] ⚠ No hay ${VAR_BD}: se omite. La app no tendrá base hasta configurarla en Vercel.`);
+  // Diagnóstico en el log (solo nombres y sí/no; nunca valores).
+  const fuente = fuenteBaseDatos();
+  const fuenteDirecta = fuenteBaseDatosDirecta();
+  const si = (v?: string) => (v ? 'sí' : 'NO');
+  console.log(
+    `[preparar-bd] base: ${fuente?.nombre ?? 'NO ENCONTRADA'} · directa: ${fuenteDirecta?.nombre ?? '—'} · ` +
+      `JWT_SECRET: ${si(process.env.JWT_SECRET)} · ANTHROPIC_API_KEY: ${si(process.env.ANTHROPIC_API_KEY)} · ` +
+      `ADMIN_EMAIL: ${si(process.env.ADMIN_EMAIL)} · ADMIN_PASSWORD: ${si(process.env.ADMIN_PASSWORD)}`
+  );
+  if (!fuente || !fuenteDirecta) {
+    console.warn('[preparar-bd] ⚠ No hay ninguna variable de base de datos (…DATABASE_URL / …POSTGRES_URL): se omite.');
     return;
   }
+  const url = fuente.valor;
+  const directa = fuenteDirecta.valor;
 
   // El CLI de Prisma lee los nombres exactos del schema: se normalizan aquí
   // por si Vercel los creó con el prefijo en minúscula.
@@ -55,38 +64,17 @@ async function main() {
       console.log(`[preparar-bd] ✓ ${await sembrarPercepcion(prisma)} marcas sembradas (base nueva)`);
     }
 
-    await adminInicial(prisma);
+    const admin = await crearAdminInicial(prisma);
+    const textos = {
+      creada: `✓ cuenta admin creada: ${process.env.ADMIN_EMAIL}`,
+      ya_existe_admin: `✓ la cuenta admin ${process.env.ADMIN_EMAIL} ya existe`,
+      existe_no_admin: `⚠ ${process.env.ADMIN_EMAIL} ya existe y NO es admin: no se asciende sola (scripts/set-admin.js)`,
+      sin_configurar: 'ℹ sin ADMIN_EMAIL + ADMIN_PASSWORD (≥10): no se crea cuenta admin',
+    };
+    console.log(`[preparar-bd] ${textos[admin]}`);
   } finally {
     await prisma.$disconnect();
   }
-}
-
-async function adminInicial(prisma: PrismaClient) {
-  const email = process.env.ADMIN_EMAIL?.trim();
-  const clave = process.env.ADMIN_PASSWORD;
-  if (!email) return;
-
-  const existe = await prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
-  if (existe) {
-    if (existe.role !== 'admin') {
-      console.warn(`[preparar-bd] ⚠ ${email} ya existe y NO es admin. No se asciende automáticamente: usar scripts/set-admin.js.`);
-    }
-    return;
-  }
-  if (!clave || clave.length < 10) {
-    console.warn('[preparar-bd] ⚠ ADMIN_PASSWORD falta o tiene menos de 10 caracteres: no se crea la cuenta admin.');
-    return;
-  }
-
-  // Nombre de usuario a partir del correo, sin chocar con uno existente.
-  const base = email.split('@')[0].replace(/[^a-zA-Z0-9_.-]/g, '') || 'admin';
-  let username = base;
-  for (let i = 2; await prisma.user.findFirst({ where: { username } }); i++) username = `${base}${i}`;
-
-  await prisma.user.create({
-    data: { email, username, password: await hashPassword(clave), role: 'admin' },
-  });
-  console.log(`[preparar-bd] ✓ cuenta admin creada: ${email} (usuario ${username})`);
 }
 
 main().catch(e => {
