@@ -500,3 +500,173 @@
   .reveal { opacity: 1; transform: none; clip-path: none; }
   .marquesina { animation: none; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   LIQUID GLASS — navegación
+   Vidrio que refracta lo que tiene detrás (filtro SVG #vidrio-liquido en
+   Chromium; en Safari/Firefox queda el desenfoque, que es el respaldo).
+   Dos tonos: sobre fondo oscuro (.vidrio--oscuro) y sobre papel.
+   ════════════════════════════════════════════════════════════════════════ */
+.vidrio {
+  position: relative;
+  isolation: isolate;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.48));
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  backdrop-filter: blur(10px) saturate(180%);
+  backdrop-filter: url(#vidrio-liquido) blur(3px) saturate(185%);
+  box-shadow:
+    inset 1.5px 1.5px 0 rgba(255, 255, 255, 0.85),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 0 18px rgba(255, 255, 255, 0.35),
+    0 1px 0 rgba(14, 12, 17, 0.04),
+    0 18px 40px -18px rgba(14, 12, 17, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  transition: background 500ms var(--ease-out-soft), box-shadow 500ms var(--ease-out-soft), border-color 500ms var(--ease-out-soft);
+}
+/* Brillo especular que recorre el borde superior */
+.vidrio::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(120% 90% at 20% -20%, rgba(255, 255, 255, 0.55), transparent 55%);
+  mix-blend-mode: soft-light;
+}
+.vidrio--oscuro {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04));
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow:
+    inset 1.5px 1.5px 0 rgba(255, 255, 255, 0.35),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 20px rgba(255, 255, 255, 0.06),
+    0 18px 40px -18px rgba(0, 0, 0, 0.6);
+  color: #fff;
+}
+
+/* Lente líquido: la pestaña activa. Se desliza con rebote y se estira
+   mientras viaja (la clase --viaje se pone solo durante el movimiento). */
+.lente {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 0;
+  border-radius: 999px;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.7));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 1px rgba(14, 12, 17, 0.06),
+    0 6px 16px -6px rgba(59, 13, 85, 0.35),
+    0 0 0 1px rgba(136, 28, 183, 0.08);
+  -webkit-backdrop-filter: blur(2px) saturate(200%);
+  backdrop-filter: blur(2px) saturate(200%);
+  backdrop-filter: url(#lente-liquido) saturate(200%);
+  transition:
+    transform 620ms cubic-bezier(0.34, 1.45, 0.5, 1),
+    width 620ms cubic-bezier(0.34, 1.45, 0.5, 1),
+    opacity 300ms ease;
+}
+.lente--viaje { animation: lente-estira 620ms cubic-bezier(0.3, 0.7, 0.3, 1); }
+@keyframes lente-estira {
+  0% { scale: 1 1; }
+  35% { scale: 1.14 0.86; }
+  70% { scale: 0.97 1.04; }
+  100% { scale: 1 1; }
+}
+.vidrio--oscuro .lente {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.1));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.2),
+    0 8px 20px -8px rgba(136, 28, 183, 0.8);
+}
+.pestana {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: rgb(14 12 17 / 0.62);
+  transition: color 300ms ease;
+}
+.pestana[data-on='true'] { color: var(--tinta); }
+.vidrio--oscuro .pestana { color: rgba(255, 255, 255, 0.62); }
+.vidrio--oscuro .pestana[data-on='true'] { color: #fff; }
+.pestana:hover { color: var(--tinta); }
+.vidrio--oscuro .pestana:hover { color: #fff; }
+.pestana__punto {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--wise);
+  opacity: 0;
+  transform: scale(0);
+  transition: transform 400ms var(--ease-out-strong), opacity 300ms ease;
+}
+.pestana[data-on='true'] .pestana__punto { opacity: 1; transform: scale(1); }
+.vidrio--oscuro .pestana__punto { background: var(--lila); }
+
+.boton-vidrio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 250ms ease, transform 250ms var(--ease-out-strong);
+}
+.boton-vidrio:hover { background: rgba(255, 255, 255, 0.55); }
+.vidrio--oscuro .boton-vidrio:hover { background: rgba(255, 255, 255, 0.12); }
+.boton-vidrio:active { transform: scale(0.96); }
+@media (prefers-reduced-motion: reduce) {
+  .lente { transition: none; }
+  .lente--viaje { animation: none; }
+}
+
+/* Ola del tanque de gasolina en la ficha */
+.ola { animation: ola 2.8s linear infinite; }
+@keyframes ola { to { transform: translateX(-50%); } }
+
+/* ── IA pensando: aurora morada que se mueve detrás del texto ───────────── */
+.ia-aurora {
+  position: absolute;
+  inset: -40%;
+  background:
+    radial-gradient(35% 35% at 30% 40%, rgba(136, 28, 183, 0.55), transparent 70%),
+    radial-gradient(30% 30% at 70% 60%, rgba(225, 29, 72, 0.28), transparent 70%),
+    radial-gradient(30% 30% at 55% 25%, rgba(216, 180, 254, 0.3), transparent 70%);
+  filter: blur(30px);
+  animation: aurora 9s ease-in-out infinite alternate;
+}
+.ia-aurora--quieta { opacity: 0.55; animation-duration: 18s; }
+@keyframes aurora {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  50% { transform: translate(6%, -4%) rotate(20deg) scale(1.1); }
+  100% { transform: translate(-5%, 5%) rotate(-10deg) scale(0.95); }
+}
+.brillo, .brillo-claro { position: relative; overflow: hidden; }
+.brillo::after, .brillo-claro::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  animation: brillo 1.6s ease-in-out infinite;
+}
+.brillo-claro::after { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent); }
+@keyframes brillo { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .ia-aurora, .brillo::after, .brillo-claro::after { animation: none; }
+}

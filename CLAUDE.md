@@ -137,7 +137,13 @@ cobertura, migración, seeds, motor de cohortes.
   caché — cuello de botella conocido.
 - Sin tests. Cualquier trabajo en `lib/ai/` o `lib/attributes/` debería estrenar los primeros.
 - Docs viejos engañosos: `BUSQUEDA_OBJETIVA_CAMPOS.md` describe código que ya no existe.
-- Deploy Vercel `iad1`, funciones `maxDuration: 30s`. Env vars: `DATABASE_URL`,
+- Base de datos: Neon conectado por la integración de Vercel con prefijo `WISE`:
+  `WISE_DATABASE_URL` (pooler, app) y `WISE_DATABASE_URL_UNPOOLED` (directa, schema).
+  `lib/db/url.ts` las lee sin importar mayúsculas. En cada deploy de PRODUCCIÓN,
+  `scripts/preparar-bd.ts` corre `prisma db push` (nunca con pérdida de datos: si
+  la hay, el deploy falla) y siembra los datos base de `lib/db/semillas.ts` si
+  faltan. En preview no toca la base. Local: `npm run db:preparar`.
+- Deploy Vercel `iad1`, funciones `maxDuration: 30s`. Env vars: `WISE_DATABASE_URL`(+`_UNPOOLED`),
   `JWT_SECRET`, `ANTHROPIC_API_KEY` (+ `ANTHROPIC_WORKSPACE_ID` si la clave no es
   de un workspace), `OPENAI_API_KEY`, `CLOUDINARY_*`, `NEXT_PUBLIC_APP_URL`.
 - LLM: la ingesta (`lib/ingest/`) usa Claude vía `lib/ai/claude.ts` (`pedirJson` +

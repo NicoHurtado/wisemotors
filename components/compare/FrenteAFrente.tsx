@@ -16,10 +16,11 @@ import { CarRender } from '@/components/car/CarRender';
 import { runDuel, type DuelVehicle } from '@/lib/comparison/duel';
 import { useEnVista } from '@/components/ui/useEnVista';
 import { millones } from '@/lib/vehiculo-datos';
+import { serie } from '@/lib/palette';
 
 type Vehiculo = DuelVehicle & { type?: string; images?: any[]; imageUrl?: string | null };
 
-function Fila({
+export function Fila({
   ronda,
   vehiculos,
   indice,
@@ -63,7 +64,7 @@ function Fila({
                     {e.value !== null && (
                       <div
                         className={`${izq ? 'barra-izq ml-auto' : 'barra-der'} h-full w-full rounded-full`}
-                        style={{ '--v': e.bar, background: e.winner ? 'var(--wise)' : 'rgb(14 12 17 / 0.28)', ...retraso } as React.CSSProperties}
+                        style={{ '--v': e.bar, background: serie(i), opacity: e.winner || !ronda.comparable ? 1 : 0.35, ...retraso } as React.CSSProperties}
                       />
                     )}
                   </div>
@@ -73,7 +74,7 @@ function Fila({
           </div>
         ) : (
           <div className="space-y-2.5">
-            {ronda.entries.map(e => {
+            {ronda.entries.map((e, i) => {
               const v = vehiculos.find(x => x.id === e.vehicleId)!;
               return (
                 <div key={e.vehicleId} className="grid grid-cols-[140px_1fr_auto] items-center gap-3 md:grid-cols-[180px_1fr_200px]">
@@ -84,7 +85,7 @@ function Fila({
                     {e.value !== null && (
                       <div
                         className="barra-der h-full w-full rounded-full"
-                        style={{ '--v': e.bar, background: e.winner ? 'var(--wise)' : 'rgb(14 12 17 / 0.28)', ...retraso } as React.CSSProperties}
+                        style={{ '--v': e.bar, background: serie(i), opacity: e.winner || !ronda.comparable ? 1 : 0.35, ...retraso } as React.CSSProperties}
                       />
                     )}
                   </div>

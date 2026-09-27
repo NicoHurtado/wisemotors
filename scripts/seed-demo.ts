@@ -20,6 +20,7 @@ import { prisma } from '../lib/prisma';
 import { pedirJson } from '../lib/ai/claude';
 import { ATTRIBUTE_REGISTRY } from '../lib/attributes/registry';
 import { publishDraft } from '../lib/ingest/publish';
+import { urlBaseDatos } from '../lib/db/url';
 
 const MARCA_DEMO = 'DEMO — datos aproximados para probar el diseño; no verificados.';
 
@@ -120,7 +121,7 @@ ${catalogo}`,
 }
 
 async function main() {
-  if (!esLocal(process.env.DATABASE_URL)) {
+  if (!esLocal(urlBaseDatos())) {
     console.error('Solo corre contra una base local (localhost). Esto son datos DEMO.');
     process.exit(1);
   }

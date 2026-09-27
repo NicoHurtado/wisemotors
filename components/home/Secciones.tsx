@@ -55,7 +55,7 @@ export function ComoFunciona({ vitrina }: { vitrina?: VehiculoTarjeta }) {
         <p className="t-meta text-tinta-2 md:col-span-3 md:pb-3">(Cómo funciona)</p>
         <Reveal className="md:col-span-9">
           <h2 className="t-titulo text-[44px] md:text-[84px]">
-            <span className="text-tinta-2/50">Tú hablas como hablas.</span> Nosotros traducimos los fierros.
+            <span className="text-tinta-2/50">Escríbelo como se lo dirías a un amigo.</span> La parte técnica corre por nuestra cuenta.
           </h2>
         </Reveal>
       </div>
