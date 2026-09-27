@@ -39,7 +39,7 @@ interface Props {
 }
 
 const ETIQUETA_TIER: Record<number, { texto: string; clase: string }> = {
-  1: { texto: 'Fabricante', clase: 'bg-emerald-50 text-emerald-700 ring-emerald-600/15' },
+  1: { texto: 'Fabricante', clase: 'bg-purple-50 text-purple-700 ring-purple-600/15' },
   2: { texto: 'Prensa especializada', clase: 'bg-sky-50 text-sky-700 ring-sky-600/15' },
   3: { texto: 'Comunidad, sin verificar', clase: 'bg-amber-50 text-amber-800 ring-amber-600/20' },
 };

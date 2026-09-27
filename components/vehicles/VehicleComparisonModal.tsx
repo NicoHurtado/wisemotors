@@ -190,14 +190,14 @@ export function VehicleComparisonModal({
 
                         {/* Ventajas */}
                         <div>
-                          <h4 className="font-semibold text-green-700 mb-2 flex items-center gap-2">
+                          <h4 className="font-semibold text-purple-700 mb-2 flex items-center gap-2">
                             <CheckCircle className="w-4 h-4" />
                             Ventajas
                           </h4>
                           <ul className="space-y-1">
                             {analysis.pros.map((pro, index) => (
                               <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                                <span className="text-green-600 text-xs mt-1">•</span>
+                                <span className="text-purple-600 text-xs mt-1">•</span>
                                 {pro}
                               </li>
                             ))}
@@ -255,14 +255,14 @@ export function VehicleComparisonModal({
 
                         {/* Ventajas */}
                         <div>
-                          <h4 className="font-semibold text-green-700 mb-2 flex items-center gap-2">
+                          <h4 className="font-semibold text-purple-700 mb-2 flex items-center gap-2">
                             <CheckCircle className="w-4 h-4" />
                             Ventajas
                           </h4>
                           <ul className="space-y-1">
                             {analysis.pros.map((pro, index) => (
                               <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                                <span className="text-green-600 text-xs mt-1">•</span>
+                                <span className="text-purple-600 text-xs mt-1">•</span>
                                 {pro}
                               </li>
                             ))}

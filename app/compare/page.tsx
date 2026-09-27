@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CompareMatrix } from '@/components/compare/CompareMatrix';
 import { CompareRadar } from '@/components/compare/CompareRadar';
 import { CompareIntelligence } from '@/components/compare/CompareIntelligence';
-import { CompareDuel } from '@/components/compare/CompareDuel';
+import { DuelArena } from '@/components/compare/duel/DuelArena';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/utils';
 import { Brain, Car, Check, Heart, LayoutGrid, Radar, Sparkles, Swords } from 'lucide-react';
@@ -222,7 +222,7 @@ export default function ComparePage() {
             })}
           </div>
 
-          {vista === 'duelo' && <CompareDuel vehicles={datos} />}
+          {vista === 'duelo' && <DuelArena vehicles={datos} />}
           {vista === 'matriz' && <CompareMatrix vehicles={datos as any} />}
           {vista === 'radar' && <CompareRadar vehicles={datos as any} />}
           {vista === 'ia' && <CompareIntelligence vehicles={datos as any} />}

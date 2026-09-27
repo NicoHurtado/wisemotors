@@ -257,7 +257,7 @@ REGLAS:
     return {
       value: corregido,
       estimated: true,
-      confidence: Math.min(0.65, Number(args.confidence) || 0.4),
+      confidence: Math.min(0.6, Number(args.confidence) || 0.4), // una estimación nunca supera 0.6 (CLAUDE.md)
       reasoningEs:
         (cambio
           ? `Corregido de ${millones(original.value)} a ${millones(corregido)} tras contrastar con el catálogo. `

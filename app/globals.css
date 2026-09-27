@@ -1139,30 +1139,307 @@ body::before {
   .liquid-lens__gota { animation: none; }
 }
 
-/* ── Duelo del comparador (components/compare/CompareDuel.tsx) ──
-   La barra crece con scaleX desde la izquierda hasta --barra; la corona
-   aterriza con un rebote corto. Solo transform y opacity. */
-.duel-barra {
+/* ════════════════════════════════════════════════════════════════════════
+   ARENA DEL DUELO (components/compare/duel/)
+   Escenario oscuro: el morado y el rojo son luz. Cada animación arranca en
+   pausa y se suelta cuando su ronda entra en pantalla (data-on). El estado
+   base de cada elemento ES el estado final: sin animación, todo se ve bien.
+   ════════════════════════════════════════════════════════════════════════ */
+.duel-arena {
+  position: relative;
+  border-radius: 32px;
+  overflow: hidden;
+  background:
+    radial-gradient(60% 50% at 0% 0%, rgba(136, 28, 183, 0.45), transparent 70%),
+    radial-gradient(55% 45% at 100% 100%, rgba(225, 29, 72, 0.32), transparent 70%),
+    radial-gradient(40% 35% at 85% 10%, rgba(192, 132, 252, 0.18), transparent 70%),
+    #0d0612;
+  box-shadow: 0 40px 90px -40px rgba(136, 28, 183, 0.7);
+  isolation: isolate;
+}
+
+.duel-arena::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(80% 70% at 50% 40%, #000, transparent);
+  pointer-events: none;
+}
+
+/* Barras de luz diagonales que cruzan la presentación */
+.duel-intro::before {
+  content: '';
+  position: absolute;
+  inset: -20% -10%;
+  background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.07) 48%, transparent 56%);
+  animation: duel-barrido 3.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes duel-barrido {
+  from { transform: translateX(-40%); }
+  to { transform: translateX(40%); }
+}
+
+/* Luchadores: tarjetas sesgadas con el color del jugador */
+.duel-luchador {
+  position: relative;
+  padding: 26px 26px 24px;
+  border-radius: 28px;
+  background:
+    radial-gradient(90% 70% at 20% 0%, rgba(255, 255, 255, 0.22), transparent 60%),
+    linear-gradient(160deg, var(--c), color-mix(in srgb, var(--c) 25%, #0d0612));
+  box-shadow: 0 30px 60px -30px var(--c), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+}
+
+.duel-luchador::after {
+  content: '';
+  position: absolute;
+  right: -30%;
+  bottom: -40%;
+  width: 80%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.04), 0 0 0 60px rgba(255, 255, 255, 0.03);
+}
+
+.duel-luchador--izq { animation: duel-entra-izq 700ms var(--ease-out-strong) 100ms both; }
+.duel-luchador--der { animation: duel-entra-der 700ms var(--ease-out-strong) 250ms both; }
+.duel-luchador--centro { animation: duel-sube-suave 600ms var(--ease-out-strong) both; }
+.duel-luchador--der { text-align: right; }
+.duel-luchador--der .duel-flota { margin-left: auto; transform: scaleX(-1); }
+
+@keyframes duel-entra-izq { from { opacity: 0; transform: translateX(-80px) skewX(8deg); } }
+@keyframes duel-entra-der { from { opacity: 0; transform: translateX(80px) skewX(-8deg); } }
+@keyframes duel-sube-suave { from { opacity: 0; transform: translateY(30px); } }
+
+.duel-flota { animation: duel-flota 2.6s ease-in-out infinite; }
+.duel-luchador--der .duel-flota { animation-name: duel-flota-espejo; }
+@keyframes duel-flota { 50% { transform: translateY(-5px); } }
+@keyframes duel-flota-espejo { 0%, 100% { transform: scaleX(-1); } 50% { transform: scaleX(-1) translateY(-5px); } }
+
+.duel-poder {
   transform-origin: left center;
-  transform: scaleX(var(--barra, 1));
-  animation: duel-barra 700ms var(--ease-out-strong) both;
+  transform: scaleX(var(--sx, 1));
+  animation: duel-crece-x 900ms var(--ease-out-strong) 700ms both;
 }
 
-@keyframes duel-barra {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(var(--barra, 1)); }
+/* El VS golpea: entra enorme y rebota */
+.duel-vs {
+  font-size: clamp(56px, 9vw, 104px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  font-style: italic;
+  background: linear-gradient(180deg, #fff 10%, #f0abfc 55%, #e11d48);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 24px rgba(225, 29, 72, 0.6));
+  padding-right: 0.12em; /* la cursiva se sale de la caja y el clip de texto la corta */
+  animation: duel-vs 650ms cubic-bezier(0.2, 1.6, 0.4, 1) 550ms both;
 }
 
-.duel-corona {
-  animation: duel-corona 420ms cubic-bezier(0.34, 1.56, 0.64, 1) 650ms both;
+.duel-vs--todos { font-size: clamp(28px, 5vw, 48px); letter-spacing: -0.02em; }
+
+@keyframes duel-vs {
+  from { opacity: 0; transform: scale(3) rotate(-8deg); }
 }
 
-@keyframes duel-corona {
-  from { opacity: 0; transform: scale(0.4) rotate(-12deg); }
-  to { opacity: 1; transform: scale(1) rotate(0); }
+.duel-boton-pelea {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 34px;
+  border-radius: 9999px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(100deg, #881cb7, #db2777 55%, #e11d48);
+  box-shadow: 0 18px 40px -14px rgba(225, 29, 72, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 220ms var(--ease-out-strong);
+  animation: duel-sube-suave 500ms var(--ease-out-strong) 900ms both;
 }
+
+.duel-boton-pelea::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  border: 2px solid rgba(240, 171, 252, 0.7);
+  animation: duel-pulso 1.6s ease-out infinite;
+}
+
+.duel-boton-pelea:hover { transform: scale(1.05); }
+.duel-boton-pelea:active { transform: scale(0.97); }
+
+@keyframes duel-pulso {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.25); }
+}
+
+/* Fichas de ronda */
+.duel-tile {
+  position: relative;
+  padding: 22px;
+  border-radius: 28px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025));
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(28px) scale(0.98);
+  transition:
+    opacity 600ms var(--ease-out-strong),
+    transform 700ms var(--ease-out-strong);
+}
+
+.duel-tile[data-on='true'] { opacity: 1; transform: none; }
+
+.duel-tile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(70% 60% at 0% 0%, rgba(192, 132, 252, 0.14), transparent 70%);
+  pointer-events: none;
+}
+
+.duel-tile--bloqueada {
+  background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.025) 0 10px, transparent 10px 20px);
+  border-style: dashed;
+}
+
+.duel-tile[data-on='false'] [data-anim] { animation-play-state: paused; }
+
+/* Carrera */
+.duel-pista-linea {
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.25) 0 14px, transparent 14px 28px);
+}
+
+.duel-meta {
+  background: repeating-conic-gradient(#fff 0 25%, #0d0612 0 50%) 0 0 / 8px 8px;
+  opacity: 0.8;
+}
+
+.duel-carro { animation: duel-carrera var(--dur, 2s) cubic-bezier(0.55, 0.05, 0.8, 0.4) 200ms both; }
+@keyframes duel-carrera { from { transform: translateX(calc(-100% + 110px)); } }
+
+.duel-aparece { animation: duel-aparece 420ms var(--ease-out-strong) var(--delay, 0s) both; }
+@keyframes duel-aparece { from { opacity: 0; transform: translateY(6px); } }
+
+/* Columnas de potencia */
+.duel-columna {
+  transform-origin: bottom;
+  animation: duel-crece-y 950ms cubic-bezier(0.34, 1.35, 0.5, 1) var(--delay, 0s) both;
+}
+
+.duel-crece-y { animation: duel-crece-y 900ms var(--ease-out-strong) var(--delay, 0s) both; }
+@keyframes duel-crece-y { from { transform: scaleY(0); } }
+
+.duel-crece-x {
+  transform-origin: left center;
+  transform: scaleX(var(--sx, 1));
+  animation: duel-crece-x 1100ms var(--ease-out-strong) var(--delay, 0s) both;
+}
+@keyframes duel-crece-x { from { transform: scaleX(0); } }
+
+/* Etiquetas de precio */
+.duel-etiqueta {
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%);
+  border-radius: 12px 0 0 12px;
+  animation: duel-etiqueta 600ms var(--ease-out-strong) var(--delay, 0s) both;
+}
+@keyframes duel-etiqueta { from { opacity: 0; transform: translateX(-40px); } }
+
+/* Medidores */
+.duel-arco {
+  stroke-dashoffset: var(--off, 0);
+  animation: duel-arco 1200ms var(--ease-out-strong) var(--delay, 0s) both;
+}
+@keyframes duel-arco { from { stroke-dashoffset: 100; } }
+
+.duel-aguja {
+  transform-box: view-box;
+  transform: rotate(var(--ang, 0deg));
+  animation: duel-aguja 1300ms cubic-bezier(0.34, 1.45, 0.5, 1) var(--delay, 0s) both;
+}
+@keyframes duel-aguja { from { transform: rotate(-90deg); } }
+
+/* Reductor */
+.duel-sube { animation: duel-sube 1000ms cubic-bezier(0.34, 1.3, 0.5, 1) var(--delay, 0s) both; }
+@keyframes duel-sube { from { transform: translateY(var(--dy, 0)); } }
+
+/* Maletas, estrellas, airbags */
+.duel-cae { animation: duel-cae 520ms cubic-bezier(0.3, 1.5, 0.5, 1) var(--delay, 0s) both; }
+@keyframes duel-cae { from { opacity: 0; transform: translateY(-30px) rotate(-14deg); } }
+
+.duel-estrella { display: inline-block; animation: duel-estrella 520ms cubic-bezier(0.3, 1.7, 0.5, 1) var(--delay, 0s) both; }
+@keyframes duel-estrella { from { opacity: 0; transform: scale(0) rotate(-120deg); } }
+
+.duel-infla { animation: duel-infla 480ms cubic-bezier(0.3, 1.8, 0.5, 1) var(--delay, 0s) both; }
+@keyframes duel-infla { from { opacity: 0; transform: scale(0); } }
+
+.duel-banner { animation: duel-banner 520ms var(--ease-out-strong) var(--delay, 1.2s) both; }
+@keyframes duel-banner { from { opacity: 0; transform: translateX(-18px) scale(0.9); } }
+
+/* Marcador flotante */
+.duel-hud { animation: duel-hud 520ms var(--ease-out-strong) both; }
+@keyframes duel-hud { from { opacity: 0; transform: translateY(40px); } }
+
+.duel-punto { display: inline-block; animation: duel-punto 460ms cubic-bezier(0.3, 1.8, 0.5, 1) both; }
+@keyframes duel-punto { from { transform: scale(2); } }
+
+/* Final */
+.duel-final {
+  padding: 44px 22px 36px;
+  background:
+    radial-gradient(60% 55% at 50% 0%, color-mix(in srgb, var(--c) 55%, transparent), transparent 75%),
+    rgba(255, 255, 255, 0.03);
+}
+
+.duel-rayos {
+  background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.07) 0 6deg, transparent 6deg 18deg);
+  mask-image: radial-gradient(circle, #000 20%, transparent 65%);
+  animation: duel-giro 24s linear infinite;
+}
+@keyframes duel-giro { to { transform: translate(-50%, -50%) rotate(360deg); } }
+.duel-rayos { transform: translate(-50%, -50%); }
+
+.duel-confeti {
+  opacity: 0;
+  animation: duel-confeti var(--dur, 2s) cubic-bezier(0.2, 0.6, 0.4, 1) var(--delay, 0s) both;
+}
+@keyframes duel-confeti {
+  0% { opacity: 1; transform: translateY(-20px) rotate(0); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(560px) rotate(calc(var(--giro, 90deg) * 3)); }
+}
+
+.duel-trofeo { animation: duel-trofeo 800ms cubic-bezier(0.3, 1.6, 0.5, 1) 150ms both; }
+@keyframes duel-trofeo { from { opacity: 0; transform: scale(0) rotate(-25deg); } }
+
+.duel-titulo-campeon {
+  background: linear-gradient(100deg, #fff, #f0abfc 45%, #fb7185);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: duel-campeon 900ms var(--ease-out-strong) 350ms both;
+}
+@keyframes duel-campeon { from { opacity: 0; transform: scale(0.7); letter-spacing: 0.1em; } }
+
+.duel-medallero { animation: duel-aparece 520ms var(--ease-out-strong) var(--delay, 0s) both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .duel-barra,
-  .duel-corona { animation: none; }
+  .duel-arena *,
+  .duel-arena *::before,
+  .duel-arena *::after { animation: none !important; transition: none !important; }
+  .duel-tile { opacity: 1; transform: none; }
 }

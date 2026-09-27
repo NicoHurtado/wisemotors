@@ -224,10 +224,10 @@ export const VehicleCard = React.memo(function VehicleCard({
             <Badge
               variant="wise"
               className={`text-xs ${affinityScore >= 80
-                ? 'bg-green-500 text-white'
+                ? 'bg-wise text-white'
                 : affinityScore >= 60
-                  ? 'bg-yellow-500 text-white'
-                  : 'bg-red-500 text-white'
+                  ? 'bg-fuchsia-500 text-white'
+                  : 'bg-rose-500 text-white'
                 }`}
             >
               {affinityScore}% match
@@ -241,12 +241,12 @@ export const VehicleCard = React.memo(function VehicleCard({
             <Badge
               variant="wise"
               className={`text-xs ${matchPercentage >= 90
-                ? 'bg-green-500 text-white'
+                ? 'bg-wise text-white'
                 : matchPercentage >= 75
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-purple-500 text-white'
                   : matchPercentage >= 60
-                    ? 'bg-yellow-500 text-white'
-                    : 'bg-orange-500 text-white'
+                    ? 'bg-fuchsia-500 text-white'
+                    : 'bg-rose-500 text-white'
                 }`}
             >
               {matchPercentage}% coincidencia

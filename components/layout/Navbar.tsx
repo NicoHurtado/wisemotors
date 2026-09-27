@@ -106,7 +106,7 @@ export function Navbar() {
                       key={enlace.href}
                       href={enlace.href}
                       aria-current={activoAdmin ? 'page' : undefined}
-                      className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-[13px] font-medium hover:text-wise ${activoAdmin ? 'text-wise' : 'text-gray-500'}`}
+                      className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-medium hover:text-wise ${activoAdmin ? 'text-wise' : 'text-gray-500'}`}
                       style={{ transition: 'color var(--motion-instant) ease' }}
                     >
                       <Icono className="h-4 w-4" strokeWidth={1.75} />
