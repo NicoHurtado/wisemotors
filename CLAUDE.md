@@ -143,6 +143,9 @@ cobertura, migración, seeds, motor de cohortes.
   `scripts/preparar-bd.ts` corre `prisma db push` (nunca con pérdida de datos: si
   la hay, el deploy falla) y siembra los datos base de `lib/db/semillas.ts` si
   faltan. En preview no toca la base. Local: `npm run db:preparar`.
+- Admin inicial: con `ADMIN_EMAIL` + `ADMIN_PASSWORD` (≥10) en Vercel, el deploy crea esa
+  cuenta como admin SI NO EXISTE. Nunca asciende cuentas existentes ni cambia contraseñas
+  (el registro no verifica correos). Otros admins: `scripts/set-admin.js`.
 - Deploy Vercel `iad1`, funciones `maxDuration: 30s`. Env vars: `WISE_DATABASE_URL`(+`_UNPOOLED`),
   `JWT_SECRET`, `ANTHROPIC_API_KEY` (+ `ANTHROPIC_WORKSPACE_ID` si la clave no es
   de un workspace), `OPENAI_API_KEY`, `CLOUDINARY_*`, `NEXT_PUBLIC_APP_URL`.
