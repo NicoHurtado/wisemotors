@@ -1,18 +1,17 @@
 import type { Metadata } from 'next'
-import { Outfit, JetBrains_Mono } from 'next/font/google'
+import '@fontsource-variable/inter-tight'
+import '@fontsource/anton'
+import '@fontsource-variable/jetbrains-mono'
 import './globals.css'
+import './legacy.css'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { FavoritesProvider } from '@/contexts/FavoritesContext'
 import { AuthProvider } from '@/contexts/AuthContext'
-import { CursorLight } from '@/components/ui/CursorLight'
 
-// Outfit tiene carácter geométrico propio; Inter es la fuente por defecto de
-// medio internet y no aporta identidad.
-const outfit = Outfit({ subsets: ['latin'], variable: '--font-sans', display: 'swap' })
-
-// Monoespaciada solo para cifras reales: precios, potencias, puntajes.
-const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' })
+// Fuentes self-hosted (fontsource): Inter Tight para todo, Anton solo para la
+// palabra gigante detrás de un carro, JetBrains Mono para cifras y rótulos.
+// Las familias se declaran en globals.css (--font-sans/display/mono).
 
 export const metadata: Metadata = {
   title: {
@@ -70,8 +69,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className={`${outfit.variable} ${mono.variable} font-sans`}>
-        <CursorLight />
+      <body className="font-sans">
         <AuthProvider>
           <FavoritesProvider>
             <div className="min-h-screen flex flex-col">
@@ -80,8 +78,6 @@ export default function RootLayout({
                 {children}
               </main>
               <Footer />
-              {/* Espacio para que el dock móvil no tape el final del footer */}
-              <div className="h-24 md:hidden" aria-hidden />
             </div>
           </FavoritesProvider>
         </AuthProvider>

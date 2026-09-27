@@ -1,5 +1,5 @@
 // ============================================================================
-// Duelo: la comparación como un juego por rondas.
+// Comparación por preguntas de comprador (usada por el "frente a frente").
 //
 // Cada ronda es UNA pregunta que un comprador sin conocimiento técnico sí se
 // hace ("¿cuál arranca más rápido?", "¿dónde cabe más mercado?"), traducida a
@@ -102,7 +102,7 @@ const LITROS_MALETA = 40;
 export const DUEL_ROUNDS: RoundDef[] = [
   {
     id: 'arranque',
-    titulo: 'Arranque',
+    titulo: 'Aceleración',
     pregunta: '¿Cuál sale más rápido?',
     porQue: 'Se nota al incorporarte a una autopista o adelantar un camión.',
     direction: 'lower',
@@ -111,7 +111,7 @@ export const DUEL_ROUNDS: RoundDef[] = [
   },
   {
     id: 'musculo',
-    titulo: 'Músculo',
+    titulo: 'Potencia',
     pregunta: '¿Cuál tiene más fuerza?',
     porQue: 'Subir a Las Palmas con el carro lleno sin sufrir.',
     direction: 'higher',
@@ -121,7 +121,7 @@ export const DUEL_ROUNDS: RoundDef[] = [
   },
   {
     id: 'bolsillo',
-    titulo: 'Bolsillo',
+    titulo: 'Precio',
     pregunta: '¿Cuál cuesta menos?',
     porQue: 'Lo que pagas por sacarlo del concesionario.',
     direction: 'lower',
@@ -130,7 +130,7 @@ export const DUEL_ROUNDS: RoundDef[] = [
   },
   {
     id: 'rinde',
-    titulo: 'Rinde',
+    titulo: 'Consumo',
     pregunta: '¿Cuál va más lejos con un galón?',
     porQue: 'Menos visitas a la bomba cada mes.',
     direction: 'higher',
@@ -164,7 +164,7 @@ export const DUEL_ROUNDS: RoundDef[] = [
   },
   {
     id: 'escudo',
-    titulo: 'Escudo',
+    titulo: 'Pruebas de choque',
     pregunta: '¿Cuál te protege mejor en un choque?',
     porQue: 'Las estrellas vienen de pruebas de choque reales; más es mejor.',
     direction: 'higher',
@@ -182,7 +182,7 @@ export const DUEL_ROUNDS: RoundDef[] = [
   },
   {
     id: 'hueco',
-    titulo: 'Anti-huecos',
+    titulo: 'Altura al piso',
     pregunta: '¿Cuál pasa los reductores sin raspar?',
     porQue: 'Más altura al piso = menos sustos con huecos y policías acostados.',
     direction: 'higher',

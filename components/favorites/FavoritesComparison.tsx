@@ -1,133 +1,68 @@
 'use client';
 
+import Link from 'next/link';
+import { ArrowUpRight } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
-import { VehicleCard } from '@/components/vehicle/VehicleCard';
-import { Button } from '@/components/ui/button';
-import { Heart, Plus } from 'lucide-react';
-import Link from 'next/link';
+import { TarjetaCarro, type VehiculoTarjeta } from '@/components/car/TarjetaCarro';
 
+// Tus favoritos: las mismas tarjetas del catálogo y un atajo al comparador.
 export function FavoritesComparison() {
   const { user } = useAuth();
-  const { favorites, loading, error, removeFromFavorites } = useFavorites();
+  const { favorites, loading } = useFavorites();
+
+  const vacio = (titulo: string, texto: string, cta: React.ReactNode) => (
+    <div className="mx-auto max-w-[1440px] px-5 py-20 md:px-8 md:py-28">
+      <div className="estudio rounded-[36px] px-8 py-16 md:px-16 md:py-24">
+        <h1 className="t-titulo max-w-[14ch] text-[48px] md:text-[80px]">{titulo}</h1>
+        <p className="mt-5 max-w-[46ch] text-[17px] leading-relaxed text-tinta-2">{texto}</p>
+        <div className="mt-10 flex flex-wrap gap-3">{cta}</div>
+      </div>
+    </div>
+  );
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center space-y-6">
-          <div className="w-24 h-24 mx-auto bg-gray-200 rounded-full flex items-center justify-center">
-            <Heart className="w-12 h-12 text-gray-400" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">Compara tus Favoritos</h1>
-          <p className="text-gray-600 max-w-md mx-auto">
-            Para guardar y comparar tus vehículos favoritos, necesitas crear una cuenta o iniciar sesión.
-          </p>
-          <div className="space-x-4">
-            <Button asChild variant="wise">
-              <Link href="/login">Iniciar Sesión</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/register">Crear Cuenta</Link>
-            </Button>
-          </div>
-        </div>
-      </div>
+    return vacio(
+      'Guarda los que te gusten.',
+      'Con una cuenta guardas carros con el corazón y después los pones frente a frente.',
+      <>
+        <Link href="/register" className="pastilla pastilla--wise h-12 px-6">
+          Crear cuenta <ArrowUpRight className="h-4 w-4" />
+        </Link>
+        <Link href="/login" className="pastilla h-12 px-6">
+          Ya tengo cuenta
+        </Link>
+      </>
     );
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center space-y-6">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-wise mx-auto"></div>
-          <p className="text-gray-600">Cargando tus favoritos...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center space-y-6">
-          <div className="w-24 h-24 mx-auto bg-red-100 rounded-full flex items-center justify-center">
-            <Heart className="w-12 h-12 text-red-400" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">Error al cargar favoritos</h1>
-          <p className="text-gray-600">{error}</p>
-          <Button onClick={() => window.location.reload()} variant="wise">
-            Reintentar
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (favorites.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center space-y-6">
-          <div className="w-24 h-24 mx-auto bg-gray-200 rounded-full flex items-center justify-center">
-            <Plus className="w-12 h-12 text-gray-400" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">No tienes favoritos aún</h1>
-          <p className="text-gray-600 max-w-md mx-auto">
-            Para comparar vehículos, primero añade algunos a tus favoritos haciendo clic en el corazón en las tarjetas de vehículos.
-          </p>
-          <Button asChild variant="wise">
-            <Link href="/vehicles">Explorar Vehículos</Link>
-          </Button>
-        </div>
-      </div>
+  if (!loading && favorites.length === 0) {
+    return vacio(
+      'Todavía no hay nada aquí.',
+      'Toca el corazón en cualquier carro del catálogo y aparecerá en esta página.',
+      <Link href="/vehicles" className="pastilla pastilla--tinta h-12 px-6">
+        Ir al catálogo <ArrowUpRight className="h-4 w-4" />
+      </Link>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Compara tus Favoritos</h1>
-          <p className="text-gray-600 mt-2">
-            Tienes {favorites.length} vehículo{favorites.length !== 1 ? 's' : ''} en favoritos
-          </p>
-        </div>
-
-        {/* Grid de favoritos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {favorites.map((vehicle) => (
-            <VehicleCard
-              key={vehicle.id}
-              vehicle={{
-                id: vehicle.id,
-                brand: vehicle.brand,
-                model: vehicle.model,
-                year: vehicle.year,
-                price: vehicle.price,
-                fuel: vehicle.fuelType.toUpperCase() as any,
-                imageUrl: vehicle.imageUrl,
-                category: vehicle.type,
-                status: 'NUEVO' as const
-              }}
-              isFavorite={true}
-              onExplore={(id) => window.location.href = `/vehicles/${id}`}
-              onToggleFavorite={removeFromFavorites}
-            />
-          ))}
-        </div>
-
-        {/* Acciones */}
-        <div className="text-center mt-8 space-y-4">
-          <p className="text-gray-600">
-            Haz clic en "Explorar Vehículo" para ver detalles completos de cada favorito
-          </p>
-          <Button asChild variant="outline">
-            <Link href="/vehicles">Añadir más favoritos</Link>
-          </Button>
-        </div>
+    <div className="mx-auto max-w-[1440px] px-5 pb-10 pt-10 md:px-8 md:pt-14">
+      <div className="flex flex-wrap items-end justify-between gap-6 border-b border-linea pb-8">
+        <h1 className="t-titulo text-[48px] md:text-[80px]">
+          Favoritos <span className="t-ligero text-tinta-2/50">({favorites.length})</span>
+        </h1>
+        {favorites.length >= 2 && (
+          <Link href="/compare" className="pastilla pastilla--wise h-12 px-6">
+            Ponerlos frente a frente <ArrowUpRight className="h-4 w-4" />
+          </Link>
+        )}
+      </div>
+      <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        {loading && favorites.length === 0
+          ? Array.from({ length: 3 }, (_, i) => <div key={i} className="h-[380px] animate-pulse rounded-[28px] bg-tarjeta" />)
+          : favorites.map((v, i) => <TarjetaCarro key={v.id} vehiculo={v as unknown as VehiculoTarjeta} indice={i} />)}
       </div>
     </div>
   );
 }
-
-

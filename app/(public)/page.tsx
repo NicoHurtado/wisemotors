@@ -1,151 +1,96 @@
 'use client';
 
-import { HeroSearch } from '@/components/landing/HeroSearch';
-import { TrendingVehicles } from '@/components/landing/TrendingVehicles';
-import { HowItWorks } from '@/components/landing/HowItWorks';
-import { Button } from '@/components/ui/button';
-import { routes } from '@/lib/urls';
-import { useEffect, useState, Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { HeroShowroom } from '@/components/home/HeroShowroom';
+import { BandaComparar, ComoFunciona, Destacados, Marquesina } from '@/components/home/Secciones';
+import type { VehiculoTarjeta } from '@/components/car/TarjetaCarro';
+import { fotoDe } from '@/components/car/CarRender';
 import { AIResultsLoader } from '@/components/vehicles/AIResultsLoader';
 import { AdaptiveResults } from '@/components/vehicles/AdaptiveResults';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { FilterButtons } from '@/components/landing/FilterButtons';
-import { AdminQuickAccess } from '@/components/admin/AdminQuickAccess';
-import { Reveal } from '@/components/ui/Reveal';
 
-function HomePageContent() {
+function Inicio() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
-  const [loadingAI, setLoadingAI] = useState(false);
-  const [aiResults, setAiResults] = useState<any[] | null>(null);
+  const [vehiculos, setVehiculos] = useState<VehiculoTarjeta[]>([]);
+  const [total, setTotal] = useState(0);
+  const [cargandoIA, setCargandoIA] = useState(false);
+  const [resultados, setResultados] = useState<any[] | null>(null);
 
   useEffect(() => {
-    const run = async () => {
-      console.log('Query changed:', query);
-      if (!query) {
-        setAiResults(null);
-        return;
-      }
-      console.log('Starting AI search for:', query);
-      setLoadingAI(true);
-      setAiResults(null);
-      try {
-        const resp = await fetch('/api/ai/recommendations', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: query })
-        });
-        const data = await resp.json();
-        console.log('AI response:', data);
-        setAiResults(data.results || data);
-      } catch (e) {
-        console.error('AI search error:', e);
-        setAiResults([]);
-      } finally {
-        setLoadingAI(false);
-      }
-    };
-    run();
+    fetch('/api/vehicles?limit=24')
+      .then(r => r.json())
+      .then(d => {
+        setVehiculos(d.vehicles ?? []);
+        setTotal(d.pagination?.total ?? d.vehicles?.length ?? 0);
+      })
+      .catch(() => setVehiculos([]));
+  }, []);
+
+  useEffect(() => {
+    if (!query) {
+      setResultados(null);
+      return;
+    }
+    setCargandoIA(true);
+    setResultados(null);
+    fetch('/api/ai/recommendations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: query }),
+    })
+      .then(r => r.json())
+      .then(d => setResultados(d.results || d))
+      .catch(() => setResultados([]))
+      .finally(() => setCargandoIA(false));
+    requestAnimationFrame(() => document.getElementById('resultados')?.scrollIntoView({ behavior: 'smooth' }));
   }, [query]);
+
+  const hayResultados =
+    resultados && (Array.isArray(resultados) ? resultados.length > 0 : (resultados as any).total_matches > 0);
+  const vitrina = vehiculos.find(v => fotoDe(v) && v.fuelType === 'Eléctrico') ?? vehiculos.find(v => fotoDe(v)) ?? vehiculos[0];
+  const irA = (q: string) => router.push(`/?q=${encodeURIComponent(q)}#resultados`);
 
   return (
     <>
-      {/* Hero Section */}
-      <section className="py-20 md:py-28 bg-hero">
-        <div className="container mx-auto px-4">
-          <HeroSearch 
-            initialQuery={query} 
-            showFilters={false}
-          />
-        </div>
-      </section>
+      <HeroShowroom vehiculos={vehiculos} consulta={query} />
 
       {query && (
-        <section className="py-6">
-          <div className="container mx-auto px-4">
-            {loadingAI && <AIResultsLoader />}
-            {!loadingAI && aiResults && (Array.isArray(aiResults) ? aiResults.length > 0 : (aiResults as any).total_matches > 0) && (
-              <AdaptiveResults 
-                results={aiResults} 
-                query={query}
-                onFilterClick={(newQuery: string) => {
-                  router.push(`/?q=${encodeURIComponent(newQuery)}`);
-                }}
-              />
-            )}
-            {!loadingAI && aiResults && (Array.isArray(aiResults) ? aiResults.length === 0 : (aiResults as any).total_matches === 0) && (
-              <div className="text-center py-12 max-w-3xl mx-auto">
-                <h3 className="text-2xl font-semibold text-foreground mb-2">No encontramos resultados con esa combinación</h3>
-                <p className="text-muted-foreground mb-6">Prueba ajustando tu búsqueda o utiliza estas opciones para refinarla.</p>
-                <FilterButtons
-                  currentQuery={query}
-                  onFilterClick={(newQuery: string) => {
-                    router.push(`/?q=${encodeURIComponent(newQuery)}`);
-                  }}
-                />
-              </div>
-            )}
+        <section id="resultados" className="scroll-mt-24 border-b border-linea">
+          <div className="mx-auto max-w-[1440px] px-5 py-16 md:px-8">
+            <p className="t-meta text-tinta-2">(Tu búsqueda)</p>
+            <h2 className="t-titulo mt-3 max-w-[22ch] text-[36px] md:text-[52px]">“{query}”</h2>
+            <div className="mt-10">
+              {cargandoIA && <AIResultsLoader />}
+              {!cargandoIA && hayResultados && <AdaptiveResults results={resultados!} query={query} onFilterClick={irA} />}
+              {!cargandoIA && resultados && !hayResultados && (
+                <div className="rounded-[28px] bg-tarjeta p-10">
+                  <p className="text-[22px] font-semibold tracking-[-0.03em]">No encontramos carros con esa combinación.</p>
+                  <p className="mt-2 text-tinta-2">Prueba con menos condiciones o usa una de estas opciones.</p>
+                  <div className="mt-6">
+                    <FilterButtons currentQuery={query} onFilterClick={irA} />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </section>
       )}
 
-      {/* Trending Vehicles Section - Solo mostrar si no hay query subjetivo */}
-      {!query || (aiResults && (aiResults as any).query_type === 'OBJECTIVE_FEATURE') ? (
-        <TrendingVehicles />
-      ) : null}
-
-      {/* How It Works Section */}
-      <HowItWorks />
-
-      {/* CTA Section */}
-      <section className="py-24">
-        <div className="container mx-auto max-w-[1180px] px-4">
-          <Reveal>
-            <div className="glass relative overflow-hidden rounded-[2rem] px-8 py-14 md:px-14">
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full"
-                style={{
-                  background:
-                    'radial-gradient(circle, rgba(136,28,183,0.16) 0%, transparent 70%)',
-                }}
-              />
-              <div className="relative grid grid-cols-1 gap-8 md:grid-cols-12 md:items-end">
-                <div className="md:col-span-7">
-                  <h2 className="text-[2.1rem] md:text-[2.6rem] font-semibold leading-[1.05] tracking-[-0.03em] text-foreground">
-                    ¿Listo para encontrar tu vehículo ideal?
-                  </h2>
-                  <p className="mt-3 max-w-[56ch] text-[17px] leading-relaxed text-muted-foreground">
-                    Explora el catálogo completo y encuentra la opción que de verdad te sirve.
-                  </p>
-                </div>
-                <div className="md:col-span-4 md:col-start-9 md:justify-self-end">
-                  <Button
-                    asChild
-                    size="lg"
-                    variant="wise"
-                    className="rounded-full px-8 text-[16px] shadow-lg shadow-wise/25"
-                  >
-                    <a href={routes.vehicles}>Ver todos los vehículos</a>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-      
-      {/* Admin Quick Access */}
-      <AdminQuickAccess />
+      <Marquesina />
+      <ComoFunciona vitrina={vitrina} />
+      <Destacados vehiculos={vehiculos} total={total} />
+      <BandaComparar vehiculos={vehiculos} />
     </>
   );
 }
 
 export default function HomePage() {
   return (
-    <Suspense fallback={<div>Cargando...</div>}>
-      <HomePageContent />
+    <Suspense fallback={<div className="min-h-screen bg-showroom" />}>
+      <Inicio />
     </Suspense>
   );
 }

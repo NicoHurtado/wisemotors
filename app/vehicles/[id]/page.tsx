@@ -1,5 +1,5 @@
 import { Metadata, ResolvingMetadata } from 'next'
-import { VehicleDetail } from '@/components/vehicles/VehicleDetail'
+import { FichaVehiculo } from '@/components/vehicles/FichaVehiculo'
 import { notFound } from 'next/navigation'
 import Script from 'next/script'
 import { getVehicle } from '@/lib/data/vehicles'
@@ -76,13 +76,13 @@ export default async function VehicleDetailPage({ params }: Props) {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="min-h-screen">
       <Script
         id="vehicle-jsonld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <VehicleDetail vehicle={vehicle} />
+      <FichaVehiculo vehicle={vehicle} />
     </div>
   );
 }
