@@ -98,6 +98,8 @@ interface Silueta {
   r: number;
   /** Radio del paso de rueda (holgura sobre la llanta). */
   arco: number;
+  /** y de la base de la carrocería entre ruedas (altura al piso). */
+  faldon: number;
   hombro: string;
   faro: string;
   stop: string;
@@ -120,6 +122,7 @@ const SILUETAS: Record<Carroceria, Silueta> = {
     ry: 130,
     r: 30,
     arco: 37,
+    faldon: 145,
     hombro: 'M46 104 C150 96 300 92 444 106',
     faro: 'M414 96 C428 99 440 104 447 111',
     stop: 'M36 104 L52 100',
@@ -135,6 +138,7 @@ const SILUETAS: Record<Carroceria, Silueta> = {
     ry: 131,
     r: 29,
     arco: 35,
+    faldon: 145,
     hombro: 'M70 92 C170 86 300 84 412 100',
     faro: 'M388 92 C400 94 410 99 415 106',
     stop: 'M68 94 L76 80',
@@ -144,13 +148,14 @@ const SILUETAS: Record<Carroceria, Silueta> = {
 
   suv: {
     cuerpo:
-      'M52 146 L48 118 C47 100 50 86 58 74 L76 50 C82 41 92 36 108 35 L250 26 C266 25 276 29 286 37 L324 82 C360 86 400 92 428 100 C438 104 442 112 442 122 L440 142 C439 146 436 148 430 148 L389.5 148 A39 39 0 1 0 322.5 148 L147.5 148 A39 39 0 1 0 80.5 148 L60 148 C54 148 52 147 52 146 Z',
+      'M54 144 L48 114 C47 98 52 86 62 74 L80 50 C86 41 96 36 112 35 L250 26 C266 25 276 29 286 37 L324 80 C360 84 400 90 428 98 C438 102 442 110 442 120 L440 138 C439 142 436 144 430 144 L390.6 144 A39 39 0 1 0 321.4 144 L148.6 144 A39 39 0 1 0 79.4 144 L60 144 C56 144 54 144 54 144 Z',
     vidrio: 'M84 74 L96 50 C99 45 104 42 112 42 L248 33 C261 33 269 36 277 43 L307 76 Z',
     pilares: [[196, 36, 194, 75], [128, 41, 118, 74]],
     ruedas: [114, 356],
-    ry: 128,
-    r: 32,
+    ry: 126,
+    r: 33,
     arco: 39,
+    faldon: 144,
     hombro: 'M54 88 C160 84 300 86 432 104',
     faro: 'M404 94 C420 97 432 102 439 109',
     stop: 'M50 90 L62 86',
@@ -160,13 +165,14 @@ const SILUETAS: Record<Carroceria, Silueta> = {
   },
   suvCoupe: {
     cuerpo:
-      'M52 146 L48 118 C47 106 50 96 58 90 C72 64 98 44 132 35 C170 26 228 23 260 27 C274 29 284 33 292 40 L326 82 C360 86 400 92 428 100 C438 104 442 112 442 122 L440 142 C439 146 436 148 430 148 L389.5 148 A39 39 0 1 0 322.5 148 L147.5 148 A39 39 0 1 0 80.5 148 L60 148 C54 148 52 147 52 146 Z',
+      'M54 144 L48 114 C47 104 51 94 60 88 C74 62 100 44 134 35 C170 26 228 23 260 27 C274 29 284 33 292 40 L326 80 C360 84 400 90 428 98 C438 102 442 110 442 120 L440 138 C439 142 436 144 430 144 L390.6 144 A39 39 0 1 0 321.4 144 L148.6 144 A39 39 0 1 0 79.4 144 L60 144 C56 144 54 144 54 144 Z',
     vidrio: 'M86 82 C98 64 116 50 138 43 C172 34 226 32 256 35 C268 37 277 41 284 48 L309 78 Z',
     pilares: [[204, 35, 202, 77]],
     ruedas: [114, 356],
-    ry: 128,
-    r: 32,
+    ry: 126,
+    r: 33,
     arco: 39,
+    faldon: 144,
     hombro: 'M56 94 C160 88 300 86 432 104',
     faro: 'M404 94 C420 97 432 102 439 109',
     stop: 'M52 94 C60 92 68 90 76 88',
@@ -183,6 +189,7 @@ const SILUETAS: Record<Carroceria, Silueta> = {
     ry: 126,
     r: 34,
     arco: 40,
+    faldon: 147,
     hombro: 'M26 84 L196 82 M206 84 C300 84 380 86 452 98',
     faro: 'M428 86 C442 89 454 94 459 102',
     stop: 'M24 78 L24 96',
@@ -249,7 +256,7 @@ function RenderSvg({ car, className }: { car: CarLike; className?: string }) {
   const centro = (r1 + r2) / 2;
 
   const arcos = base.ruedas.map(cx => {
-    const dy = 160 - 12 - s.ry;
+    const dy = base.faldon - base.ry;
     const dx = Math.sqrt(s.arco * s.arco - dy * dy);
     return `M${cx + dx} ${s.ry + dy} A${s.arco} ${s.arco} 0 1 0 ${cx - dx} ${s.ry + dy}`;
   });
@@ -299,7 +306,7 @@ function RenderSvg({ car, className }: { car: CarLike; className?: string }) {
 
       {/* Hueco del paso de rueda: oscuro, recortado a la altura del faldón */}
       <clipPath id={`pozo-${id}`}>
-        <rect x="0" y="0" width="480" height={149} />
+        <rect x="0" y="0" width="480" height={s.faldon + 1} />
       </clipPath>
       <g clipPath={`url(#pozo-${id})`}>
         {s.ruedas.map(x => (
@@ -334,7 +341,13 @@ function RenderSvg({ car, className }: { car: CarLike; className?: string }) {
         <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#0b0a0d" strokeWidth={5} />
       ))}
       {/* Destello en el vidrio */}
-      <path d={s.vidrio} fill="#fff" opacity={0.08} clipPath={`url(#cuerpo-${id})`} transform="translate(22 0) scale(0.92 1)" />
+      <clipPath id={`vidrio-clip-${id}`}>
+        <path d={s.vidrio} />
+      </clipPath>
+      <g clipPath={`url(#vidrio-clip-${id})`}>
+        <path d="M150 90 L230 0 L262 0 L182 90 Z" fill="#fff" opacity={0.1} />
+        <path d="M196 90 L276 0 L288 0 L208 90 Z" fill="#fff" opacity={0.07} />
+      </g>
 
       {/* Espejo y manijas */}
       <path d={s.espejo} fill={bajo} />

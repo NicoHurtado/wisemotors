@@ -70,6 +70,7 @@ export function DataProvenance({
   razonamientoPrecio,
   coberturaGlobal,
 }: Props) {
+  const [detalle, setDetalle] = useState(false);
   const [datos, setDatos] = useState<Procedencia | null>(null);
 
   useEffect(() => {
@@ -118,7 +119,6 @@ export function DataProvenance({
                     : `${total} datos registrados · fuentes en verificación.`;
                 })()
               : 'Ficha cargada manualmente, sin registro de fuentes por dato.'}
-            {cobertura != null && ` Cobertura de ficha: ${cobertura}%.`}
           </p>
         </div>
       </div>
@@ -141,6 +141,25 @@ export function DataProvenance({
         </div>
       )}
 
+      {cobertura != null && (
+        <div className="mb-5">
+          <div className="h-1.5 overflow-hidden rounded-full bg-papel">
+            <div className="h-full rounded-full bg-wise" style={{ width: `${cobertura}%` }} />
+          </div>
+          <p className="mt-2 text-[13px] text-tinta-2">Qué tan completa está la ficha: {cobertura}%</p>
+        </div>
+      )}
+
+      <button
+        onClick={() => setDetalle(d => !d)}
+        aria-expanded={detalle}
+        className="text-[14px] font-medium text-tinta underline-offset-4 hover:underline"
+      >
+        {detalle ? 'Ocultar el detalle' : '¿Cómo lo sabemos?'}
+      </button>
+
+      {detalle && (
+      <div className="sube mt-5">
       {/* Métricas de la ficha: sin adornos, tres números que se pueden auditar */}
       {total > 0 && (
         <dl className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -206,6 +225,8 @@ export function DataProvenance({
         <p className="mt-4 text-[12px] text-muted-foreground">
           Última extracción: {fecha(datos.ultimaActualizacion)}.
         </p>
+      )}
+      </div>
       )}
     </Reveal>
   );

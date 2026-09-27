@@ -44,7 +44,8 @@ const PROFILES: Record<string, { labelEs: string; weights: ProfileWeights }> = {
   },
   economia: {
     labelEs: 'económico de mantener',
-    weights: { efficiency_norm: 1.0, quality_price_ratio_norm: 0.7, reliability_norm: 0.4 },
+    // "Que no gaste mucho" es primero no pagar de más y después gastar poco al mes.
+    weights: { quality_price_ratio_norm: 1.0, efficiency_norm: 0.8, reliability_norm: 0.4 },
   },
   familia: {
     labelEs: 'para la familia',
@@ -93,7 +94,8 @@ const KEYWORDS: Record<string, RegExp> = {
   palmas: /\b(palmas|subid[ao]|pendiente|loma|monta[ñn]a|empinad|subir)/,
   huecos: /\b(hueco|calles? mal|v[ií]as? mal|destapad|resistente)/,
   finca: /\b(finca|trocha|4x4|todo\s?terreno|campo|vereda|barro)/,
-  economia: /\b(econ[oó]mic|barat|ahorr|consum|rendidor|gasta poco|eficien)/,
+  // "que no gaste mucho", "gastar poco", "cuidar el bolsillo": así lo dice la gente.
+  economia: /\b(econ[oó]mic|barat|ahorr|consum|rendidor|gast[aeo]|eficien|presupuest|bolsillo|plata)/,
   familia: /\b(famili|ni[ñn]o|beb[eé]|espaci|ba[uú]l|puestos|asientos)/,
   ciudad: /\b(ciudad|tranc[oó]n|parquear|parqueadero|compact|urban|medell[ií]n|bogot[aá]|peque[ñn]o)/,
   desempeno: /\b(r[aá]pid|deportiv|potenci|potente|veloz|correr|acelera)/,

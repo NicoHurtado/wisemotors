@@ -486,10 +486,11 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
                 <p className="text-[13px] text-white/50">{vehicle.type}</p>
               </div>
             </div>
-            {datos.map(d => {
+            {datos.map((d, i) => {
               const Icono = ICONOS[d.clave] ?? Gauge;
+              const huerfana = datos.length % 2 === 1 && i === datos.length - 1;
               return (
-                <div key={d.clave} className="flex shrink-0 snap-start flex-col justify-between rounded-[24px] border border-linea bg-blanco p-4 md:w-[240px] md:rounded-[28px] md:p-6">
+                <div key={d.clave} className={`flex shrink-0 snap-start flex-col justify-between rounded-[24px] border border-linea bg-blanco p-4 md:w-[240px] md:rounded-[28px] md:p-6 ${huerfana ? 'col-span-2 md:col-span-1' : ''}`}>
                   <div className="flex items-start justify-between">
                     <span className="flex h-12 w-12 items-center justify-center rounded-full border border-linea">
                       <Icono className="h-5 w-5" />

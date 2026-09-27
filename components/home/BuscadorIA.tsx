@@ -5,7 +5,7 @@
 // El placeholder se escribe solo con cosas que la gente de verdad dice.
 // ============================================================================
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowUpRight, Sparkles } from 'lucide-react';
 
@@ -26,6 +26,7 @@ const SUGERENCIAS = [
 
 export function BuscadorIA({ inicial = '', oscuro = false }: { inicial?: string; oscuro?: boolean }) {
   const router = useRouter();
+  const campo = useId();
   const [q, setQ] = useState(inicial);
   const [ph, setPh] = useState('');
   const [i, setI] = useState(0);
@@ -79,11 +80,11 @@ export function BuscadorIA({ inicial = '', oscuro = false }: { inicial?: string;
         className="group relative flex h-[62px] items-center rounded-full bg-blanco pl-5 pr-2 shadow-[0_24px_50px_-24px_rgba(0,0,0,0.6)] ring-1 ring-black/5 transition-shadow focus-within:ring-2 focus-within:ring-wise"
       >
         <Sparkles className="h-5 w-5 shrink-0 text-wise" />
-        <label htmlFor="buscador-ia" className="sr-only">
+        <label htmlFor={campo} className="sr-only">
           Describe el carro que necesitas
         </label>
         <input
-          id="buscador-ia"
+          id={campo}
           value={q}
           onChange={e => setQ(e.target.value)}
           placeholder={ph || 'Describe cómo vas a usar el carro'}

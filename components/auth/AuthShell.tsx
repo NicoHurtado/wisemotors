@@ -25,7 +25,7 @@ export function AuthShell({
         <div aria-hidden className="absolute inset-y-0 left-0 w-[38%]" style={{ background: 'linear-gradient(170deg, #521672, #2a0a3d)' }} />
         <p aria-hidden className="t-display absolute left-5 top-4 text-[120px] leading-none text-[#5b1a82]">WISE</p>
         <div className="carro-entra absolute bottom-3 left-[8%] right-[-4%]">
-          <CarRender car={{ brand: 'Wise', model: 'Estudio', type: 'SUV' }} className="aspect-[480/180] w-full" />
+          <CarRender car={{ brand: 'Wise', model: 'Fastback', type: 'SUV', fuelType: 'Eléctrico' }} className="aspect-[480/180] w-full" />
         </div>
       </div>
       <div className="relative hidden overflow-hidden rounded-[36px] bg-showroom text-white lg:block">
@@ -38,7 +38,7 @@ export function AuthShell({
           WISE
         </p>
         <div className="carro-entra absolute left-[6%] right-[4%] top-[34%]">
-          <CarRender car={{ brand: 'Wise', model: 'Estudio', type: 'SUV' }} className="aspect-[480/180] w-full" />
+          <CarRender car={{ brand: 'Wise', model: 'Fastback', type: 'SUV', fuelType: 'Eléctrico' }} className="aspect-[480/180] w-full" />
         </div>
         <div className="absolute inset-x-8 bottom-8 flex items-end justify-between gap-6">
           <p className="max-w-[26ch] text-[22px] font-semibold leading-tight tracking-[-0.03em]">

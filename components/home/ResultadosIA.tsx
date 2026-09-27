@@ -13,7 +13,26 @@ import Link from 'next/link';
 import { ArrowUpRight, Check } from 'lucide-react';
 import { CarRender } from '@/components/car/CarRender';
 import { TarjetaCarro, type VehiculoTarjeta } from '@/components/car/TarjetaCarro';
-import { millones, palabraGigante } from '@/lib/vehiculo-datos';
+import { BuscadorIA } from '@/components/home/BuscadorIA';
+import { datosClave, millones, palabraGigante, tresDatos } from '@/lib/vehiculo-datos';
+
+/** Razones comparativas, calculadas con datos reales, frente a los otros del podio. */
+function razonesRelativas(v: any, podio: any[]): string[] {
+  if (podio.length < 2) return [];
+  const out: string[] = [];
+  const dato = (x: any, k: string) => datosClave(x).find(d => d.clave === k)?.numero ?? null;
+  const mejor = (k: string, menor = false) => {
+    const vals = podio.map(x => dato(x, k)).filter((n): n is number => n !== null);
+    const mio = dato(v, k);
+    if (mio === null || vals.length < 2) return false;
+    return menor ? mio === Math.min(...vals) : mio === Math.max(...vals);
+  };
+  if (v.price === Math.min(...podio.map(x => x.price))) out.push(`El de menor precio de tus ${podio.length} mejores opciones`);
+  if (mejor('consumo')) out.push('El que más rinde por galón de los tres');
+  if (mejor('baul')) out.push('El baúl más grande de los tres');
+  if (mejor('potencia')) out.push('El de más fuerza de los tres');
+  return out;
+}
 
 interface Resultado {
   id: string;
@@ -52,10 +71,17 @@ export function ResultadosIA({
 
   return (
     <div className="space-y-14">
+      <div className="max-w-[640px]">
+        <BuscadorIA inicial={consulta} />
+      </div>
       {primero && (
         <div className="grid overflow-hidden rounded-[36px] bg-blanco lg:grid-cols-[1.25fr_1fr]">
           <div className="estudio relative flex min-h-[320px] items-center justify-center overflow-hidden p-8">
-            <p aria-hidden className="t-display pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-[clamp(110px,14vw,220px)] leading-none text-[#d4d2da]">
+            <p
+              aria-hidden
+              className="t-display pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-[clamp(110px,14vw,220px)] leading-none"
+              style={{ color: 'transparent', WebkitTextStroke: '1.5px #cfcdd5' }}
+            >
               {palabraGigante(primero.model, primero.brand)}
             </p>
             <span className="t-meta absolute left-6 top-6 rounded-full bg-tinta px-3 py-1.5 text-white">Tu mejor opción</span>
@@ -84,9 +110,23 @@ export function ResultadosIA({
               </div>
             </div>
 
-            {primero.reasons?.length ? (
-              <ul className="mt-8 space-y-2.5 border-t border-linea pt-6">
-                {primero.reasons.slice(0, 4).map(r => (
+            {tresDatos(primero).length > 0 && (
+              <div className="fila-datos mt-8 border-y border-linea py-4">
+                {tresDatos(primero).map(d => (
+                  <div key={d.clave} className="px-3 text-center first:pl-0 last:pr-0">
+                    <p className="cifra text-[17px] font-semibold">
+                      {d.valor}
+                      {d.unidad && <span className="ml-0.5 text-[12px] font-normal text-tinta-2">{d.unidad}</span>}
+                    </p>
+                    <p className="mt-0.5 text-[12px] text-tinta-2">{d.etiqueta}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {[...razonesRelativas(primero, podio), ...(primero.reasons ?? [])].length ? (
+              <ul className="mt-6 space-y-2.5">
+                {Array.from(new Set([...razonesRelativas(primero, podio), ...(primero.reasons ?? [])])).slice(0, 4).map(r => (
                   <li key={r} className="flex items-start gap-3 text-[15px]">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-wise" strokeWidth={2.5} />
                     {r}

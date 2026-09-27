@@ -98,6 +98,16 @@ export function HeroShowroom({ vehiculos, consulta }: { vehiculos: VehiculoTarje
 
         {/* Escenario del carro */}
         <div className="relative h-[74vw] max-h-[520px] lg:col-span-2 lg:row-start-1 lg:h-auto lg:max-h-none">
+          {/* Piso del showroom: el vacío bajo el carro se vuelve escenario */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -bottom-2 right-[-32px] hidden h-[34%] lg:left-[calc(36vw-32px)] lg:block"
+            style={{
+              background:
+                'linear-gradient(180deg, transparent, rgba(26,19,32,0.9)), radial-gradient(60% 100% at 60% 100%, rgba(136,28,183,0.18), transparent 70%)',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+            }}
+          />
           <div aria-hidden className="pointer-events-none absolute left-0 top-[6%] lg:hidden" key={`m-${palabra}`}>
             <Palabra texto={palabra} color="#5b1a82" />
           </div>

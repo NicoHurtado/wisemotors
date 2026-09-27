@@ -65,6 +65,10 @@ console.log('\n1. Router de perfiles (regex + diccionario es-CO)');
   check('"economico" (sin tilde) activa economía', p2.activeProfiles.includes('economia'));
   check('"ciudad" activa ciudad', p2.activeProfiles.includes('ciudad'));
 
+  const p2b = detectQueryProfile('Una SUV para la familia que no gaste mucho');
+  check('"que no gaste mucho" activa economía', p2b.activeProfiles.includes('economia'));
+  check('"familia" sigue activa junto a economía', p2b.activeProfiles.includes('familia'));
+
   const p3 = detectQueryProfile('camioneta blanca bonita');
   check('consulta sin señales usa perfil neutro', p3.activeProfiles.length === 0
     && Object.keys(p3.weights).length > 0);

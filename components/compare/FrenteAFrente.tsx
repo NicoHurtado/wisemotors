@@ -130,7 +130,7 @@ export function FrenteAFrente({ vehiculos }: { vehiculos: Vehiculo[] }) {
                 <CarRender car={v} className={`relative h-full w-full ${dos && i === 1 ? '-scale-x-100' : ''}`} />
               </div>
               <p className="mt-8 text-[13px] text-tinta-2">{v.brand}</p>
-              <p className="text-[24px] font-semibold tracking-[-0.03em] md:text-[30px]">{v.model}</p>
+              <p className="text-[22px] font-semibold leading-tight tracking-[-0.03em] [text-wrap:balance] md:text-[30px]">{v.model}</p>
               <p className="cifra mt-1 text-[15px]">{millones(v.price)}</p>
             </div>
           ))}
