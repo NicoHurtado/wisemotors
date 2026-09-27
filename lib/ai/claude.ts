@@ -32,6 +32,29 @@ export function claude(): Anthropic {
   return cliente;
 }
 
+/**
+ * Mensaje en español para los errores de la API que un admin puede resolver
+ * (saldo, clave, sobrecarga). El resto pasa tal cual.
+ */
+export function explicarErrorClaude(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (/credit balance is too low/i.test(msg)) {
+    return 'La cuenta de Anthropic se quedó sin saldo. Recarga en console.anthropic.com → Plans & Billing y vuelve a intentar.';
+  }
+  if (/invalid x-api-key|authentication_error/i.test(msg))
+    return 'La clave ANTHROPIC_API_KEY no es válida. Revísala en Vercel.';
+  if (/overloaded|529/i.test(msg)) return 'Claude está saturado en este momento. Intenta de nuevo en unos minutos.';
+  if (/rate_limit|429/i.test(msg))
+    return 'Demasiadas solicitudes a Claude seguidas. Espera un minuto y vuelve a intentar.';
+  return msg;
+}
+
+/** Errores que no se arreglan reintentando con otra fuente: hay que avisar y parar. */
+export function esErrorDeCuenta(err: unknown) {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /credit balance is too low|invalid x-api-key|authentication_error/i.test(msg);
+}
+
 export async function pedirJson<T extends z.ZodType>(opts: {
   schema: T;
   /** Texto, o bloques de contenido (p. ej. un PDF + instrucciones). */
@@ -39,17 +62,22 @@ export async function pedirJson<T extends z.ZodType>(opts: {
   system?: string;
   maxTokens?: number;
 }): Promise<z.infer<T>> {
-  const res = await claude().beta.messages.parse({
-    model: CLAUDE_MODEL,
-    max_tokens: opts.maxTokens ?? 16000,
-    ...(opts.system ? { system: opts.system } : {}),
-    messages: [{ role: 'user', content: opts.prompt }],
-    output_config: { format: betaZodOutputFormat(opts.schema) },
-    // Si el modelo declina por política, la API reintenta con otro modelo en
-    // la misma llamada en vez de dejar el vehículo a medias.
-    betas: ['server-side-fallback-2026-07-01'],
-    fallbacks: 'default',
-  });
+  let res;
+  try {
+    res = await claude().beta.messages.parse({
+      model: CLAUDE_MODEL,
+      max_tokens: opts.maxTokens ?? 16000,
+      ...(opts.system ? { system: opts.system } : {}),
+      messages: [{ role: 'user', content: opts.prompt }],
+      output_config: { format: betaZodOutputFormat(opts.schema) },
+      // Si el modelo declina por política, la API reintenta con otro modelo en
+      // la misma llamada en vez de dejar el vehículo a medias.
+      betas: ['server-side-fallback-2026-07-01'],
+      fallbacks: 'default',
+    });
+  } catch (err) {
+    throw new Error(explicarErrorClaude(err));
+  }
 
   if (res.stop_reason === 'refusal') {
     throw new Error('Claude declinó la solicitud; revisar el texto de la fuente.');

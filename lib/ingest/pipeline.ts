@@ -11,7 +11,7 @@
 
 import { z } from 'zod/v4';
 import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
-import { pedirJson } from '@/lib/ai/claude';
+import { esErrorDeCuenta, explicarErrorClaude, pedirJson } from '@/lib/ai/claude';
 import { fetchPageText } from './fetcher';
 import { discoverSources } from './sources';
 import { buscarFuentes, leerConClaude, type Contenido } from './buscar-fuentes';
@@ -83,6 +83,7 @@ function reconcile(raw: RawFact[]): DraftFact[] {
       sourceUrl: winner.sourceUrl,
       tier: winner.tier,
       quote: winner.quote,
+      vigencia: winner.vigencia,
       conflict,
       outOfRange,
       alternatives: others
@@ -118,7 +119,7 @@ async function resolvePrice(
       price: {
         value: priceFact.value,
         estimated: false,
-        reasoningEs: `Precio encontrado en fuente tier ${priceFact.tier}: "${priceFact.quote}"`,
+        reasoningEs: `Precio de la fuente${priceFact.vigencia ? `, vigente a ${priceFact.vigencia}` : ' (la fuente no dice de qué fecha es)'}: "${priceFact.quote}"`,
         sourceUrl: priceFact.sourceUrl,
         confidence: priceFact.confidence,
       },
@@ -165,6 +166,22 @@ Ancla el razonamiento en rivales directos que SÍ se venden en Colombia y sus pr
   }
 }
 
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+function remainingFactsVigencia(facts: DraftFact[]) {
+  return facts.find(f => f.key === PRICE_KEY)?.vigencia;
+}
+
+/** "octubre de 2025" → meses transcurridos hasta hoy. null si no se entiende. */
+export function mesesDesde(vigencia: string | undefined, hoy = new Date()): number | null {
+  if (!vigencia) return null;
+  const t = vigencia.toLowerCase();
+  const anio = t.match(/\b(20\d\d)\b/);
+  if (!anio) return null;
+  const mes = MESES.findIndex(m => t.includes(m));
+  return (hoy.getFullYear() - Number(anio[1])) * 12 + (hoy.getMonth() - (mes >= 0 ? mes : 0));
+}
+
 // ---------------------------------------------------------------------------
 // Pipeline completo
 // ---------------------------------------------------------------------------
@@ -178,7 +195,17 @@ export async function runIngestPipeline(input: {
 
   // 1. Identidad canónica
   const identity = await resolveIdentity(input.brand, input.model, input.year, input.country);
-  const version = identity.trim ? `, versión ${identity.trim}` : '';
+  // Sin versión pedida, el objetivo es la versión de ENTRADA, con nombre propio:
+  // si no, una página dedicada a una versión alta (CX-30 Touring) pasaría por "la objetivo".
+  const versionObjetivo = identity.trim || identity.versionEntrada;
+  if (!identity.trim) {
+    warningsEs.push(
+      identity.versionEntrada
+        ? `No se pidió versión: se tomaron solo datos de la versión de entrada (${identity.versionEntrada}) o comunes a toda la gama.`
+        : 'No se pidió versión y no se identificó la de entrada: revisar con cuidado que los datos no mezclen versiones.'
+    );
+  }
+  const version = versionObjetivo ? `, versión ${versionObjetivo}${identity.trim ? '' : ' (la de entrada)'}` : '';
   const label = `${identity.brand} ${identity.model} ${input.year}${version} (mercado ${input.country})`;
   // El nombre publicado lleva la versión ("Onix RS"): en Colombia se venden
   // como carros distintos. Las fuentes se buscan por el modelo base, que es
@@ -187,8 +214,10 @@ export async function runIngestPipeline(input: {
 
   // 2. Fuentes reales: búsqueda web (solo URLs que salieron en los resultados).
   //    Si la búsqueda falla o trae muy poco, se completa con las rutas conocidas.
-  let candidates = await buscarFuentes(identity.brand, identity.model, identity.trim, input.year).catch(err => {
-    warningsEs.push(`La búsqueda web falló (${String(err?.message ?? err).slice(0, 80)}); se usaron fuentes conocidas.`);
+  let candidates = await buscarFuentes(identity.brand, identity.model, versionObjetivo, input.year).catch(err => {
+    // Sin saldo o con la clave mala no tiene sentido seguir: todo lo demás también fallaría.
+    if (esErrorDeCuenta(err)) throw new Error(explicarErrorClaude(err));
+    warningsEs.push(`La búsqueda web falló (${explicarErrorClaude(err).slice(0, 120)}); se usaron fuentes conocidas.`);
     return [];
   });
   if (candidates.length < 2) {
@@ -198,6 +227,15 @@ export async function runIngestPipeline(input: {
   if (candidates.length === 0) {
     warningsEs.push('No se encontraron fuentes candidatas. Revisar el nombre del modelo.');
   }
+
+  // Una fuente de hace más de un año modelo puede ser otra generación o una
+  // versión que ya cambió (el RS manual de 2021 vs el RS automático de hoy): fuera.
+  const viejo = (r: Awaited<ReturnType<typeof extractFromPage>>) => {
+    const anioViejo = r.anioModeloFuente > 1990 && r.anioModeloFuente < input.year - 1;
+    return anioViejo ? { ...r, facts: [] as RawFact[], anioViejo } : { ...r, anioViejo };
+  };
+  const nota = (n: number, descartados: number, como: string) =>
+    `${n} datos extraídos${como}${descartados ? ` · ${descartados} descartados por ser de otra versión` : ''}`;
 
   // 3+4. Lectura + extracción, fuentes en paralelo (máx 6).
   //   a) descarga directa (rápida y gratis);
@@ -211,25 +249,37 @@ export async function runIngestPipeline(input: {
       const esPdf = /\.pdf($|\?)/i.test(source.url);
       const directo = esPdf ? null : await fetchPageText(source.url);
       if (directo && directo.length >= 300) {
-        const facts = await extractFromPage(directo, source.url, source.tier, label);
-        if (facts.length > 0) return { source, facts, ok: true, note: `${facts.length} datos extraídos` };
+        const r = viejo(await extractFromPage(directo, source.url, source.tier, label, versionObjetivo));
+        if (r.anioViejo) {
+          return { source, facts: [] as RawFact[], ok: false, note: `Es del modelo ${r.anioModeloFuente}: demasiado viejo para el ${input.year}, se descartó` };
+        }
+        if (r.facts.length > 0) return { source, facts: r.facts, ok: true, note: nota(r.facts.length, r.descartadosPorVersion, '') };
       }
       let contenido: Contenido | null = null;
       try {
         contenido = await leerConClaude(source.url);
-      } catch {
+      } catch (err) {
+        if (esErrorDeCuenta(err)) throw new Error(explicarErrorClaude(err));
         contenido = null;
       }
       if (!contenido) {
         return { source, facts: [] as RawFact[], ok: false, note: 'No se pudo leer la página (vacía, bloqueada o no existe)' };
       }
-      const facts = await extractFromPage(contenido, source.url, source.tier, label);
+      const r = viejo(await extractFromPage(contenido, source.url, source.tier, label, versionObjetivo));
+      if (r.anioViejo) {
+        return { source, facts: [] as RawFact[], ok: false, note: `Es del modelo ${r.anioModeloFuente}: demasiado viejo para el ${input.year}, se descartó` };
+      }
       const como = 'pdfBase64' in contenido ? ' del PDF' : '';
       return {
         source,
-        facts,
-        ok: facts.length > 0,
-        note: facts.length > 0 ? `${facts.length} datos extraídos${como}` : `Se leyó${como}, pero no trae especificaciones de este modelo`,
+        facts: r.facts,
+        ok: r.facts.length > 0,
+        note:
+          r.facts.length > 0
+            ? nota(r.facts.length, r.descartadosPorVersion, como)
+            : r.descartadosPorVersion > 0
+              ? `Se leyó${como}: sus ${r.descartadosPorVersion} datos son de otras versiones, se descartaron`
+              : `Se leyó${como}, pero no trae especificaciones de este modelo`,
       };
     })
   );
@@ -260,6 +310,7 @@ export async function runIngestPipeline(input: {
   // 6. Precio, con verificación contra el catálogo real
   const { price: precioCrudo, remainingFacts } = await resolvePrice(allFacts, {
     ...identity,
+    trim: versionObjetivo,
     year: input.year,
   });
 
@@ -267,10 +318,19 @@ export async function runIngestPipeline(input: {
   let comparablesPrecio: { etiqueta: string; precio: number }[] = [];
 
   if (precioCrudo) {
-    const revision = await verificarPrecio(precioCrudo, { ...identity, year: input.year });
+    const revision = await verificarPrecio(precioCrudo, { ...identity, trim: versionObjetivo, year: input.year });
     price = revision.price;
     comparablesPrecio = revision.comparables;
     if (revision.notaEs) warningsEs.push(revision.notaEs);
+  }
+
+  // Un precio de fuente también envejece: si la fuente dice la fecha y tiene
+  // más de 6 meses, se avisa; si no la dice, también.
+  if (price && !price.estimated) {
+    const vig = remainingFactsVigencia(allFacts);
+    const meses = mesesDesde(vig);
+    if (!vig) warningsEs.push('La fuente del precio no dice de qué fecha es: confírmalo con el concesionario.');
+    else if (meses !== null && meses > 6) warningsEs.push(`El precio es de ${vig} (hace ~${meses} meses): puede estar desactualizado, confírmalo con el concesionario.`);
   }
 
   if (price?.estimated) {

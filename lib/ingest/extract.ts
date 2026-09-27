@@ -25,9 +25,21 @@ const ExtraccionSchema = z.object({
           .union([z.number(), z.string(), z.boolean()])
           .describe('Número puro para numéricos (sin unidad), true para booleanos presentes, string para texto/enum'),
         quote: z.string().describe('Cita textual (máx 140 caracteres) del fragmento del texto que respalda el valor'),
+        aplicaA: z
+          .enum(['version_objetivo', 'todas_las_versiones', 'otra_version', 'no_especifica'])
+          .describe(
+            'A qué versión se refiere el dato según el texto: version_objetivo (el texto lo atribuye a la versión pedida, o la página/documento entero trata SOLO de esa versión), todas_las_versiones (el texto dice que es de serie en toda la gama), otra_version (el texto lo atribuye a otra versión), no_especifica (no queda claro).'
+          ),
+        vigencia: z.string().describe('Fecha o vigencia que el texto asocia al dato (sobre todo precios), ej. "octubre de 2025". Cadena vacía si no dice.'),
       })
     )
     .describe('Especificaciones encontradas en el texto, solo keys del catálogo'),
+  anioModeloFuente: z
+    .number()
+    .describe('Año modelo del que habla el texto/documento (ej. 2026). 0 si no se puede saber.'),
+  otrasVersiones: z
+    .array(z.string())
+    .describe('Nombres de las OTRAS versiones de este modelo que aparecen en el texto (ej. "LT", "LTZ", "Premier"), sin la versión objetivo. Vacío si no hay.'),
 });
 
 function buildCatalog(): string {
@@ -44,9 +56,9 @@ REGLAS ABSOLUTAS:
 2. Solo usas keys del catálogo. Si un dato del texto no corresponde a ninguna key, lo ignoras.
 3. Números en la unidad del catálogo: convierte si el texto usa otra (kW→HP: ×1.341; kgf·m→Nm: ×9.807; km/L→L/100km: 100÷valor). La conversión de unidades mal hecha es la fuente #1 de basura en datos automotores — verifica cada una.
 4. Cada valor lleva su cita textual. Sin cita, no reportes el dato.
-5. Si el texto da rangos o varias versiones, usa la versión indicada en el VEHÍCULO OBJETIVO; si no indica ninguna, la de entrada (base). Un dato que solo aparece para otra versión NO se reporta.
-6. Precios en COP: repórtalos SOLO en la key 'commercial.priceCop' si el texto trae precio para Colombia. Un precio en USD o de otro país NO se reporta.
-7. Año modelo: la prensa y los fabricantes suelen hablar del año anterior o siguiente de la MISMA generación (un Onix 2026 y un 2027 son el mismo carro). Eso cuenta como el vehículo objetivo. Solo si es otra generación, otro modelo u otro mercado, no reportes nada.
+5. VERSIONES — la regla más importante: cada versión (LT, LTZ, RS, Premier…) es un carro distinto. Un dato de otra versión JAMÁS se atribuye a la versión objetivo, aunque sea "parecido" o "probablemente igual". Si el texto dice "el Onix LT trae cámara de reversa" y el objetivo es el Onix RS, ese dato NO existe para el RS. Solo vale: lo que el texto atribuye a la versión objetivo, lo que dice que es de serie en TODAS las versiones, o lo que está en una página/ficha dedicada exclusivamente a la versión objetivo. Si no hay versión objetivo, el objetivo es la versión de entrada (base). Marca siempre 'aplicaA' con honestidad.
+6. Precios en COP: repórtalos SOLO en la key 'commercial.priceCop' si el texto trae el precio en Colombia de EXACTAMENTE la versión objetivo (con su caja si el texto distingue). Un "desde $X" de la gama, un precio de otra versión, en USD o de otro país NO se reporta. Anota en 'vigencia' la fecha que dé el texto para ese precio.
+7. Anota en 'anioModeloFuente' el año modelo del que habla la página o el documento (si lo dice, aunque sea en el título o el nombre del archivo). Año modelo: la prensa y los fabricantes suelen hablar del año anterior o siguiente de la MISMA generación (un Onix 2026 y un 2027 son el mismo carro). Eso cuenta como el vehículo objetivo. Solo si es otra generación, otro modelo u otro mercado, no reportes nada.
 8. Que el texto NO mencione algo NO significa que el carro no lo tenga. Si no encuentras un dato, OMITE la key. Jamás reportes false ni 0 para decir "no aparece": eso afirma que el carro carece del equipamiento, que es una mentira distinta a no saberlo.`;
 
 /** Texto comparable para verificar citas: sin tildes, espacios ni puntuación. */
@@ -70,12 +82,44 @@ function citaEnTexto(cita: string, textoPlano: string) {
   return false;
 }
 
+/** ¿El texto menciona este nombre de versión como palabra suelta? */
+function menciona(texto: string, nombre: string) {
+  const n = nombre.trim().toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (!n) return false;
+  return new RegExp(`(^|[^a-z0-9áéíóúñ])${n}([^a-z0-9áéíóúñ]|$)`, 'i').test(texto);
+}
+
+export interface ResultadoExtraccion {
+  facts: RawFact[];
+  /** Datos descartados por ser de otra versión (o sin versión clara), para contarlo en la revisión. */
+  descartadosPorVersion: number;
+  /** Año modelo del que habla la fuente (0 = no se sabe). */
+  anioModeloFuente: number;
+}
+
+// Palabras que describen carrocería o caja, no la versión: "Premier Sedán" es la versión "Premier".
+const GENERICAS = new Set(['sedan', 'sedán', 'hatchback', 'hb', 'automatico', 'automático', 'manual', 'mt', 'at', 'cvt', 'aut', 'mec', 'mecánico', 'mecanico', 'turbo', 'plus', 'version', 'versión', 'de', 'la', 'el']);
+
+/** Palabras que identifican a las otras versiones, sin las genéricas ni las de la versión pedida o el modelo. */
+function marcasDeOtras(otras: string[], version: string, modelo: string) {
+  const propias = new Set(`${version} ${modelo}`.toLowerCase().split(/[^a-z0-9áéíóúñ]+/).filter(Boolean));
+  const tokens = new Set<string>();
+  for (const o of otras) {
+    for (const t of o.toLowerCase().split(/[^a-z0-9áéíóúñ]+/)) {
+      if (t.length >= 2 && !GENERICAS.has(t) && !propias.has(t)) tokens.add(t);
+    }
+  }
+  return Array.from(tokens);
+}
+
 export async function extractFromPage(
   contenido: string | Contenido,
   sourceUrl: string,
   tier: SourceTier,
-  vehicleLabel: string
-): Promise<RawFact[]> {
+  vehicleLabel: string,
+  /** Versión pedida ("RS"). Vacía = versión de entrada. */
+  version = ''
+): Promise<ResultadoExtraccion> {
   const c: Contenido = typeof contenido === 'string' ? { texto: contenido } : contenido;
   const esPdf = 'pdfBase64' in c;
   const encabezado = `VEHÍCULO OBJETIVO: ${vehicleLabel}
@@ -103,9 +147,31 @@ ${buildCatalog()}
 
   const textoPlano = esPdf ? null : plano(c.texto);
   const facts: RawFact[] = [];
+  let descartadosPorVersion = 0;
+  // Palabras que delatan otra versión ("Premier", "LTZ"…), comparadas palabra por palabra:
+  // la IA puede decir "Premier Sedán" y la cita solo "el Premier".
+  const modelo = vehicleLabel.split(' ').slice(1, 3).join(' ');
+  const otras = marcasDeOtras(parsed.otrasVersiones ?? [], version, modelo);
   for (const f of parsed.facts ?? []) {
     // El LLM no inventa campos: keys fuera del registro mueren aquí.
     if (!VALID_KEYS.has(f.key)) continue;
+
+    // Regla de versiones, verificada en código y no solo pedida al modelo:
+    //  - lo que el modelo marcó como de otra versión, fuera;
+    //  - con versión pedida, lo que no quedó claro también fuera;
+    //  - el precio solo si es explícitamente de la versión objetivo;
+    //  - si la cita nombra otra versión y no la pedida, fuera aunque el modelo la haya aceptado.
+    const esPrecio = f.key === 'commercial.priceCop';
+    const citaNombraOtra = otras.some(o => menciona(f.quote, o)) && !(version && menciona(f.quote, version));
+    if (
+      f.aplicaA === 'otra_version' ||
+      (version && f.aplicaA === 'no_especifica') ||
+      (esPrecio && f.aplicaA !== 'version_objetivo') ||
+      citaNombraOtra
+    ) {
+      descartadosPorVersion++;
+      continue;
+    }
     if (f.value === null || f.value === undefined || f.value === '') continue;
     if (typeof f.quote !== 'string' || f.quote.trim() === '') continue;
     // La cita tiene que estar en la página: una cita que no aparece es un dato inventado.
@@ -133,10 +199,10 @@ ${buildCatalog()}
       value = String(value).slice(0, 200);
     }
 
-    facts.push({ key: f.key, value, quote: f.quote.slice(0, 160), sourceUrl, tier });
+    facts.push({ key: f.key, value, quote: f.quote.slice(0, 160), sourceUrl, tier, vigencia: f.vigencia?.trim() || undefined });
   }
 
-  return facts;
+  return { facts, descartadosPorVersion, anioModeloFuente: Math.round(parsed.anioModeloFuente || 0) };
 }
 
 /** Resolución de identidad canónica (plan §5.1, paso 1): una sola llamada. */
@@ -145,13 +211,16 @@ export async function resolveIdentity(
   model: string,
   year: number,
   country: string
-): Promise<{ brand: string; model: string; trim: string; type: string; vehicleType: string; fuelType: string }> {
+): Promise<{ brand: string; model: string; trim: string; versionEntrada: string; type: string; vehicleType: string; fuelType: string }> {
   const IdentidadSchema = z.object({
     brand: z.string().describe('Marca con capitalización oficial (ej. "Toyota", "BYD")'),
     model: z.string().describe('Modelo canónico SIN marca, año ni versión (ej. "Corolla Cross", "Onix")'),
     trim: z
       .string()
       .describe('Versión/línea que el usuario pidió (ej. "RS", "XEI", "Premier"), con su nombre comercial en el país. Cadena vacía si no pidió ninguna. No inventes una.'),
+    versionEntrada: z
+      .string()
+      .describe('Nombre comercial de la versión de ENTRADA (la más barata) de este modelo en ese país, ej. "Prime", "LT", "Zen". Cadena vacía si no la conoces con seguridad.'),
     type: z.enum(['Sedán', 'SUV', 'Pickup', 'Deportivo', 'Wagon', 'Hatchback', 'Convertible']),
     vehicleType: z.enum(['Automóvil', 'Deportivo', 'Todoterreno', 'Lujo', 'Económico']),
     fuelType: z
@@ -169,6 +238,7 @@ export async function resolveIdentity(
     brand: args.brand || brand,
     model: args.model || model,
     trim: args.trim.trim(),
+    versionEntrada: args.versionEntrada.trim(),
     type: args.type || 'Sedán',
     vehicleType: args.vehicleType || 'Automóvil',
     fuelType: args.fuelType || 'Gasolina',
