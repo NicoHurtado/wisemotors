@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && tsx scripts/preparar-bd.ts && next build",
     "start": "next start",
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
+    "db:preparar": "tsx scripts/preparar-bd.ts --forzar",
     "db:studio": "prisma studio",
     "db:migrate": "node migrate.js",
     "postinstall": "prisma generate",

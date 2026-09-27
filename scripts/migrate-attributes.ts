@@ -13,6 +13,7 @@
 import { PrismaClient } from '@prisma/client';
 import { ATTRIBUTE_REGISTRY, attributeAppliesTo } from '../lib/attributes/registry';
 import { computeCoverage } from '../lib/attributes/coverage';
+import { sembrarDefiniciones } from '../lib/db/semillas';
 
 const prisma = new PrismaClient();
 const WRITE = process.argv.includes('--write');
@@ -32,30 +33,7 @@ interface Stats {
 
 async function seedDefinitions() {
   console.log(`\n— Sembrando ${ATTRIBUTE_REGISTRY.length} definiciones de atributos…`);
-  for (const d of ATTRIBUTE_REGISTRY) {
-    const data = {
-      labelEs: d.labelEs,
-      unit: d.unit ?? null,
-      dataType: d.dataType,
-      direction: d.direction,
-      appliesTo: d.appliesTo,
-      displayGroup: d.displayGroup,
-      dimension: d.dimension,
-      displayPriority: d.displayPriority,
-      cardEligible: d.cardEligible ?? false,
-      coAvailability: d.coAvailability ?? 'common',
-      comparable: d.comparable ?? true,
-      expectedMin: d.expectedMin ?? null,
-      expectedMax: d.expectedMax ?? null,
-    };
-    if (WRITE) {
-      await prisma.attributeDefinition.upsert({
-        where: { key: d.key },
-        create: { key: d.key, ...data },
-        update: data,
-      });
-    }
-  }
+  if (WRITE) await sembrarDefiniciones(prisma);
   console.log(WRITE ? '  ✓ definiciones sembradas' : '  (dry-run: no se escribió)');
 }
 

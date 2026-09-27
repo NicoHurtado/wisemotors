@@ -2,9 +2,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Variables de la integración Neon en Vercel (prefijo WISE_). Ver lib/db/url.ts.
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("WISE_DATABASE_URL")
+  directUrl = env("WISE_DATABASE_URL_UNPOOLED")
 }
 
 model User {
