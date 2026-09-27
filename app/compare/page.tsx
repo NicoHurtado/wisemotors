@@ -7,9 +7,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CompareMatrix } from '@/components/compare/CompareMatrix';
 import { CompareRadar } from '@/components/compare/CompareRadar';
 import { CompareIntelligence } from '@/components/compare/CompareIntelligence';
+import { CompareDuel } from '@/components/compare/CompareDuel';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/utils';
-import { Brain, Car, Check, Heart, LayoutGrid, Radar, Sparkles } from 'lucide-react';
+import { Brain, Car, Check, Heart, LayoutGrid, Radar, Sparkles, Swords } from 'lucide-react';
 
 // ============================================================================
 // Comparador.
@@ -19,11 +20,12 @@ import { Brain, Car, Check, Heart, LayoutGrid, Radar, Sparkles } from 'lucide-re
 // fichas que se prenden y apagan, y la comparación empieza de una.
 // ============================================================================
 
-type Vista = 'matriz' | 'radar' | 'ia';
+type Vista = 'duelo' | 'matriz' | 'radar' | 'ia';
 
 const MAX_COMPARAR = 5;
 
 const VISTAS: { clave: Vista; texto: string; icono: typeof LayoutGrid }[] = [
+  { clave: 'duelo', texto: 'Duelo', icono: Swords },
   { clave: 'matriz', texto: 'Dato por dato', icono: LayoutGrid },
   { clave: 'radar', texto: 'Radar', icono: Radar },
   { clave: 'ia', texto: 'Análisis IA', icono: Brain },
@@ -57,7 +59,7 @@ export default function ComparePage() {
   const { user } = useAuth();
   const { favorites, loading } = useFavorites();
   const [seleccionados, setSeleccionados] = useState<string[]>([]);
-  const [vista, setVista] = useState<Vista>('matriz');
+  const [vista, setVista] = useState<Vista>('duelo');
 
   useEffect(() => {
     // Arranca con los primeros favoritos ya marcados: nadie quiere hacer clic
@@ -127,11 +129,11 @@ export default function ComparePage() {
           Comparador
         </p>
         <h1 className="mt-2 text-[34px] font-semibold leading-[1.05] tracking-[-0.035em] text-foreground md:text-[44px]">
-          Lado a lado, sin adornos
+          ¿Cuál se lleva la corona?
         </h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-          Solo se comparan los datos que al menos dos de tus vehículos tienen. Lo que no aplica a un
-          tren motriz se dice; lo que falta, también.
+          Ponlos a competir por rondas, míralos dato por dato o en radar. Lo que no aplica a un
+          tren motriz se dice; lo que nos falta, también.
         </p>
       </header>
 
@@ -199,7 +201,7 @@ export default function ComparePage() {
       ) : (
         <>
           {/* Selector de vista: pastilla de vidrio, no una barra de pestañas */}
-          <div className="glass mb-5 inline-flex gap-1 rounded-full p-1">
+          <div className="glass mb-5 inline-flex max-w-full gap-1 overflow-x-auto rounded-full p-1">
             {VISTAS.map(v => {
               const Icono = v.icono;
               const activa = vista === v.clave;
@@ -207,7 +209,7 @@ export default function ComparePage() {
                 <button
                   key={v.clave}
                   onClick={() => setVista(v.clave)}
-                  className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold transition-colors ${
+                  className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold transition-colors ${
                     activa
                       ? 'bg-wise text-white'
                       : 'text-muted-foreground hover:text-foreground'
@@ -220,6 +222,7 @@ export default function ComparePage() {
             })}
           </div>
 
+          {vista === 'duelo' && <CompareDuel vehicles={datos} />}
           {vista === 'matriz' && <CompareMatrix vehicles={datos as any} />}
           {vista === 'radar' && <CompareRadar vehicles={datos as any} />}
           {vista === 'ia' && <CompareIntelligence vehicles={datos as any} />}

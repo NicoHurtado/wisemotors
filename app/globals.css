@@ -1138,3 +1138,31 @@ body::before {
   .liquid-lens { transition: opacity var(--motion-quick) ease; }
   .liquid-lens__gota { animation: none; }
 }
+
+/* ── Duelo del comparador (components/compare/CompareDuel.tsx) ──
+   La barra crece con scaleX desde la izquierda hasta --barra; la corona
+   aterriza con un rebote corto. Solo transform y opacity. */
+.duel-barra {
+  transform-origin: left center;
+  transform: scaleX(var(--barra, 1));
+  animation: duel-barra 700ms var(--ease-out-strong) both;
+}
+
+@keyframes duel-barra {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(var(--barra, 1)); }
+}
+
+.duel-corona {
+  animation: duel-corona 420ms cubic-bezier(0.34, 1.56, 0.64, 1) 650ms both;
+}
+
+@keyframes duel-corona {
+  from { opacity: 0; transform: scale(0.4) rotate(-12deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .duel-barra,
+  .duel-corona { animation: none; }
+}
