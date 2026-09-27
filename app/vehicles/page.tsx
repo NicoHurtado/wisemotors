@@ -2,7 +2,9 @@ import { getVehicles } from '@/lib/data/vehicles';
 import { Catalogo } from '@/components/vehicles/Catalogo';
 import type { VehiculoTarjeta } from '@/components/car/TarjetaCarro';
 
-export const revalidate = 30;
+// Se arma en cada visita, no en el build: así el build no necesita la base de
+// datos (en Vercel, las variables de entorno pueden no estar en el build).
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'Catálogo',
