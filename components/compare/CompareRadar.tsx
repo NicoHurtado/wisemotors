@@ -1,5 +1,6 @@
 'use client';
 
+import { SERIES } from '@/lib/palette';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -283,7 +284,7 @@ export function CompareRadar({ vehicles }: CompareRadarProps) {
                 />
                 
                 {vehiclesWithSpecs.map((vehicle, index) => {
-                  const colors = ['#3b82f6', '#f59e0b', '#ef4444', '#10b981'];
+                  const colors = SERIES;
                   const color = colors[index % colors.length];
                   
                   return (

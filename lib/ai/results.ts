@@ -1,3 +1,4 @@
+import { urlImagen } from '@/lib/data/imagen';
 // Advanced Result Processing for Different Query Types
 import { prisma } from '@/lib/prisma';
 import { CategorizedIntent, QueryType } from './categorization';
@@ -76,9 +77,7 @@ async function processSubjectiveQuery(intent: CategorizedIntent, startTime: numb
     const features = computeVehicleFeatures(v, marketStats);
     const tags = generateVehicleTags(v, features);
     const firstImage = (v as any).images?.[0];
-    const imageUrl = firstImage?.url?.startsWith('http')
-      ? firstImage.url
-      : `/api/vehicles/${v.id}/image?index=0`;
+    const imageUrl = urlImagen(v.id, firstImage?.url);
     return {
       id: v.id,
       brand: v.brand,
@@ -176,9 +175,7 @@ async function processObjectiveQuery(intent: CategorizedIntent, startTime: numbe
 
   const formattedVehicles = vehicles.map(v => {
     const firstImage = (v as any).images?.[0];
-    const imageUrl = firstImage?.url?.startsWith('http')
-      ? firstImage.url
-      : `/api/vehicles/${v.id}/image?index=0`;
+    const imageUrl = urlImagen(v.id, firstImage?.url);
     return {
       id: v.id,
       brand: v.brand,
@@ -237,9 +234,7 @@ async function processHybridQuery(intent: CategorizedIntent, startTime: number):
     const features = computeVehicleFeatures(v, marketStats);
     const tags = generateVehicleTags(v, features);
     const firstImage = (v as any).images?.[0];
-    const imageUrl = firstImage?.url?.startsWith('http')
-      ? firstImage.url
-      : `/api/vehicles/${v.id}/image?index=0`;
+    const imageUrl = urlImagen(v.id, firstImage?.url);
     return {
       id: v.id,
       brand: v.brand,

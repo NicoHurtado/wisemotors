@@ -293,8 +293,8 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                 </div>
 
                 <div className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise/50 transition-colors">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                    <Zap className="w-6 h-6 text-green-600" />
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                    <Zap className="w-6 h-6 text-purple-600" />
                   </div>
                   <div className="flex-1">
                     <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Combustible</div>
@@ -452,8 +452,8 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                         onClick={() => scrollToSection('sec-consumo')}
                         className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise hover:shadow-md transition-all cursor-pointer w-full text-left"
                       >
-                        <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mr-4">
-                          <Zap className="w-6 h-6 text-emerald-600" />
+                        <div className="w-12 h-12 bg-fuchsia-100 rounded-full flex items-center justify-center mr-4">
+                          <Zap className="w-6 h-6 text-fuchsia-600" />
                         </div>
                         <div className="flex-1">
                           <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Autonomía</div>
@@ -469,8 +469,8 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                         onClick={() => scrollToSection('sec-consumo')}
                         className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:border-wise hover:shadow-md transition-all cursor-pointer w-full text-left"
                       >
-                        <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center mr-4">
-                          <Fuel className="w-6 h-6 text-teal-600" />
+                        <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mr-4">
+                          <Fuel className="w-6 h-6 text-rose-600" />
                         </div>
                         <div className="flex-1">
                           <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Consumo Mixto</div>
@@ -539,8 +539,8 @@ export function VehicleSpecifications({ vehicle, onVideoClick }: VehicleSpecific
                     tipoLower.includes('dsg') || tipoLower.includes('tronic') ||
                     tipoLower.includes('tiptronic') || tipoLower.includes('s tronic')) {
                     tipoTexto = 'Automático';
-                    iconoColor = 'bg-green-100';
-                    iconoTextColor = 'text-green-600';
+                    iconoColor = 'bg-purple-100';
+                    iconoTextColor = 'text-purple-600';
                   } else {
                     // Si no está claro, mostrar el tipo original
                     tipoTexto = tipo;

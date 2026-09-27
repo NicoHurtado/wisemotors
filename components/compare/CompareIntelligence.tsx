@@ -308,13 +308,13 @@ export function CompareIntelligence({ vehicles }: CompareIntelligenceProps) {
                 {/* Pros */}
                 <div>
                   <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <CheckCircle className="w-4 h-4 text-purple-600" />
                     Ventajas:
                   </h4>
                   <ul className="space-y-1">
                     {analysis?.pros.map((pro, index) => (
                       <li key={index} className="text-xs text-gray-600 flex items-start gap-2">
-                        <span className="text-green-600 text-xs mt-0.5">•</span>
+                        <span className="text-purple-600 text-xs mt-0.5">•</span>
                         {pro}
                       </li>
                     ))}

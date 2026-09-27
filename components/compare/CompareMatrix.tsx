@@ -1,5 +1,6 @@
 'use client';
 
+import { SERIES } from '@/lib/palette';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, Crown, Info } from 'lucide-react';
@@ -45,7 +46,7 @@ type Celda =
   | { estado: 'no_aplica' }
   | { estado: 'sin_dato' };
 
-const PALETA = ['#881cb7', '#c026d3', '#0ea5e9', '#f59e0b', '#10b981'];
+const PALETA = SERIES;
 
 function leerPath(obj: any, path: string): any {
   return path.split('.').reduce((acc, k) => (acc == null ? undefined : acc[k]), obj);

@@ -291,9 +291,9 @@ export function VehicleSpecsBento({ vehicle }: VehicleSpecsBentoProps) {
                                     )}
                                 </div>
                                 {efficiency.costoEnergia100km && (
-                                    <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl flex justify-between items-center">
-                                        <span className="text-emerald-700 text-sm font-medium">Costo Energético / 100km</span>
-                                        <span className="text-emerald-600 font-bold">${new Intl.NumberFormat('es-CO').format(Number(efficiency.costoEnergia100km))} COP</span>
+                                    <div className="bg-fuchsia-50 border border-fuchsia-200 p-3 rounded-xl flex justify-between items-center">
+                                        <span className="text-fuchsia-700 text-sm font-medium">Costo Energético / 100km</span>
+                                        <span className="text-fuchsia-600 font-bold">${new Intl.NumberFormat('es-CO').format(Number(efficiency.costoEnergia100km))} COP</span>
                                     </div>
                                 )}
                                 <div className="flex gap-2 text-xs text-gray-600 justify-between px-1">

@@ -17,8 +17,9 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
+        sans: ['var(--font-sans)'],
+        display: ['var(--font-display)'],
+        mono: ['var(--font-mono)'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -55,10 +56,19 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
         wise: {
-          DEFAULT: "#881cb7", // Purple for Wise branding
+          DEFAULT: "#881cb7",
           light: "#a855f7",
           dark: "#6b21a8",
+          profundo: "#3b0d55",
+          lila: "#d8b4fe",
         },
+        // En RGB con <alpha-value> para que funcionen modificadores como text-tinta/40.
+        papel: "rgb(241 240 243 / <alpha-value>)",
+        tarjeta: "rgb(232 231 235 / <alpha-value>)",
+        blanco: "rgb(251 251 252 / <alpha-value>)",
+        tinta: { DEFAULT: "rgb(14 12 17 / <alpha-value>)", 2: "rgb(95 91 102 / <alpha-value>)" },
+        linea: "rgb(217 215 222 / <alpha-value>)",
+        showroom: "rgb(12 10 15 / <alpha-value>)",
       },
       borderRadius: {
         lg: "var(--radius)",

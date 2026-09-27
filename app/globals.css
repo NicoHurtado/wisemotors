@@ -3,1006 +3,500 @@
 @tailwind utilities;
 
 /* ════════════════════════════════════════════════════════════════════════
-   Sistema de movimiento (plan §7.3)
-   Regla dura: solo se animan transform y opacity. Nunca width/height/top.
+   WISEMOTORS · SISTEMA "ESTUDIO"  (docs/diseno-brief.md)
+   Papel gris frío, tinta casi negra, morado como luz. Showroom negro solo en
+   momentos puntuales. Tipografía grotesca apretada; Anton solo para la
+   palabra gigante detrás de un carro.
    ════════════════════════════════════════════════════════════════════════ */
 :root {
-  --motion-instant: 120ms;
-  /* hover, focus, feedback táctil */
-  --motion-quick: 240ms;
-  /* aparición de elementos, tooltips */
-  --motion-smooth: 400ms;
-  /* transiciones de sección */
-  --motion-hero: 700ms;
-  /* entrada de la ficha, revelaciones */
-  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --font-sans: 'Inter Tight Variable', 'Inter Tight', system-ui, sans-serif;
+  --font-display: 'Anton', 'Impact', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+
+  --papel: #f1f0f3;
+  --tarjeta: #e8e7eb;
+  --blanco: #fbfbfc;
+  --tinta: #0e0c11;
+  --tinta-2: #5f5b66;
+  --linea: #d9d7de;
+  --showroom: #0c0a0f;
+  --wise: #881cb7;
+  --wise-profundo: #3b0d55;
+  --lila: #d8b4fe;
   --wise-glow: 136, 28, 183;
-  /* #881cb7 en RGB, para usarlo como luz */
-}
 
-/* ════════════════════════════════════════════════════════════════════════
-   LIQUID GLASS (versión clara)
-   La refracción de borde es lo que lo separa del glassmorphism genérico:
-   brillo especular arriba, sombra teñida de morado abajo. Blur máximo 20px,
-   más que eso castiga a Safari.
-   ════════════════════════════════════════════════════════════════════════ */
-/* El vidrio es el sistema, no un adorno. Tres capas obligatorias:
-   1. fondo semitransparente + blur + saturate (el material)
-   2. borde de 1px claro (el canto del vidrio)
-   3. refracción: highlight especular arriba, sombra teñida abajo
-   Sin la capa 3 esto es glassmorphism de plantilla. */
-.glass {
-  position: relative;
-  background: linear-gradient(150deg,
-      rgba(255, 255, 255, 0.72) 0%,
-      rgba(255, 255, 255, 0.42) 46%,
-      rgba(255, 255, 255, 0.56) 100%);
-  backdrop-filter: blur(22px) saturate(190%);
-  -webkit-backdrop-filter: blur(22px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 0 -1px 0 rgba(var(--wise-glow), 0.1),
-    inset 1px 0 0 rgba(255, 255, 255, 0.6),
-    0 24px 50px -28px rgba(var(--wise-glow), 0.45),
-    0 2px 8px -4px rgba(var(--wise-glow), 0.14);
-}
-
-/* Canto superior iridiscente: la línea que hace que se lea como vidrio real
-   y no como un div blanco con opacidad. */
-.glass::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: linear-gradient(100deg,
-      transparent 0%,
-      rgba(var(--wise-glow), 0.10) 32%,
-      rgba(255, 255, 255, 0.55) 48%,
-      transparent 72%);
-  opacity: 0.55;
-  mix-blend-mode: overlay;
-}
-
-/* Variante para barras: menos transparente porque lleva texto crítico */
-.glass-bar {
-  background: linear-gradient(180deg,
-      rgba(255, 255, 255, 0.82) 0%,
-      rgba(255, 255, 255, 0.62) 100%);
-  backdrop-filter: blur(24px) saturate(190%);
-  -webkit-backdrop-filter: blur(24px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 0 -1px 0 rgba(var(--wise-glow), 0.08),
-    0 18px 40px -26px rgba(var(--wise-glow), 0.4);
-}
-
-/* Sin backdrop-filter el panel queda sólido y legible, nunca translúcido roto */
-@supports not (backdrop-filter: blur(1px)) {
-
-  .glass,
-  .glass-bar {
-    background: #ffffff;
-  }
-}
-
-/* ── Revelado al recorrer la página ──
-   Una sola vez por elemento, 420ms, solo transform y opacity. */
-.reveal {
-  opacity: 0;
-  transform: translateY(18px);
-  transition:
-    opacity 420ms var(--ease-out-strong),
-    transform 420ms var(--ease-out-strong);
-}
-
-.reveal[data-shown='true'] {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* ════════════════════════════════════════════════════════════════════════
-   HUD de búsqueda. Estética de instrumento: barrido de escáner, retícula,
-   segmentos que se encienden. Solo transform y opacity.
-   ════════════════════════════════════════════════════════════════════════ */
-.hud-scan {
-  background: linear-gradient(180deg,
-      transparent 0%,
-      rgba(var(--wise-glow), 0.16) 55%,
-      rgba(var(--wise-glow), 0.30) 78%,
-      transparent 100%);
-  animation: hud-scan 2.4s var(--ease-in-out-strong, ease-in-out) infinite;
-  will-change: transform;
-}
-
-@keyframes hud-scan {
-  0% {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-
-  12% {
-    opacity: 1;
-  }
-
-  88% {
-    opacity: 1;
-  }
-
-  100% {
-    transform: translateY(520%);
-    opacity: 0;
-  }
-}
-
-.hud-grid {
-  background-image:
-    linear-gradient(rgba(var(--wise-glow), 0.09) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(var(--wise-glow), 0.09) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 78%);
-  -webkit-mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 78%);
-}
-
-/* Segmentos: apagados son un riel tenue; encendidos se iluminan y crecen */
-.hud-seg {
-  background: rgba(var(--wise-glow), 0.10);
-  transform: scaleY(0.55);
-  transform-origin: bottom;
-  transition:
-    background-color 220ms var(--ease-out-strong),
-    transform 220ms var(--ease-out-strong),
-    box-shadow 220ms var(--ease-out-strong);
-}
-
-.hud-seg[data-on='true'] {
-  background: rgb(var(--wise-glow));
-  transform: scaleY(1);
-  box-shadow: 0 2px 10px -2px rgba(var(--wise-glow), 0.75);
-}
-
-.hud-dot[data-estado='activa'] {
-  background: rgb(var(--wise-glow));
-  animation: hud-latido 1.1s ease-in-out infinite;
-}
-
-.hud-dot[data-estado='hecha'] {
-  background: rgb(var(--wise-glow));
-}
-
-.hud-dot[data-estado='espera'] {
-  background: rgba(var(--wise-glow), 0.28);
-}
-
-@keyframes hud-latido {
-
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-
-  50% {
-    transform: scale(1.9);
-    opacity: 0.55;
-  }
-}
-
-.hud-caret {
-  animation: hud-parpadeo 1s steps(2, start) infinite;
-}
-
-@keyframes hud-parpadeo {
-
-  0%,
-  49% {
-    opacity: 1;
-  }
-
-  50%,
-  100% {
-    opacity: 0;
-  }
-}
-
-/* Con movimiento reducido el HUD se queda quieto pero sigue informando */
-@media (prefers-reduced-motion: reduce) {
-
-  .hud-scan,
-  .hud-dot,
-  .hud-caret {
-    animation: none;
-  }
-
-  .hud-scan {
-    opacity: 0.25;
-  }
-}
-
-/* Barras de métricas: se dibujan al entrar en pantalla */
-.metric-bar {
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 700ms var(--ease-out-strong);
-}
-
-.metric-bar[data-shown='true'] {
-  transform: scaleX(1);
-}
-
-/* Cascada de entrada de resultados: stagger de 40ms vía --enter-delay */
-@keyframes card-enter {
-  from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.98);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.card-enter {
-  animation: card-enter var(--motion-smooth) var(--ease-out-soft) both;
-  animation-delay: var(--enter-delay, 0ms);
-}
-
-/* ── Glow reactivo al cursor: el morado como luz, no como relleno ──
-   El spotlight sigue al mouse vía --mx/--my (custom props que setea la
-   tarjeta). Solo se anima opacity: el gradiente ya está pintado. */
-.card-glow {
-  position: relative;
-}
-
-.card-glow::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity var(--motion-quick) ease;
-  background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 40%),
-      rgba(var(--wise-glow), 0.13), transparent 65%);
-  z-index: 2;
-}
-
-/* Borde y sombra que se encienden — pre-pintados, solo cambia opacity */
-.card-glow::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity var(--motion-quick) ease;
-  box-shadow:
-    0 0 0 1px rgba(var(--wise-glow), 0.35),
-    0 18px 40px -18px rgba(var(--wise-glow), 0.45);
-  z-index: 2;
-}
-
-.card-glow:hover::before,
-.card-glow:focus-within::before,
-.card-glow:hover::after,
-.card-glow:focus-within::after {
-  opacity: 1;
-}
-
-/* ── Botón de favorito ──
-   El clic tiene que sentirse ANTES de que responda el servidor: el latido se
-   dispara con el gesto, no con la red. */
-.like-btn {
-  position: relative;
-  overflow: visible;
-}
-
-.like-heart {
-  display: block;
-  transition:
-    transform 260ms var(--ease-out-strong),
-    fill 200ms ease,
-    color 200ms ease;
-}
-
-.like-btn[data-latido='true'] .like-heart {
-  animation: like-latido 420ms var(--ease-out-strong);
-}
-
-@keyframes like-latido {
-  0% {
-    transform: scale(1);
-  }
-
-  35% {
-    transform: scale(1.42);
-  }
-
-  60% {
-    transform: scale(0.92);
-  }
-
-  100% {
-    transform: scale(1);
-  }
-}
-
-/* Onda expansiva: pre-pintada, solo se anima al marcar */
-.like-onda {
-  position: absolute;
-  inset: 0;
-  border-radius: 9999px;
-  pointer-events: none;
-  opacity: 0;
-  border: 1.5px solid rgb(var(--wise-glow));
-}
-
-.like-btn[data-latido='true'] .like-onda {
-  animation: like-onda 520ms var(--ease-out-strong);
-}
-
-@keyframes like-onda {
-  0% {
-    opacity: 0.55;
-    transform: scale(0.85);
-  }
-
-  100% {
-    opacity: 0;
-    transform: scale(1.9);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-
-  .like-btn[data-latido='true'] .like-heart,
-  .like-btn[data-latido='true'] .like-onda {
-    animation: none;
-  }
-
-  .like-heart {
-    transition: fill 200ms ease, color 200ms ease;
-  }
-}
-
-/* ════════════════════════════════════════════════════════════════════════
-   PODIO DE RESULTADOS.
-   La jerarquía no se comunica con una medalla: se comunica con LUZ, ESCALA
-   y PROFUNDIDAD. El #1 flota sobre el plano (aura + sombra larga), el #2 y
-   el #3 quedan apoyados en él. Todo se pinta con transform/opacity.
-   ════════════════════════════════════════════════════════════════════════ */
-
-/* Aura del ganador: la fuente de luz que separa el #1 del fondo */
-.podio-aura {
-  position: absolute;
-  inset: -14% -6% -22%;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    radial-gradient(52% 62% at 22% 32%, rgba(var(--wise-glow), 0.30), transparent 68%),
-    radial-gradient(46% 58% at 82% 68%, rgba(var(--wise-glow), 0.20), transparent 70%);
-  filter: blur(46px);
-  opacity: 0;
-  transform: scale(0.94);
-  transition:
-    opacity 900ms var(--ease-out-strong),
-    transform 900ms var(--ease-out-strong);
-}
-
-.podio-aura[data-shown='true'] {
-  opacity: 1;
-  transform: scale(1);
-}
-
-/* Panel del ganador: sombra en tres capas = distancia real al fondo */
-.podio-primero {
-  position: relative;
-  z-index: 1;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    inset 0 -1px 0 rgba(var(--wise-glow), 0.14),
-    0 2px 6px -2px rgba(var(--wise-glow), 0.18),
-    0 22px 44px -22px rgba(var(--wise-glow), 0.42),
-    0 54px 96px -46px rgba(15, 12, 24, 0.40);
-  transition: transform var(--motion-smooth) var(--ease-out-strong);
-}
-
-.podio-primero:hover {
-  transform: translateY(-3px);
-}
-
-/* Cifra fantasma del puesto: escala tipográfica como jerarquía, no un badge */
-.podio-cifra {
-  font-variant-numeric: tabular-nums;
-  line-height: 0.78;
-  letter-spacing: -0.05em;
-  background: linear-gradient(180deg,
-      rgba(var(--wise-glow), 0.26),
-      rgba(var(--wise-glow), 0.04));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  user-select: none;
-}
-
-/* Escoltas: apoyados un escalón más abajo, se enderezan al pasar el cursor */
-.podio-escolta {
-  position: relative;
-  transform: translateY(6px) scale(0.985);
-  transition: transform var(--motion-smooth) var(--ease-out-strong);
-}
-
-.podio-escolta:hover {
-  transform: translateY(0) scale(1);
-}
-
-/* Anillo de afinidad: se dibuja al entrar en pantalla */
-.podio-anillo circle.valor {
-  transform: rotate(-90deg);
-  transform-origin: 50% 50%;
-  stroke-dasharray: var(--circunferencia);
-  stroke-dashoffset: var(--circunferencia);
-  transition: stroke-dashoffset 1100ms var(--ease-out-strong);
-}
-
-.podio-anillo[data-shown='true'] circle.valor {
-  stroke-dashoffset: var(--resto);
-}
-
-/* Imagen del ganador: leve acercamiento al pasar el cursor por el panel */
-.podio-foto {
-  transition: transform 620ms var(--ease-out-strong);
-}
-
-.podio-primero:hover .podio-foto {
-  transform: scale(1.035);
-}
-
-/* Accesibilidad: si la persona pidió menos movimiento, se le respeta TODO */
-@media (prefers-reduced-motion: reduce) {
-
-  .podio-aura {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-
-  .podio-primero,
-  .podio-primero:hover,
-  .podio-escolta,
-  .podio-escolta:hover,
-  .podio-foto,
-  .podio-primero:hover .podio-foto,
-  .podio-anillo circle.valor {
-    transform: none;
-    transition: none;
-  }
-
-  .podio-anillo circle.valor {
-    stroke-dashoffset: var(--resto);
-  }
-
-  .card-enter,
-  .highlight-animation,
-  .shine-overlay {
-    animation: none !important;
-  }
-
-  .card-glow::before,
-  .card-glow::after {
-    transition: none;
-  }
-
-  .reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-
-  .metric-bar {
-    transform: scaleX(1);
-    transition: none;
-  }
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* Animación de brillo metálico para tarjetas de especificaciones */
-@keyframes shine {
-  0% {
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
-    opacity: 0;
-  }
-
-  10% {
-    opacity: 0.8;
-  }
-
-  50% {
-    opacity: 1;
-  }
-
-  90% {
-    opacity: 0.8;
-  }
-
-  100% {
-    transform: translateX(200%) translateY(200%) rotate(45deg);
-    opacity: 0;
-  }
-}
-
-.shine-overlay {
-  will-change: transform, opacity;
-}
-
-.highlight-animation {
-  animation: pulse-glow 2s ease-in-out;
-}
-
-@keyframes pulse-glow {
-
-  0%,
-  100% {
-    box-shadow: 0 4px 6px -1px rgba(136, 28, 183, 0.2), 0 2px 4px -1px rgba(136, 28, 183, 0.1);
-  }
-
-  50% {
-    box-shadow: 0 10px 25px -5px rgba(136, 28, 183, 0.5), 0 8px 10px -6px rgba(136, 28, 183, 0.4);
-  }
+  --motion-instant: 120ms;
+  --motion-quick: 240ms;
+  --motion-smooth: 420ms;
+  --motion-hero: 900ms;
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-strong: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 295 100% 35%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 295 100% 35%;
-    --radius: 0.5rem;
+    --background: 270 7% 95%;
+    --foreground: 270 17% 6%;
+    --card: 240 11% 98%;
+    --card-foreground: 270 17% 6%;
+    --popover: 240 11% 98%;
+    --popover-foreground: 270 17% 6%;
+    --primary: 281 73% 41%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 260 7% 91%;
+    --secondary-foreground: 270 17% 6%;
+    --muted: 260 7% 91%;
+    --muted-foreground: 264 6% 38%;
+    --accent: 260 7% 91%;
+    --accent-foreground: 270 17% 6%;
+    --destructive: 346 77% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 260 8% 86%;
+    --input: 260 8% 86%;
+    --ring: 281 73% 41%;
+    --radius: 1rem;
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 295 100% 35%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 295 100% 35%;
-  }
-}
-
-@layer base {
   * {
     @apply border-border;
   }
 
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: var(--font-sans);
+    font-feature-settings: 'ss01', 'cv11';
   }
 
-  /* High-quality image rendering for vehicle images */
-  img,
-  picture,
-  [data-nextjs-image] {
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
+  ::selection {
+    background: rgba(var(--wise-glow), 0.2);
   }
 
-  /* Ensure Next.js Image components maintain quality */
-  img[loading="lazy"],
-  img[loading="eager"] {
-    image-rendering: -webkit-optimize-contrast;
+  :focus-visible {
+    outline: 2px solid var(--wise);
+    outline-offset: 3px;
   }
 }
 
-/* ── Luz ambiental ──
-   El vidrio necesita algo detrás que refractar: sobre blanco plano es
-   invisible. Tres focos morados muy suaves, fijos, sin animación. */
-body::before {
+/* ── Tipografía ──────────────────────────────────────────────────────── */
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 0.82;
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+
+.t-titulo {
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  text-wrap: balance;
+}
+
+.t-ligero {
+  font-weight: 300;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+/* Metadato en monoespaciada: medidas, cifras, rótulos laterales (Nexwash) */
+.t-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cifra {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* ── Divisor de ticks tipo código de barras (Nexwash) ──────────────────── */
+.ticks {
+  height: 22px;
+  background-image: repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 7px);
+  opacity: 0.22;
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+/* ── Botones ───────────────────────────────────────────────────────────── */
+.pastilla {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 9999px;
+  border: 1px solid var(--linea);
+  background: var(--blanco);
+  color: var(--tinta);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background-color var(--motion-quick) var(--ease-out-soft),
+    color var(--motion-quick) var(--ease-out-soft),
+    border-color var(--motion-quick) var(--ease-out-soft),
+    transform var(--motion-quick) var(--ease-out-soft);
+}
+
+.pastilla:hover { border-color: var(--tinta); }
+.pastilla:active { transform: scale(0.97); }
+.pastilla[data-activa='true'],
+.pastilla--tinta {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: #fff;
+}
+.pastilla--wise {
+  background: var(--wise);
+  border-color: var(--wise);
+  color: #fff;
+}
+.pastilla--wise:hover { background: #7415a0; border-color: #7415a0; }
+.pastilla--oscura {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+.pastilla--oscura:hover { border-color: rgba(255, 255, 255, 0.5); }
+
+/* Botón círculo con flecha ↗ (Carzone, Nexwash) */
+.flecha {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  border: 1px solid var(--linea);
+  background: var(--blanco);
+  color: var(--tinta);
+  transition:
+    background-color var(--motion-quick) var(--ease-out-soft),
+    color var(--motion-quick) var(--ease-out-soft),
+    transform var(--motion-smooth) var(--ease-out-strong);
+}
+.flecha svg { transition: transform var(--motion-smooth) var(--ease-out-strong); }
+.group:hover .flecha,
+.flecha:hover {
+  background: var(--wise);
+  border-color: var(--wise);
+  color: #fff;
+}
+.group:hover .flecha svg,
+.flecha:hover svg { transform: rotate(45deg); }
+.flecha--fija:hover svg,
+.group:hover .flecha--fija svg { transform: none; }
+.flecha--fija:active { transform: scale(0.94); }
+
+/* CTA con corte diagonal (LaFerrari) */
+.cta-corte {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  padding: 0 30px 0 34px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  isolation: isolate;
+}
+.cta-corte::before {
   content: '';
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(62% 46% at 8% 2%, rgba(136, 28, 183, 0.19), transparent 62%),
-    radial-gradient(52% 42% at 96% 12%, rgba(96, 82, 232, 0.17), transparent 64%),
-    radial-gradient(46% 40% at 78% 62%, rgba(214, 92, 196, 0.13), transparent 66%),
-    radial-gradient(56% 48% at 24% 92%, rgba(136, 28, 183, 0.12), transparent 68%);
+  background: var(--wise);
+  clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%);
+  transition: clip-path var(--motion-smooth) var(--ease-out-strong), background-color var(--motion-quick);
+}
+.cta-corte:hover::before {
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  background: #7415a0;
 }
 
-/* ── Luz que sigue al cursor ──
-   Una sola capa fija; el componente CursorLight le mueve --cx/--cy.
-   Solo translate, nunca top/left, y desactivada en táctil. */
-.cursor-light {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: -1;
-  width: 44rem;
-  height: 44rem;
-  margin: -22rem 0 0 -22rem;
-  pointer-events: none;
-  opacity: 0;
-  background: radial-gradient(circle,
-      rgba(136, 28, 183, 0.16) 0%,
-      rgba(136, 28, 183, 0.06) 38%,
-      transparent 68%);
-  transition: opacity 500ms var(--ease-out-strong);
-  will-change: transform;
-}
-
-.cursor-light[data-active='true'] {
-  opacity: 1;
-}
-
-/* El héroe deja pasar la luz ambiental en vez de taparla con blanco */
-.bg-hero {
-  background: transparent;
-}
-
-/* Hero image overlay for better text contrast */
-.hero-text-shadow {
-  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.6);
-}
-
-.hero-overlay-dark {
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.2));
-}
-
-@media (min-width: 640px) {
-  .hero-overlay-dark {
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.35), transparent);
-  }
-}
-
-/* Animación para carrusel infinito */
-@keyframes scroll-infinite {
-  0% {
-    transform: translateX(0);
-  }
-
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-scroll-infinite {
-  animation: scroll-infinite 30s linear infinite;
-}
-
-/* Pausar animación al hover */
-.animate-scroll-infinite:hover {
-  animation-play-state: paused;
-}
-
-/* Modal fullscreen fix */
-.modal-fullscreen {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  z-index: 9999 !important;
-}
-
-/* Mobile optimizations */
-@media (max-width: 768px) {
-
-  /* Ensure minimum touch target size */
-  button,
-  [role="button"],
-  input[type="button"],
-  input[type="submit"] {
-    min-height: 44px;
-    min-width: 44px;
-  }
-
-  /* Better text readability on mobile */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    line-height: 1.2;
-  }
-
-  /* Prevent text from being too small */
-  p,
-  span,
-  div {
-    font-size: 16px;
-    line-height: 1.5;
-  }
-
-  /* ...pero un span dentro de un titular debe heredar el tamaño del titular.
-     Sin esto, "WiseMotors" dentro del h1 caía a 16px y partía la portada. */
-  h1 span,
-  h2 span,
-  h3 span,
-  h4 span,
-  h5 span,
-  h6 span,
-  button span,
-  h1 div,
-  h2 div,
-  h3 div {
-    font-size: inherit;
-    line-height: inherit;
-  }
-
-  /* Better container padding for mobile */
-  .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-}
-
-/* Responsive tables */
-.responsive-table {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.responsive-table::-webkit-scrollbar {
-  height: 6px;
-}
-
-.responsive-table::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.responsive-table::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
-}
-
-.responsive-table::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-
-/* Gradient Button Styles */
-@property --pos-x {
-  syntax: '<percentage>';
-  initial-value: 11.14%;
-  inherits: false;
-}
-
-@property --pos-y {
-  syntax: '<percentage>';
-  initial-value: 140%;
-  inherits: false;
-}
-
-@property --spread-x {
-  syntax: '<percentage>';
-  initial-value: 150%;
-  inherits: false;
-}
-
-@property --spread-y {
-  syntax: '<percentage>';
-  initial-value: 180.06%;
-  inherits: false;
-}
-
-@property --color-1 {
-  syntax: '<color>';
-  initial-value: #000;
-  inherits: false;
-}
-
-@property --color-2 {
-  syntax: '<color>';
-  initial-value: #2e1065;
-  /* purple-950 */
-  inherits: false;
-}
-
-@property --color-3 {
-  syntax: '<color>';
-  initial-value: #581c87;
-  /* purple-900 */
-  inherits: false;
-}
-
-@property --color-4 {
-  syntax: '<color>';
-  initial-value: #7e22ce;
-  /* purple-700 */
-  inherits: false;
-}
-
-@property --color-5 {
-  syntax: '<color>';
-  initial-value: #a855f7;
-  /* purple-500 */
-  inherits: false;
-}
-
-@property --border-angle {
-  syntax: '<angle>';
-  initial-value: 20deg;
-  inherits: true;
-}
-
-@property --border-color-1 {
-  syntax: '<color>';
-  initial-value: hsla(270, 75%, 60%, 0.2);
-  inherits: true;
-}
-
-@property --border-color-2 {
-  syntax: '<color>';
-  initial-value: hsla(270, 75%, 40%, 0.75);
-  inherits: true;
-}
-
-@property --stop-1 {
-  syntax: '<percentage>';
-  initial-value: 37.35%;
-  inherits: false;
-}
-
-@property --stop-2 {
-  syntax: '<percentage>';
-  initial-value: 61.36%;
-  inherits: false;
-}
-
-@property --stop-3 {
-  syntax: '<percentage>';
-  initial-value: 78.42%;
-  inherits: false;
-}
-
-@property --stop-4 {
-  syntax: '<percentage>';
-  initial-value: 89.52%;
-  inherits: false;
-}
-
-@property --stop-5 {
-  syntax: '<percentage>';
-  initial-value: 100%;
-  inherits: false;
-}
-
-.gradient-button {
-  @apply relative appearance-none cursor-pointer;
-  background: radial-gradient(var(--spread-x) var(--spread-y) at var(--pos-x) var(--pos-y),
-      var(--color-1) var(--stop-1),
-      var(--color-2) var(--stop-2),
-      var(--color-3) var(--stop-3),
-      var(--color-4) var(--stop-4),
-      var(--color-5) var(--stop-5));
+/* ── Tarjeta Carzone ──────────────────────────────────────────────────── */
+.tarjeta-carro {
+  position: relative;
+  border-radius: 28px;
+  background: var(--tarjeta);
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateZ(0);
   transition:
-    --pos-x 0.5s,
-    --pos-y 0.5s,
-    --spread-x 0.5s,
-    --spread-y 0.5s,
-    --color-1 0.5s,
-    --color-2 0.5s,
-    --color-3 0.5s,
-    --color-4 0.5s,
-    --color-5 0.5s,
-    --border-angle 0.5s,
-    --border-color-1 0.5s,
-    --border-color-2 0.5s,
-    --stop-1 0.5s,
-    --stop-2 0.5s,
-    --stop-3 0.5s,
-    --stop-4 0.5s,
-    --stop-5 0.5s;
+    transform 700ms var(--ease-out-strong),
+    box-shadow 700ms var(--ease-out-strong),
+    background-color 500ms var(--ease-out-soft);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+.tarjeta-carro::before {
+  /* Tinte de color al pasar: el morado como luz desde arriba */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(var(--wise-glow), 0.13), rgba(var(--wise-glow), 0) 62%);
+  opacity: 0;
+  transition: opacity 500ms var(--ease-out-soft);
+  pointer-events: none;
+}
+.tarjeta-carro:hover {
+  box-shadow: 0 40px 60px -30px rgba(40, 10, 60, 0.45);
+  transition-duration: 180ms, 700ms, 500ms;
+}
+.tarjeta-carro:hover::before,
+.tarjeta-carro[data-destacada='true']::before { opacity: 1; }
+/* Un solo activo a la vez: si el cursor está en otra tarjeta, la destacada se apaga */
+.grid:has(.tarjeta-carro:hover) .tarjeta-carro[data-destacada='true']:not(:hover)::before { opacity: 0; }
+.grid:has(.tarjeta-carro:hover) .tarjeta-carro[data-destacada='true']:not(:hover) .marca-agua { opacity: 0; }
+
+/* Nombre del modelo gigante detrás del carro */
+.marca-agua {
+  font-family: var(--font-display);
+  line-height: 0.8;
+  color: color-mix(in srgb, var(--wise) 20%, var(--tarjeta));
+  opacity: 0;
+  transform: translateY(18px) scale(0.96);
+  transition:
+    opacity 600ms var(--ease-out-soft),
+    transform 800ms var(--ease-out-strong);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.tarjeta-carro:hover .marca-agua,
+.tarjeta-carro[data-destacada='true'] .marca-agua { opacity: 0.75; transform: none; }
+
+.tarjeta-carro .carro {
+  transition: transform 800ms var(--ease-out-strong);
+}
+.tarjeta-carro:hover .carro { transform: translateX(8px) scale(1.04); }
+
+/* Fila de datos con divisores (Carzone / LaFerrari) */
+.fila-datos {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+.fila-datos > * + * { border-left: 1px solid var(--linea); }
+.fila-datos--oscura > * + * { border-left-color: rgba(255, 255, 255, 0.12); }
+
+/* ── Piso de estudio ──────────────────────────────────────────────────── */
+.estudio {
+  background:
+    radial-gradient(70% 55% at 60% 30%, #ffffff 0%, rgba(255, 255, 255, 0) 70%),
+    linear-gradient(180deg, #dedce3 0%, #eceaef 55%, #f6f5f8 56%, #e9e8ed 100%);
+}
+.carro-reflejo {
+  mask-image: linear-gradient(180deg, #000, transparent 85%);
 }
 
-.gradient-button::before {
+/* ── Hotspots (Mercedes) ──────────────────────────────────────────────── */
+.hotspot {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: translate(-20px, -50%);
+  transition:
+    left 800ms var(--ease-out-strong),
+    top 800ms var(--ease-out-strong),
+    opacity 400ms var(--ease-out-soft);
+}
+.hotspot { animation: hotspot-entra 600ms var(--ease-out-strong) var(--d, 0ms) both; }
+@keyframes hotspot-entra { from { opacity: 0; } }
+.hotspot__punto { animation: hotspot-punto 700ms cubic-bezier(0.3, 1.6, 0.5, 1) var(--d, 0ms) both; }
+@keyframes hotspot-punto { from { transform: scale(0); } }
+.hotspot__punto {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background: rgba(14, 12, 17, 0.72);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hotspot__punto::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #fff;
+}
+.hotspot__punto::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(var(--border-angle),
-      var(--border-color-1),
-      var(--border-color-2));
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  animation: pulso-hotspot 2.2s var(--ease-out-soft) infinite;
+}
+.hotspot__etiqueta {
+  padding: 9px 16px;
+  border-radius: 9999px;
+  /* Tinta con filo blanco: se lee igual sobre pintura clara, oscura o foto */
+  background: rgba(14, 12, 17, 0.82);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28), 0 10px 24px -12px rgba(14, 12, 17, 0.6);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+@keyframes pulso-hotspot {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(1.7); opacity: 0; }
+}
+
+/* ── Entradas ─────────────────────────────────────────────────────────── */
+/* Palabra gigante: cada letra sube detrás de una máscara */
+.letra-sube {
+  display: inline-block;
+  clip-path: inset(0 0 0 0);
+}
+.letra-sube > span {
+  display: inline-block;
+  animation: letra-sube 1100ms var(--ease-out-strong) both;
+  animation-delay: calc(var(--i, 0) * 55ms + 150ms);
+}
+@keyframes letra-sube {
+  from { transform: translateY(105%); }
+}
+
+/* Carro que entra desenfocado y se posa */
+.carro-entra {
+  animation: carro-entra 1400ms var(--ease-out-strong) 250ms both;
+}
+@keyframes carro-entra {
+  from { transform: translateX(14%); opacity: 0; filter: blur(14px); }
+  60% { filter: blur(0); }
+}
+
+.sube {
+  animation: sube 900ms var(--ease-out-strong) both;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes sube {
+  from { opacity: 0; transform: translateY(24px); }
+}
+
+/* Revelado al hacer scroll (components/ui/Reveal.tsx) */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  clip-path: inset(0 0 12% 0);
+  transition:
+    opacity 900ms var(--ease-out-soft),
+    transform 1000ms var(--ease-out-strong),
+    clip-path 1000ms var(--ease-out-strong);
+}
+.reveal[data-shown='true'] {
+  opacity: 1;
+  transform: none;
+  clip-path: inset(0 0 0 0);
+}
+
+/* Hero: la palabra gigante se parte donde se parte el fondo */
+.palabra-capa--panel { display: none; }
+@media (min-width: 1024px) {
+  .palabra-capa--panel { display: block; clip-path: inset(0 calc(100% - 36vw) 0 0); }
+  .palabra-capa--negro { clip-path: inset(0 0 0 36vw); }
+}
+.progreso-hero { animation: progreso-hero linear both; }
+@keyframes progreso-hero { from { transform: scaleX(0); } }
+
+/* Menú de usuario */
+.menu-usuario { animation: menu-usuario 260ms var(--ease-out-strong) both; transform-origin: top right; }
+@keyframes menu-usuario { from { opacity: 0; transform: translateY(-6px) scale(0.97); } }
+
+/* Menú móvil */
+.menu-movil { animation: menu-movil 500ms var(--ease-out-strong) both; }
+@keyframes menu-movil { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* Franja oscura con muesca arriba (Nexwash) */
+.banda-muesca {
+  clip-path: polygon(0 0, 38% 0, 40.5% 34px, 59.5% 34px, 62% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+/* Catálogo: rango doble de precio (dos range superpuestos, pulgares negros) */
+.rango-doble input[type='range'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
   pointer-events: none;
 }
+.rango-doble input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--tinta);
+  border: 3px solid var(--blanco);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  cursor: grab;
+  transition: transform var(--motion-quick) var(--ease-out-soft);
+}
+.rango-doble input[type='range']::-webkit-slider-thumb:active { transform: scale(1.2); cursor: grabbing; }
+.rango-doble input[type='range']::-moz-range-thumb {
+  pointer-events: auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--tinta);
+  border: 3px solid var(--blanco);
+  cursor: grab;
+}
+.histo-barra { transition: background-color 400ms var(--ease-out-soft); }
+.hoja-filtros { animation: hoja-filtros 450ms var(--ease-out-strong) both; }
+@keyframes hoja-filtros { from { transform: translateX(100%); } }
 
-.gradient-button:hover {
-  --pos-x: 0%;
-  --pos-y: 91.51%;
-  --spread-x: 120.24%;
-  --spread-y: 103.18%;
-  --color-1: #d8b4fe;
-  /* purple-300 */
-  --color-2: #c084fc;
-  /* purple-400 */
-  --color-3: #a855f7;
-  /* purple-500 */
-  --color-4: #7e22ce;
-  /* purple-700 */
-  --color-5: #581c87;
-  /* purple-900 */
-  --border-angle: 190deg;
-  --border-color-1: hsla(270, 78%, 90%, 0.1);
-  --border-color-2: hsla(270, 75%, 90%, 0.6);
-  --stop-1: 0%;
-  --stop-2: 8.8%;
-  --stop-3: 21.44%;
-  --stop-4: 71.34%;
-  --stop-5: 85.76%;
+/* Marquesina de marcas */
+.marquesina {
+  display: flex;
+  width: max-content;
+  animation: marquesina 38s linear infinite;
+}
+.marquesina:hover { animation-play-state: paused; }
+@keyframes marquesina {
+  to { transform: translateX(-50%); }
 }
 
-.gradient-button-variant {
-  --color-1: #000022;
-  --color-2: #1f3f6d;
-  --color-3: #469396;
-  --color-4: #f1ffa5;
-  --border-angle: 200deg;
-  --border-color-1: hsla(320, 75%, 90%, 0.6);
-  --border-color-2: hsla(320, 50%, 90%, 0.15);
-}.gradient-button-variant:hover {
-  --pos-x: 0%;
-  --pos-y: 95.51%;
-  --spread-x: 110.24%;
-  --spread-y: 110.2%;
-  --color-1: #000020;
-  --color-2: #f1ffa5;
-  --color-3: #469396;
-  --color-4: #1f3f6d;
-  --color-5: #000;
-  --stop-1: 0%;
-  --stop-2: 10%;
-  --stop-3: 35.44%;
-  --stop-4: 71.34%;
-  --stop-5: 90.76%;
-  --border-angle: 210deg;
-  --border-color-1: hsla(320, 75%, 90%, 0.2);
-  --border-color-2: hsla(320, 50%, 90%, 0.75);
+/* Barras divergentes desde el centro (comparador) */
+.barra-izq,
+.barra-der {
+  transform: scaleX(var(--v, 1));
+  transition: transform 1100ms var(--ease-out-strong);
+}
+.barra-izq { transform-origin: right center; }
+.barra-der { transform-origin: left center; }
+[data-visto='false'] .barra-izq,
+[data-visto='false'] .barra-der { transform: scaleX(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+  .reveal { opacity: 1; transform: none; clip-path: none; }
+  .marquesina { animation: none; }
 }

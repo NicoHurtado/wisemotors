@@ -1,3 +1,4 @@
+import { urlImagen } from '@/lib/data/imagen';
 import { prisma } from '@/lib/prisma';
 import { cache } from 'react';
 
@@ -95,9 +96,7 @@ export const getVehicle = cache(async (id: string) => {
       try { vSpecs = JSON.parse(vSpecs); } catch (e) { vSpecs = {}; }
     }
     const firstImage = v.images?.[0];
-    const imageUrl = firstImage?.url?.startsWith('http') 
-      ? firstImage.url 
-      : `/api/vehicles/${v.id}/image?index=0`;
+    const imageUrl = urlImagen(v.id, firstImage?.url);
     return {
       id: v.id,
       brand: v.brand,
@@ -105,6 +104,8 @@ export const getVehicle = cache(async (id: string) => {
       year: v.year,
       price: v.price,
       fuel: v.fuelType?.toUpperCase() || 'GASOLINA',
+      fuelType: v.fuelType,
+      images: v.images,
       imageUrl,
       category: v.type,
       status: v.status || 'NUEVO',
@@ -116,9 +117,7 @@ export const getVehicle = cache(async (id: string) => {
   // Get the cover image URL directly from Cloudinary if available
   const coverImg = vehicle.images?.find((img: any) => img.type === 'cover');
   const firstImg = vehicle.images?.[0];
-  const mainImageUrl = (coverImg?.url || firstImg?.url)?.startsWith('http')
-    ? (coverImg?.url || firstImg?.url)
-    : `/api/vehicles/${vehicle.id}/image?index=0`;
+  const mainImageUrl = urlImagen(vehicle.id, coverImg?.url || firstImg?.url);
 
   const result = {
     ...vehicle,
@@ -283,9 +282,7 @@ export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
   // Transform to match UI expectation (VehicleCard interface)
   const transformedVehicles = resultVehicles.map((vehicle: any) => {
     const firstImage = vehicle.images?.[0];
-    const imageUrl = firstImage?.url?.startsWith('http')
-      ? firstImage.url
-      : `/api/vehicles/${vehicle.id}/image?index=0`;
+    const imageUrl = urlImagen(vehicle.id, firstImage?.url);
     return {
       id: vehicle.id,
       brand: vehicle.brand,
@@ -293,13 +290,15 @@ export const getVehicles = cache(async (options: GetVehiclesOptions = {}) => {
       year: vehicle.year,
       price: vehicle.price,
       fuel: vehicle.fuelType.toUpperCase(),
+      fuelType: vehicle.fuelType,
+      type: vehicle.type,
       imageUrl,
       category: vehicle.type,
       status: vehicle.status || 'NUEVO',
       specifications: vehicle.specifications,
       images: vehicle.images?.map((img: any) => ({
         ...img,
-        url: img.url?.startsWith('http') ? img.url : `/api/vehicles/${vehicle.id}/image?index=${img.order}`
+        url: urlImagen(vehicle.id, img.url, img.order)
       })) || []
     };
   });

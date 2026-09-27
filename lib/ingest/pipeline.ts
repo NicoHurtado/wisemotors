@@ -7,7 +7,9 @@
 // después de que el humano acepte o rechace campo por campo.
 // ============================================================================
 
+import { z } from 'zod/v4';
 import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
+import { pedirJson } from '@/lib/ai/claude';
 import { fetchPageText } from './fetcher';
 import { discoverSources } from './sources';
 import { extractFromPage, resolveIdentity } from './extract';
@@ -103,7 +105,7 @@ function reconcile(raw: RawFact[]): DraftFact[] {
 // ---------------------------------------------------------------------------
 async function resolvePrice(
   facts: DraftFact[],
-  identity: { brand: string; model: string; year: number; fuelType: string; type: string }
+  identity: { brand: string; model: string; trim?: string; year: number; fuelType: string; type: string }
 ): Promise<{ price: PriceDraft | null; remainingFacts: DraftFact[] }> {
   const priceFact = facts.find(f => f.key === PRICE_KEY);
   const remainingFacts = facts.filter(f => f.key !== PRICE_KEY);
@@ -121,50 +123,25 @@ async function resolvePrice(
     };
   }
 
-  // Estimación razonada con el modelo grande (una sola llamada)
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return { price: null, remainingFacts };
+  // Estimación razonada (una sola llamada)
+  if (!process.env.ANTHROPIC_API_KEY) return { price: null, remainingFacts };
 
-  const fn = {
-    name: 'estimate_price',
-    description: 'Estima el precio en COP con razonamiento explícito',
-    parameters: {
-      type: 'object',
-      properties: {
-        priceCop: { type: 'number', description: 'Precio estimado en pesos colombianos (versión de entrada)' },
-        reasoning: {
-          type: 'string',
-          description: 'Razonamiento en español, 2-4 frases: contra qué rivales del mercado colombiano se ancla la estimación y por qué',
-        },
-        confidence: { type: 'number', minimum: 0, maximum: 1 },
-      },
-      required: ['priceCop', 'reasoning', 'confidence'],
-    },
-  };
+  const EstimacionSchema = z.object({
+    priceCop: z.number().describe('Precio estimado en pesos colombianos (número completo, ej. 89990000)'),
+    reasoning: z
+      .string()
+      .describe('Razonamiento en español, 2-4 frases: contra qué rivales del mercado colombiano se ancla la estimación y por qué'),
+    confidence: z.number().describe('Entre 0 y 1'),
+  });
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'user',
-            content: `Estima el precio de lista en Colombia (COP, versión de entrada) del ${identity.brand} ${identity.model} ${identity.year} (${identity.fuelType}, ${identity.type}).
+    const args = await pedirJson({
+      schema: EstimacionSchema,
+      maxTokens: 8000,
+      prompt: `Estima el precio de lista en Colombia (COP, ${identity.trim ? `versión ${identity.trim}` : 'versión de entrada'}) del ${identity.brand} ${identity.model} ${identity.year} (${identity.fuelType}, ${identity.type}).
 
 Ancla el razonamiento en rivales directos que SÍ se venden en Colombia y sus precios conocidos (H1-2026: los 10 más vendidos cotizan entre $75M y $136M base; Tesla Model Y desde $119,99M; el más barato del mercado ~$47M). Ajusta por segmento, tren motriz y posicionamiento de marca. Si el modelo no se vende en Colombia, estima el precio que tendría al importarse (incluye arancel e IVA) y dilo en el razonamiento.`,
-          },
-        ],
-        functions: [fn],
-        function_call: { name: 'estimate_price' },
-        temperature: 0.2,
-      }),
     });
-
-    if (!response.ok) return { price: null, remainingFacts };
-    const data = await response.json();
-    const args = JSON.parse(data.choices?.[0]?.message?.function_call?.arguments ?? '{}');
 
     // El modelo a veces contesta "85" por 85 millones: sin este saneo se
     // publicaría un carro de $85 pesos sin que nada chille.
@@ -198,7 +175,12 @@ export async function runIngestPipeline(input: {
 
   // 1. Identidad canónica
   const identity = await resolveIdentity(input.brand, input.model, input.year, input.country);
-  const label = `${identity.brand} ${identity.model} ${input.year} (mercado ${input.country})`;
+  const version = identity.trim ? `, versión ${identity.trim}` : '';
+  const label = `${identity.brand} ${identity.model} ${input.year}${version} (mercado ${input.country})`;
+  // El nombre publicado lleva la versión ("Onix RS"): en Colombia se venden
+  // como carros distintos. Las fuentes se buscan por el modelo base, que es
+  // como las indexa la prensa.
+  const modeloPublicado = identity.trim ? `${identity.model} ${identity.trim}` : identity.model;
 
   // 2. Fuentes por tier
   const candidates = await discoverSources(identity.brand, identity.model, input.year);
@@ -269,7 +251,7 @@ export async function runIngestPipeline(input: {
 
   return {
     brand: identity.brand,
-    model: identity.model,
+    model: modeloPublicado,
     year: input.year,
     country: input.country,
     type: identity.type,

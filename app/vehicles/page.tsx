@@ -1,23 +1,16 @@
 import { getVehicles } from '@/lib/data/vehicles';
-import VehiclesClient from '@/components/vehicles/VehiclesClient';
+import { Catalogo } from '@/components/vehicles/Catalogo';
+import type { VehiculoTarjeta } from '@/components/car/TarjetaCarro';
 
-export const revalidate = 30; // Revalidate every 30 seconds
+export const revalidate = 30;
 
 export const metadata = {
-  title: 'Vehículos | WiseMotors',
-  description: 'Explora nuestra selección de vehículos de alta gama, deportivos y exclusivos. Encuentra tu próximo auto con WiseMotors.',
+  title: 'Catálogo',
+  description: 'Carros nuevos en Colombia, medidos contra el mercado colombiano y explicados en palabras de persona.',
 };
 
+// El catálogo completo (hasta 200) se filtra en el cliente: ver components/vehicles/Catalogo.tsx.
 export default async function VehiclesPage() {
-  // Fetch initial data on the server
-  // Note: We don't pass searchParams here yet because the filter logic is client-side in the original implementation.
-  // The original page initializes with empty filters.
-  // So we fetch the default list (relevance/latest).
-
-  const { vehicles, pagination } = await getVehicles({
-    limit: 9,
-    sortBy: 'createdAt'
-  });
-
-  return <VehiclesClient initialVehicles={vehicles} initialTotal={pagination.total} />;
+  const { vehicles } = await getVehicles({ limit: 200, sortBy: 'createdAt' });
+  return <Catalogo vehiculos={vehicles as unknown as VehiculoTarjeta[]} />;
 }
