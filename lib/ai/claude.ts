@@ -20,7 +20,7 @@ export const CLAUDE_MODEL = 'claude-opus-5';
 
 let cliente: Anthropic | null = null;
 
-function claude(): Anthropic {
+export function claude(): Anthropic {
   if (cliente) return cliente;
   if (!process.env.ANTHROPIC_API_KEY) {
     throw new Error('ANTHROPIC_API_KEY no está definida: la ingesta necesita a Claude.');
@@ -34,7 +34,8 @@ function claude(): Anthropic {
 
 export async function pedirJson<T extends z.ZodType>(opts: {
   schema: T;
-  prompt: string;
+  /** Texto, o bloques de contenido (p. ej. un PDF + instrucciones). */
+  prompt: string | Anthropic.Beta.Messages.BetaContentBlockParam[];
   system?: string;
   maxTokens?: number;
 }): Promise<z.infer<T>> {

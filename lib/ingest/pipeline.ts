@@ -1,6 +1,8 @@
 // ============================================================================
 // Orquestador de la ingesta (plan §5.1):
-//   identidad → fuentes → fetch → extracción → reconciliación → validación
+//   identidad → fuentes (búsqueda web real) → lectura (directa o con web_fetch
+//   de Anthropic, incluidos PDF oficiales) → extracción con citas verificadas
+//   → reconciliación → validación
 //   → precio (encontrado o ESTIMADO con razonamiento) → borrador
 //
 // El borrador NO toca la base de datos. La publicación es otra llamada,
@@ -12,6 +14,7 @@ import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
 import { pedirJson } from '@/lib/ai/claude';
 import { fetchPageText } from './fetcher';
 import { discoverSources } from './sources';
+import { buscarFuentes, leerConClaude, type Contenido } from './buscar-fuentes';
 import { extractFromPage, resolveIdentity } from './extract';
 import { normalizarCop, verificarPrecio } from './price-check';
 import type { DraftFact, PriceDraft, RawFact, VehicleDraft } from './types';
@@ -182,25 +185,52 @@ export async function runIngestPipeline(input: {
   // como las indexa la prensa.
   const modeloPublicado = identity.trim ? `${identity.model} ${identity.trim}` : identity.model;
 
-  // 2. Fuentes por tier
-  const candidates = await discoverSources(identity.brand, identity.model, input.year);
+  // 2. Fuentes reales: búsqueda web (solo URLs que salieron en los resultados).
+  //    Si la búsqueda falla o trae muy poco, se completa con las rutas conocidas.
+  let candidates = await buscarFuentes(identity.brand, identity.model, identity.trim, input.year).catch(err => {
+    warningsEs.push(`La búsqueda web falló (${String(err?.message ?? err).slice(0, 80)}); se usaron fuentes conocidas.`);
+    return [];
+  });
+  if (candidates.length < 2) {
+    const conocidas = await discoverSources(identity.brand, identity.model, input.year);
+    candidates = [...candidates, ...conocidas.filter(c => !candidates.some(x => x.url === c.url))];
+  }
   if (candidates.length === 0) {
     warningsEs.push('No se encontraron fuentes candidatas. Revisar el nombre del modelo.');
   }
 
-  // 3+4. Fetch + extracción (fuentes en paralelo, máx 5)
+  // 3+4. Lectura + extracción, fuentes en paralelo (máx 6).
+  //   a) descarga directa (rápida y gratis);
+  //   b) si el sitio bloquea, es PDF o no trajo datos: lectura con web_fetch de Anthropic.
   const sourcesReport: VehicleDraft['sourcesReport'] = [];
   const rawFacts: RawFact[] = [];
 
   const toProcess = candidates.slice(0, 6);
   const results = await Promise.allSettled(
     toProcess.map(async source => {
-      const text = await fetchPageText(source.url);
-      if (!text || text.length < 300) {
-        return { source, facts: [] as RawFact[], ok: false, note: 'Página vacía, inaccesible o bloqueada por robots.txt' };
+      const esPdf = /\.pdf($|\?)/i.test(source.url);
+      const directo = esPdf ? null : await fetchPageText(source.url);
+      if (directo && directo.length >= 300) {
+        const facts = await extractFromPage(directo, source.url, source.tier, label);
+        if (facts.length > 0) return { source, facts, ok: true, note: `${facts.length} datos extraídos` };
       }
-      const facts = await extractFromPage(text, source.url, source.tier, label);
-      return { source, facts, ok: true, note: `${facts.length} datos extraídos` };
+      let contenido: Contenido | null = null;
+      try {
+        contenido = await leerConClaude(source.url);
+      } catch {
+        contenido = null;
+      }
+      if (!contenido) {
+        return { source, facts: [] as RawFact[], ok: false, note: 'No se pudo leer la página (vacía, bloqueada o no existe)' };
+      }
+      const facts = await extractFromPage(contenido, source.url, source.tier, label);
+      const como = 'pdfBase64' in contenido ? ' del PDF' : '';
+      return {
+        source,
+        facts,
+        ok: facts.length > 0,
+        note: facts.length > 0 ? `${facts.length} datos extraídos${como}` : `Se leyó${como}, pero no trae especificaciones de este modelo`,
+      };
     })
   );
 

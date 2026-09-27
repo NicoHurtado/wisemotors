@@ -12,7 +12,8 @@
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 const FETCH_TIMEOUT_MS = 20_000;
 /** Máximo de texto que pasa al extractor por página. */
-const MAX_TEXT_CHARS = 18_000;
+// Claude lee con holgura ~60k caracteres; más que eso, se toma la zona más densa en cifras.
+const MAX_TEXT_CHARS = 60_000;
 
 // Cache simple en memoria por proceso (la ingesta de versiones del mismo
 // carro comparte el 90% de las fuentes).

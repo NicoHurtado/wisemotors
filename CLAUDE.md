@@ -97,6 +97,13 @@ cobertura, migración, seeds, motor de cohortes.
   conflictos detectados — mezcla de versiones híbrida/gasolina —, precio $133M de
   Autos de Primera) → publicado → la búsqueda "una SUV para la familia que no gaste
   mucho" lo devuelve #1 con razones. Scoring determinístico + rerank funcionando.
+- **Ingesta v2 (sep-2026):** las fuentes ya no se adivinan. `lib/ingest/buscar-fuentes.ts`:
+  Claude con `web_search` busca la página oficial CO + prensa CO; solo se aceptan URLs que
+  salieron en los resultados. Cada fuente se descarga directo y, si falla / es PDF / no trae
+  datos, se lee con `web_fetch` de Anthropic (Haiku). Las fichas técnicas PDF oficiales se
+  extraen como documento. Toda cita de página HTML se verifica contra el texto (si no
+  aparece, el dato muere). Probado: Onix RS 33 datos, CX-30 36, Dolphin 41, ~50 s.
+  La ruta de ingesta tiene `maxDuration: 300`.
 - Pendiente de ingesta v2: fotos (Cloudinary), asociar concesionario, cola de
   auditoría, `maxDuration: 60` puede quedar corto en Vercel para 6 fuentes (~45s local).
 

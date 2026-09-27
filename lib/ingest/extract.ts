@@ -10,6 +10,7 @@ import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
 import { z } from 'zod/v4';
 import { pedirJson } from '@/lib/ai/claude';
 import type { RawFact, SourceTier } from './types';
+import type { Contenido } from './buscar-fuentes';
 
 // Solo atributos que se publican en Colombia y con keys válidas
 const EXTRACTABLE = ATTRIBUTE_REGISTRY.filter(d => d.coAvailability !== 'never_published');
@@ -45,39 +46,71 @@ REGLAS ABSOLUTAS:
 4. Cada valor lleva su cita textual. Sin cita, no reportes el dato.
 5. Si el texto da rangos o varias versiones, usa la versión indicada en el VEHÍCULO OBJETIVO; si no indica ninguna, la de entrada (base). Un dato que solo aparece para otra versión NO se reporta.
 6. Precios en COP: repórtalos SOLO en la key 'commercial.priceCop' si el texto trae precio para Colombia. Un precio en USD o de otro país NO se reporta.
-7. Que el texto NO mencione algo NO significa que el carro no lo tenga. Si no encuentras un dato, OMITE la key. Jamás reportes false ni 0 para decir "no aparece": eso afirma que el carro carece del equipamiento, que es una mentira distinta a no saberlo.`;
+7. Año modelo: la prensa y los fabricantes suelen hablar del año anterior o siguiente de la MISMA generación (un Onix 2026 y un 2027 son el mismo carro). Eso cuenta como el vehículo objetivo. Solo si es otra generación, otro modelo u otro mercado, no reportes nada.
+8. Que el texto NO mencione algo NO significa que el carro no lo tenga. Si no encuentras un dato, OMITE la key. Jamás reportes false ni 0 para decir "no aparece": eso afirma que el carro carece del equipamiento, que es una mentira distinta a no saberlo.`;
+
+/** Texto comparable para verificar citas: sin tildes, espacios ni puntuación. */
+const plano = (t: string) =>
+  t
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+
+/**
+ * ¿La cita aparece en el texto? Se compara sin espacios ni puntuación y basta
+ * con un tramo largo de la cita (el modelo a veces recorta los bordes).
+ */
+function citaEnTexto(cita: string, textoPlano: string) {
+  const c = plano(cita);
+  if (c.length < 4) return false;
+  if (textoPlano.includes(c)) return true;
+  const tramo = Math.max(12, Math.floor(c.length * 0.6));
+  for (let i = 0; i + tramo <= c.length; i += 4) if (textoPlano.includes(c.slice(i, i + tramo))) return true;
+  return false;
+}
 
 export async function extractFromPage(
-  pageText: string,
+  contenido: string | Contenido,
   sourceUrl: string,
   tier: SourceTier,
   vehicleLabel: string
 ): Promise<RawFact[]> {
-  const userPrompt = `VEHÍCULO OBJETIVO: ${vehicleLabel}
+  const c: Contenido = typeof contenido === 'string' ? { texto: contenido } : contenido;
+  const esPdf = 'pdfBase64' in c;
+  const encabezado = `VEHÍCULO OBJETIVO: ${vehicleLabel}
 
 CATÁLOGO DE ATRIBUTOS (key | etiqueta | tipo):
 ${buildCatalog()}
-
-TEXTO DE LA PÁGINA (${sourceUrl}):
-"""
-${pageText}
-"""
-
-Extrae las especificaciones del vehículo objetivo presentes en el texto. Si el texto habla de otro vehículo, no reportes nada.`;
+`;
+  const cierre = `Extrae las especificaciones del vehículo objetivo presentes en ${esPdf ? 'el documento' : 'el texto'}. Si habla de otro vehículo, no reportes nada.`;
 
   let parsed: z.infer<typeof ExtraccionSchema>;
   try {
-    parsed = await pedirJson({ schema: ExtraccionSchema, system: SYSTEM_PROMPT, prompt: userPrompt });
+    parsed = await pedirJson({
+      schema: ExtraccionSchema,
+      system: SYSTEM_PROMPT,
+      prompt: esPdf
+        ? [
+            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: c.pdfBase64 } },
+            { type: 'text', text: `${encabezado}\nEl documento adjunto es ${sourceUrl}.\n\n${cierre}` },
+          ]
+        : `${encabezado}\nTEXTO DE LA PÁGINA (${sourceUrl}):\n"""\n${c.texto.slice(0, 60000)}\n"""\n\n${cierre}`,
+    });
   } catch (err) {
     throw new Error(`Claude falló extrayendo de ${sourceUrl}: ${err instanceof Error ? err.message : err}`);
   }
 
+  const textoPlano = esPdf ? null : plano(c.texto);
   const facts: RawFact[] = [];
   for (const f of parsed.facts ?? []) {
     // El LLM no inventa campos: keys fuera del registro mueren aquí.
     if (!VALID_KEYS.has(f.key)) continue;
     if (f.value === null || f.value === undefined || f.value === '') continue;
     if (typeof f.quote !== 'string' || f.quote.trim() === '') continue;
+    // La cita tiene que estar en la página: una cita que no aparece es un dato inventado.
+    // (En PDF no hay texto para comparar; son fichas oficiales del fabricante.)
+    if (textoPlano !== null && !citaEnTexto(f.quote, textoPlano)) continue;
 
     const def = EXTRACTABLE.find(d => d.key === f.key)!;
     let value: number | string | boolean = f.value;
