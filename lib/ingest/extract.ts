@@ -11,6 +11,7 @@ import { z } from 'zod/v4';
 import { pedirJson } from '@/lib/ai/claude';
 import type { RawFact, SourceTier } from './types';
 import type { Contenido } from './buscar-fuentes';
+import { denserWindow, MAX_TEXT_CHARS } from './fetcher';
 
 // Solo atributos que se publican en Colombia y con keys válidas
 const EXTRACTABLE = ATTRIBUTE_REGISTRY.filter(d => d.coAvailability !== 'never_published');
@@ -24,7 +25,7 @@ const ExtraccionSchema = z.object({
         value: z
           .union([z.number(), z.string(), z.boolean()])
           .describe('Número puro para numéricos (sin unidad), true para booleanos presentes, string para texto/enum'),
-        quote: z.string().describe('Cita textual (máx 140 caracteres) del fragmento del texto que respalda el valor'),
+        quote: z.string().describe('Cita textual CORTA (máx 100 caracteres) del fragmento del texto que respalda el valor'),
         aplicaA: z
           .enum(['version_objetivo', 'todas_las_versiones', 'otra_version', 'no_especifica'])
           .describe(
@@ -139,7 +140,7 @@ ${buildCatalog()}
             { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: c.pdfBase64 } },
             { type: 'text', text: `${encabezado}\nEl documento adjunto es ${sourceUrl}.\n\n${cierre}` },
           ]
-        : `${encabezado}\nTEXTO DE LA PÁGINA (${sourceUrl}):\n"""\n${c.texto.slice(0, 60000)}\n"""\n\n${cierre}`,
+        : `${encabezado}\nTEXTO DE LA PÁGINA (${sourceUrl}):\n"""\n${c.texto.length <= MAX_TEXT_CHARS ? c.texto : denserWindow(c.texto, MAX_TEXT_CHARS)}\n"""\n\n${cierre}`,
     });
   } catch (err) {
     throw new Error(`Claude falló extrayendo de ${sourceUrl}: ${err instanceof Error ? err.message : err}`);

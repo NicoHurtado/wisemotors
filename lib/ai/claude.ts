@@ -16,7 +16,14 @@ import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import type { z } from 'zod/v4';
 
-export const CLAUDE_MODEL = 'claude-opus-5';
+// Costo: NUNCA Opus. Sonnet donde un error publica datos falsos o se le muestra
+// al usuario (extracción, fuentes, identidad, precio, veredicto); Haiku donde
+// solo se copia o no es crítico (leer páginas, datos DEMO).
+export const MODELOS = {
+  sonnet: 'claude-sonnet-5',
+  haiku: 'claude-haiku-4-5',
+} as const;
+export type Modelo = keyof typeof MODELOS;
 
 let cliente: Anthropic | null = null;
 
@@ -61,19 +68,17 @@ export async function pedirJson<T extends z.ZodType>(opts: {
   prompt: string | Anthropic.Beta.Messages.BetaContentBlockParam[];
   system?: string;
   maxTokens?: number;
+  /** Sonnet por defecto; Haiku solo para tareas no críticas. */
+  modelo?: Modelo;
 }): Promise<z.infer<T>> {
   let res;
   try {
     res = await claude().beta.messages.parse({
-      model: CLAUDE_MODEL,
-      max_tokens: opts.maxTokens ?? 16000,
+      model: MODELOS[opts.modelo ?? 'sonnet'],
+      max_tokens: opts.maxTokens ?? 8000,
       ...(opts.system ? { system: opts.system } : {}),
       messages: [{ role: 'user', content: opts.prompt }],
       output_config: { format: betaZodOutputFormat(opts.schema) },
-      // Si el modelo declina por política, la API reintenta con otro modelo en
-      // la misma llamada en vez de dejar el vehículo a medias.
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
     });
   } catch (err) {
     throw new Error(explicarErrorClaude(err));

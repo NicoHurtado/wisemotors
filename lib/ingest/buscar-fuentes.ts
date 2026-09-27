@@ -19,10 +19,8 @@
 
 import { z } from 'zod/v4';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
-import { claude, CLAUDE_MODEL } from '@/lib/ai/claude';
+import { claude, MODELOS } from '@/lib/ai/claude';
 import type { DiscoveredSource, SourceTier } from './types';
-
-const MODELO_LECTOR = 'claude-haiku-4-5';
 
 const TIPOS = ['fabricante_colombia', 'prensa_colombia', 'prensa_internacional', 'enciclopedia', 'otro'] as const;
 
@@ -59,13 +57,13 @@ function tierDe(tipo: (typeof TIPOS)[number], url: string, marca: string): Sourc
 export async function buscarFuentes(marca: string, modelo: string, version: string, anio: number): Promise<DiscoveredSource[]> {
   const nombre = `${marca} ${modelo}${version ? ` ${version}` : ''}`;
   const res = await claude().beta.messages.parse({
-    model: CLAUDE_MODEL,
+    model: MODELOS.sonnet,
     max_tokens: 4000,
     tools: [
       {
         type: 'web_search_20250305',
         name: 'web_search',
-        max_uses: 4,
+        max_uses: 3,
         // user_location no admite Colombia (400 "Country code CO is not supported"):
         // el foco en Colombia va en el prompt.
       },
@@ -78,7 +76,7 @@ Evita concesionarios, clasificados de usados, foros y videos. Prefiere páginas 
     messages: [
       {
         role: 'user',
-        content: `Encuentra entre 3 y 6 páginas con la ficha técnica del ${nombre} (modelo ${anio} o la generación vigente) para Colombia. Devuelve solo URLs que hayas visto en los resultados de la búsqueda, copiadas exactas.`,
+        content: `Encuentra entre 3 y 4 páginas con la ficha técnica del ${nombre} (modelo ${anio} o la generación vigente) para Colombia. Devuelve solo URLs que hayas visto en los resultados de la búsqueda, copiadas exactas.`,
       },
     ],
     output_config: { format: betaZodOutputFormat(FuentesSchema) },
@@ -102,7 +100,7 @@ Evita concesionarios, clasificados de usados, foros y videos. Prefiere páginas 
     unicas.set(n, { url: f.url.trim(), tier: tierDe(f.tipo, f.url, marca), nameEs: f.nombre.slice(0, 60) });
   }
   // Fabricante primero, luego prensa: si hay que recortar, se recorta lo menos confiable.
-  return Array.from(unicas.values()).sort((a, b) => a.tier - b.tier).slice(0, 6);
+  return Array.from(unicas.values()).sort((a, b) => a.tier - b.tier).slice(0, 4);
 }
 
 /** Contenido de una fuente: texto plano, o PDF (las fichas técnicas oficiales suelen serlo). */
@@ -113,10 +111,10 @@ export type Contenido = { texto: string } | { pdfBase64: string };
  */
 export async function leerConClaude(url: string): Promise<Contenido | null> {
   const res = await claude().beta.messages.create({
-    // Aquí el modelo solo dispara la descarga: el más rápido basta.
-    model: MODELO_LECTOR,
+    // Aquí el modelo solo dispara la descarga: el más barato basta.
+    model: MODELOS.haiku,
     max_tokens: 300,
-    tools: [{ type: 'web_fetch_20250910', name: 'web_fetch', max_uses: 1, max_content_tokens: 40000 }],
+    tools: [{ type: 'web_fetch_20250910', name: 'web_fetch', max_uses: 1, max_content_tokens: 12000 }],
     messages: [{ role: 'user', content: `Usa web_fetch para leer exactamente esta URL y luego responde solo "listo": ${url}` }],
     betas: ['web-fetch-2025-09-10'],
   } as any);

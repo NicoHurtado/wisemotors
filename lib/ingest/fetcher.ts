@@ -12,8 +12,8 @@
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 const FETCH_TIMEOUT_MS = 20_000;
 /** Máximo de texto que pasa al extractor por página. */
-// Claude lee con holgura ~60k caracteres; más que eso, se toma la zona más densa en cifras.
-const MAX_TEXT_CHARS = 60_000;
+// Tope de texto por página que se le manda a la IA (costo): la zona más densa en cifras.
+export const MAX_TEXT_CHARS = 25_000;
 
 // Cache simple en memoria por proceso (la ingesta de versiones del mismo
 // carro comparte el 90% de las fuentes).
@@ -122,7 +122,7 @@ export async function fetchPageText(url: string): Promise<string | null> {
 }
 
 /** Ventana del texto con mayor densidad de dígitos: ahí viven las specs. */
-function denserWindow(text: string, size: number): string {
+export function denserWindow(text: string, size: number): string {
   const step = Math.floor(size / 2);
   let best = 0;
   let bestScore = -1;

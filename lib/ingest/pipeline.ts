@@ -237,13 +237,14 @@ export async function runIngestPipeline(input: {
   const nota = (n: number, descartados: number, como: string) =>
     `${n} datos extraídos${como}${descartados ? ` · ${descartados} descartados por ser de otra versión` : ''}`;
 
-  // 3+4. Lectura + extracción, fuentes en paralelo (máx 6).
+  // 3+4. Lectura + extracción, fuentes en paralelo (máx 4, por costo).
   //   a) descarga directa (rápida y gratis);
-  //   b) si el sitio bloquea, es PDF o no trajo datos: lectura con web_fetch de Anthropic.
+  //   b) solo si el sitio bloquea o es PDF: lectura con web_fetch de Anthropic.
+  //      Una página que se leyó y no trae datos NO se vuelve a leer (costo doble).
   const sourcesReport: VehicleDraft['sourcesReport'] = [];
   const rawFacts: RawFact[] = [];
 
-  const toProcess = candidates.slice(0, 6);
+  const toProcess = candidates.slice(0, 4);
   const results = await Promise.allSettled(
     toProcess.map(async source => {
       const esPdf = /\.pdf($|\?)/i.test(source.url);
@@ -253,7 +254,12 @@ export async function runIngestPipeline(input: {
         if (r.anioViejo) {
           return { source, facts: [] as RawFact[], ok: false, note: `Es del modelo ${r.anioModeloFuente}: demasiado viejo para el ${input.year}, se descartó` };
         }
-        if (r.facts.length > 0) return { source, facts: r.facts, ok: true, note: nota(r.facts.length, r.descartadosPorVersion, '') };
+        return {
+          source,
+          facts: r.facts,
+          ok: r.facts.length > 0,
+          note: r.facts.length > 0 ? nota(r.facts.length, r.descartadosPorVersion, '') : 'Se leyó, pero no trae especificaciones de esta versión',
+        };
       }
       let contenido: Contenido | null = null;
       try {
