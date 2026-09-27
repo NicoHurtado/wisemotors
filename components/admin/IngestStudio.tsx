@@ -1,16 +1,18 @@
 'use client';
 
 // ============================================================================
-// Estudio de ingesta: humano escribe marca/modelo/año/país → el pipeline trae
-// un borrador → el humano acepta/rechaza/edita CAMPO POR CAMPO → publicar.
+// Estudio de ingesta: el humano escribe una línea por vehículo ("Onix RS 2026")
+// → la cola corre el pipeline uno a uno → cada borrador queda listo para que el
+// humano acepte/rechace/edite CAMPO POR CAMPO → publicar.
 // Nada llega a la base sin pasar por esta pantalla.
 // ============================================================================
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminFetch, mensajeDeErrorDeAuth } from '@/lib/admin-fetch';
 import { Button } from '@/components/ui/button';
-import { Loader2, ExternalLink, AlertTriangle, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
+import { parseVehicleList, type ParsedVehicleQuery } from '@/lib/ingest/parse-query';
+import { Loader2, ExternalLink, AlertTriangle, CheckCircle2, XCircle, Sparkles, Clock, ChevronRight } from 'lucide-react';
 
 const TYPES = ['Sedán', 'SUV', 'Pickup', 'Deportivo', 'Wagon', 'Hatchback', 'Convertible'];
 const VEHICLE_TYPES = ['Automóvil', 'Deportivo', 'Todoterreno', 'Lujo', 'Económico'];
@@ -45,7 +47,21 @@ interface Draft {
   warningsEs: string[];
 }
 
-type Phase = 'form' | 'running' | 'review' | 'publishing' | 'done';
+type Phase = 'form' | 'review' | 'publishing' | 'done';
+
+type EstadoItem = 'en cola' | 'buscando' | 'listo' | 'error' | 'publicado';
+
+interface ItemCola {
+  id: number;
+  raw: string;
+  parsed: ParsedVehicleQuery;
+  estado: EstadoItem;
+  draft?: Draft;
+  error?: string;
+  publicadoId?: string;
+}
+
+const EJEMPLO = 'Onix RS 2026\nRenault Duster 2026\nBYD Dolphin Mini';
 
 function host(url: string): string {
   try { return new URL(url).hostname.replace('www.', ''); } catch { return url; }
@@ -57,16 +73,28 @@ function TierBadge({ tier }: { tier: number }) {
   return <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${styles}`}>T{tier} · {label}</span>;
 }
 
+function EstadoIcono({ estado }: { estado: EstadoItem }) {
+  if (estado === 'buscando') return <Loader2 className="w-4 h-4 text-wise animate-spin shrink-0" />;
+  if (estado === 'listo') return <Sparkles className="w-4 h-4 text-wise shrink-0" />;
+  if (estado === 'publicado') return <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />;
+  if (estado === 'error') return <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />;
+  return <Clock className="w-4 h-4 text-gray-300 shrink-0" />;
+}
+
 export function IngestStudio() {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>('form');
   const [error, setError] = useState<string | null>(null);
 
-  // Formulario
-  const [brand, setBrand] = useState('');
-  const [model, setModel] = useState('');
-  const [year, setYear] = useState(new Date().getFullYear());
+  // Cola: una línea por vehículo
+  const [texto, setTexto] = useState('');
   const [country, setCountry] = useState('CO');
+  const [cola, setCola] = useState<ItemCola[]>([]);
+  const [abierto, setAbierto] = useState<number | null>(null);
+  const siguienteId = useRef(1);
+  const corriendo = useRef(false);
+
+  const vistaPrevia = useMemo(() => parseVehicleList(texto), [texto]);
 
   // Borrador en revisión
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -88,32 +116,84 @@ export function IngestStudio() {
 
   const acceptedCount = draft ? draft.facts.filter(f => accepted[f.key]).length : 0;
 
-  async function runPipeline(e: React.FormEvent) {
+  function encolar(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setPhase('running');
-    try {
-      const res = await adminFetch('/api/admin/ingest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brand, model, year, country }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(mensajeDeErrorDeAuth(res) ?? data.error ?? 'Falló la ingesta');
-
-      const d: Draft = data.draft;
-      setDraft(d);
-      // Por defecto: aceptado todo lo que no esté fuera de rango físico
-      const initial: Record<string, boolean> = {};
-      for (const f of d.facts) initial[f.key] = !f.outOfRange;
-      setAccepted(initial);
-      setEdited({});
-      setPriceValue(d.price ? String(d.price.value) : '');
-      setPhase('review');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error inesperado');
-      setPhase('form');
+    const nuevos: ItemCola[] = vistaPrevia
+      .filter((l): l is { raw: string; parsed: ParsedVehicleQuery } => l.parsed !== null)
+      .map(l => ({ id: siguienteId.current++, raw: l.raw, parsed: l.parsed, estado: 'en cola' }));
+    if (nuevos.length === 0) {
+      setError('Escribe al menos un vehículo, por ejemplo "Onix RS 2026".');
+      return;
     }
+    setCola(prev => [...prev, ...nuevos]);
+    setTexto('');
+  }
+
+  // Un pipeline a la vez: cada uno hace ~6 fetch + varias llamadas LLM, y en
+  // paralelo se pisan los límites de OpenAI y de los sitios de prensa.
+  useEffect(() => {
+    if (corriendo.current) return;
+    const item = cola.find(i => i.estado === 'en cola');
+    if (!item) return;
+    corriendo.current = true;
+    const actualizar = (cambio: Partial<ItemCola>) =>
+      setCola(prev => prev.map(i => (i.id === item.id ? { ...i, ...cambio } : i)));
+    actualizar({ estado: 'buscando' });
+
+    (async () => {
+      try {
+        const res = await adminFetch('/api/admin/ingest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            brand: item.parsed.brand,
+            model: item.parsed.model,
+            year: item.parsed.year,
+            country,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(mensajeDeErrorDeAuth(res) ?? data.error ?? 'Falló la ingesta');
+        actualizar({ estado: 'listo', draft: data.draft });
+      } catch (err) {
+        actualizar({ estado: 'error', error: err instanceof Error ? err.message : 'Error inesperado' });
+      } finally {
+        corriendo.current = false;
+        // Dispara el siguiente: el efecto depende de `cola`, que acaba de cambiar.
+        setCola(prev => [...prev]);
+      }
+    })();
+  }, [cola, country]);
+
+  function abrirRevision(item: ItemCola) {
+    if (!item.draft) return;
+    const d = item.draft;
+    setAbierto(item.id);
+    setDraft(d);
+    // Por defecto: aceptado todo lo que no esté fuera de rango físico
+    const initial: Record<string, boolean> = {};
+    for (const f of d.facts) initial[f.key] = !f.outOfRange;
+    setAccepted(initial);
+    setEdited({});
+    setPriceValue(d.price ? String(d.price.value) : '');
+    setError(null);
+    setPhase('review');
+  }
+
+  function volverACola() {
+    setPhase('form');
+    setDraft(null);
+    setAbierto(null);
+    setPublished(null);
+  }
+
+  function reintentar(id: number) {
+    setCola(prev => prev.map(i => (i.id === id ? { ...i, estado: 'en cola', error: undefined } : i)));
+  }
+
+  function quitar(id: number) {
+    setCola(prev => prev.filter(i => i.id !== id || i.estado === 'buscando'));
   }
 
   async function publish() {
@@ -152,6 +232,7 @@ export function IngestStudio() {
       if (!res.ok) throw new Error(mensajeDeErrorDeAuth(res) ?? data.error ?? 'No se pudo publicar');
 
       setPublished({ id: data.vehicle.id, label: `${data.vehicle.brand} ${data.vehicle.model} ${data.vehicle.year}` });
+      setCola(prev => prev.map(i => (i.id === abierto ? { ...i, estado: 'publicado', publicadoId: data.vehicle.id } : i)));
       setPhase('done');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado');
@@ -159,56 +240,115 @@ export function IngestStudio() {
     }
   }
 
-  // ── Fase: formulario ──
-  if (phase === 'form' || phase === 'running') {
+  // ── Fase: cola ──
+  if (phase === 'form') {
+    const pendientes = cola.filter(i => i.estado === 'en cola' || i.estado === 'buscando').length;
     return (
-      <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-soft border border-gray-200 p-8">
-        <div className="flex items-center gap-2 mb-1">
-          <Sparkles className="w-5 h-5 text-wise" />
-          <h2 className="text-xl font-bold text-gray-900">Ingesta con IA</h2>
-        </div>
-        <p className="text-sm text-gray-500 mb-6">
-          El sistema busca en fuentes por confiabilidad (fabricante → prensa CO), extrae specs con cita
-          textual y te deja aceptar o rechazar cada dato antes de publicar.
-        </p>
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div className="bg-white rounded-2xl shadow-soft border border-gray-200 p-8">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="w-5 h-5 text-wise" />
+            <h2 className="text-xl font-bold text-gray-900">¿Qué vehículos subimos?</h2>
+          </div>
+          <p className="text-sm text-gray-500 mb-5">
+            Uno por línea, como lo diría el concesionario: <span className="font-medium text-gray-700">Onix RS 2026</span>.
+            La IA busca en el fabricante y la prensa colombiana, extrae cada dato con su cita y te lo deja para
+            verificar. Si no pones año, se asume el modelo vigente.
+          </p>
 
-        <form onSubmit={runPipeline} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Marca</label>
-              <input value={brand} onChange={e => setBrand(e.target.value)} required placeholder="Toyota"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-wise" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Modelo</label>
-              <input value={model} onChange={e => setModel(e.target.value)} required placeholder="Corolla Cross"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-wise" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
-              <input type="number" value={year} onChange={e => setYear(parseInt(e.target.value) || year)} required
-                min={1990} max={new Date().getFullYear() + 2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-wise" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">País</label>
+          <form onSubmit={encolar} className="space-y-4">
+            <textarea
+              value={texto}
+              onChange={e => setTexto(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) encolar(e);
+              }}
+              rows={4}
+              placeholder={EJEMPLO}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl text-[15px] leading-relaxed focus:ring-2 focus:ring-wise focus:border-wise"
+            />
+
+            {vistaPrevia.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {vistaPrevia.map(l => (
+                  <span key={l.raw}
+                    className={`px-2.5 py-1 rounded-full text-xs ${l.parsed ? 'bg-wise/10 text-wise' : 'bg-red-50 text-red-700'}`}>
+                    {l.parsed
+                      ? <>{l.parsed.brand || <span className="italic opacity-70">marca por IA</span>} · {l.parsed.model} · {l.parsed.year}{l.parsed.yearAssumed && ' (asumido)'}</>
+                      : <>No entendí: {l.raw}</>}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center gap-3">
               <select value={country} onChange={e => setCountry(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-wise">
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-wise focus:border-wise">
                 <option value="CO">Colombia</option>
                 <option value="MX">México</option>
                 <option value="US">Estados Unidos</option>
               </select>
+              <Button type="submit" className="flex-1 bg-wise hover:bg-wise-dark">
+                {vistaPrevia.length > 1 ? `Agregar ${vistaPrevia.length} a la cola` : 'Buscar y extraer datos'}
+              </Button>
             </div>
+          </form>
+
+          {error && <p className="mt-4 text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</p>}
+        </div>
+
+        {cola.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-soft border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold text-gray-900">Cola</h3>
+              <span className="text-xs text-gray-500">
+                {pendientes > 0 ? `${pendientes} por procesar · ~45 s cada uno` : 'Todo procesado'}
+              </span>
+            </div>
+            <ul className="divide-y divide-gray-100">
+              {cola.map(item => (
+                <li key={item.id} className="py-3 flex items-center gap-3">
+                  <EstadoIcono estado={item.estado} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {item.draft ? `${item.draft.brand} ${item.draft.model} ${item.draft.year}` : item.raw}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {item.estado === 'listo' && item.draft
+                        ? `${item.draft.facts.length} datos · ${item.draft.sourcesReport.filter(x => x.ok).length} fuentes${item.draft.warningsEs.length ? ` · ${item.draft.warningsEs.length} avisos` : ''}`
+                        : item.estado === 'error'
+                          ? item.error
+                          : item.estado === 'buscando'
+                            ? 'Buscando fuentes y extrayendo…'
+                            : item.estado === 'publicado'
+                              ? 'Publicado'
+                              : 'Esperando turno'}
+                    </p>
+                  </div>
+                  {item.estado === 'listo' && (
+                    <Button size="sm" onClick={() => abrirRevision(item)} className="bg-wise hover:bg-wise-dark">
+                      Revisar <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  )}
+                  {item.estado === 'publicado' && item.publicadoId && (
+                    <Button size="sm" variant="outline" onClick={() => router.push(`/vehicles/${item.publicadoId}`)}>
+                      Ver ficha
+                    </Button>
+                  )}
+                  {item.estado === 'error' && (
+                    <Button size="sm" variant="outline" onClick={() => reintentar(item.id)}>Reintentar</Button>
+                  )}
+                  {item.estado !== 'buscando' && item.estado !== 'publicado' && (
+                    <button onClick={() => quitar(item.id)} aria-label="Quitar de la cola"
+                      className="p-1 text-gray-300 hover:text-red-500">
+                      <XCircle className="w-4 h-4" />
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
-
-          {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</p>}
-
-          <Button type="submit" disabled={phase === 'running'} className="w-full bg-wise hover:bg-wise-dark">
-            {phase === 'running'
-              ? <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Buscando fuentes y extrayendo… (~30-60s)</span>
-              : 'Buscar y extraer datos'}
-          </Button>
-        </form>
+        )}
       </div>
     );
   }
@@ -222,8 +362,8 @@ export function IngestStudio() {
         <p className="text-sm text-gray-500 mb-6">Con los datos que aceptaste, su fuente y su cobertura calculada.</p>
         <div className="flex gap-3 justify-center">
           <Button onClick={() => router.push(`/vehicles/${published.id}`)} className="bg-wise hover:bg-wise-dark">Ver ficha</Button>
-          <Button variant="outline" onClick={() => { setPhase('form'); setDraft(null); setPublished(null); setBrand(''); setModel(''); }}>
-            Ingestar otro
+          <Button variant="outline" onClick={volverACola}>
+            {cola.some(i => i.estado === 'listo' || i.estado === 'en cola' || i.estado === 'buscando') ? 'Siguiente de la cola' : 'Subir otro'}
           </Button>
         </div>
       </div>
@@ -374,7 +514,7 @@ export function IngestStudio() {
           {draft.price?.estimated && Number(priceValue) > 0 && <span className="text-amber-700"> y precio estimado</span>}.
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => { setPhase('form'); setDraft(null); }}>Descartar</Button>
+          <Button variant="outline" onClick={volverACola}>Volver a la cola</Button>
           <Button onClick={publish} disabled={phase === 'publishing' || !priceValue || Number(priceValue) <= 0}
             className="bg-wise hover:bg-wise-dark">
             {phase === 'publishing'

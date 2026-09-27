@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/api-auth';
 import { runIngestPipeline } from '@/lib/ingest/pipeline';
+import { parseVehicleQuery } from '@/lib/ingest/parse-query';
 
 // La ingesta hace varias llamadas LLM + fetch de fuentes: necesita más que
 // los 30s por defecto del proyecto.
@@ -9,17 +10,27 @@ export const dynamic = 'force-dynamic';
 
 // POST /api/admin/ingest — corre el pipeline y devuelve un BORRADOR.
 // No escribe nada en la base de datos: eso lo hace /publish tras la revisión.
+//
+// Acepta { query: "Ónix RS 2026" } (una línea, lo normal) o { brand, model, year }.
+// Con query la marca puede faltar: resolveIdentity la deduce del modelo.
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
   try {
     const body = await request.json();
-    const { brand, model, year, country } = body ?? {};
+    let { brand, model, year } = body ?? {};
+    const { query, country } = body ?? {};
 
-    if (!brand || !model || !year) {
+    if (typeof query === 'string' && query.trim()) {
+      const parsed = parseVehicleQuery(query);
+      if (!parsed) {
+        return NextResponse.json({ error: 'No entendí el vehículo. Ejemplo: "Onix RS 2026"' }, { status: 400 });
+      }
+      ({ brand, model, year } = parsed);
+    } else if (!brand || !model || !year) {
       return NextResponse.json(
-        { error: 'Faltan campos: brand, model y year son obligatorios' },
+        { error: 'Falta el vehículo: manda query ("Onix RS 2026") o brand, model y year' },
         { status: 400 }
       );
     }
@@ -30,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     const draft = await runIngestPipeline({
-      brand: String(brand).trim(),
+      brand: String(brand ?? '').trim(),
       model: String(model).trim(),
       year: yearNum,
       country: String(country ?? 'CO').trim().toUpperCase(),

@@ -103,7 +103,7 @@ function reconcile(raw: RawFact[]): DraftFact[] {
 // ---------------------------------------------------------------------------
 async function resolvePrice(
   facts: DraftFact[],
-  identity: { brand: string; model: string; year: number; fuelType: string; type: string }
+  identity: { brand: string; model: string; trim?: string; year: number; fuelType: string; type: string }
 ): Promise<{ price: PriceDraft | null; remainingFacts: DraftFact[] }> {
   const priceFact = facts.find(f => f.key === PRICE_KEY);
   const remainingFacts = facts.filter(f => f.key !== PRICE_KEY);
@@ -151,7 +151,7 @@ async function resolvePrice(
         messages: [
           {
             role: 'user',
-            content: `Estima el precio de lista en Colombia (COP, versión de entrada) del ${identity.brand} ${identity.model} ${identity.year} (${identity.fuelType}, ${identity.type}).
+            content: `Estima el precio de lista en Colombia (COP, ${identity.trim ? `versión ${identity.trim}` : 'versión de entrada'}) del ${identity.brand} ${identity.model} ${identity.year} (${identity.fuelType}, ${identity.type}).
 
 Ancla el razonamiento en rivales directos que SÍ se venden en Colombia y sus precios conocidos (H1-2026: los 10 más vendidos cotizan entre $75M y $136M base; Tesla Model Y desde $119,99M; el más barato del mercado ~$47M). Ajusta por segmento, tren motriz y posicionamiento de marca. Si el modelo no se vende en Colombia, estima el precio que tendría al importarse (incluye arancel e IVA) y dilo en el razonamiento.`,
           },
@@ -198,7 +198,12 @@ export async function runIngestPipeline(input: {
 
   // 1. Identidad canónica
   const identity = await resolveIdentity(input.brand, input.model, input.year, input.country);
-  const label = `${identity.brand} ${identity.model} ${input.year} (mercado ${input.country})`;
+  const version = identity.trim ? `, versión ${identity.trim}` : '';
+  const label = `${identity.brand} ${identity.model} ${input.year}${version} (mercado ${input.country})`;
+  // El nombre publicado lleva la versión ("Onix RS"): en Colombia se venden
+  // como carros distintos. Las fuentes se buscan por el modelo base, que es
+  // como las indexa la prensa.
+  const modeloPublicado = identity.trim ? `${identity.model} ${identity.trim}` : identity.model;
 
   // 2. Fuentes por tier
   const candidates = await discoverSources(identity.brand, identity.model, input.year);
@@ -269,7 +274,7 @@ export async function runIngestPipeline(input: {
 
   return {
     brand: identity.brand,
-    model: identity.model,
+    model: modeloPublicado,
     year: input.year,
     country: input.country,
     type: identity.type,

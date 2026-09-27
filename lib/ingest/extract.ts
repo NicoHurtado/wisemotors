@@ -62,7 +62,7 @@ REGLAS ABSOLUTAS:
 2. Solo usas keys del catálogo. Si un dato del texto no corresponde a ninguna key, lo ignoras.
 3. Números en la unidad del catálogo: convierte si el texto usa otra (kW→HP: ×1.341; kgf·m→Nm: ×9.807; km/L→L/100km: 100÷valor). La conversión de unidades mal hecha es la fuente #1 de basura en datos automotores — verifica cada una.
 4. Cada valor lleva su cita textual. Sin cita, no reportes el dato.
-5. Si el texto da rangos o varias versiones, usa la versión de entrada (base) salvo que el contexto pida otra.
+5. Si el texto da rangos o varias versiones, usa la versión indicada en el VEHÍCULO OBJETIVO; si no indica ninguna, la de entrada (base). Un dato que solo aparece para otra versión NO se reporta.
 6. Precios en COP: repórtalos SOLO en la key 'commercial.priceCop' si el texto trae precio para Colombia. Un precio en USD o de otro país NO se reporta.
 7. Que el texto NO mencione algo NO significa que el carro no lo tenga. Si no encuentras un dato, OMITE la key. Jamás reportes false ni 0 para decir "no aparece": eso afirma que el carro carece del equipamiento, que es una mentira distinta a no saberlo.`;
 
@@ -157,7 +157,7 @@ export async function resolveIdentity(
   model: string,
   year: number,
   country: string
-): Promise<{ brand: string; model: string; type: string; vehicleType: string; fuelType: string }> {
+): Promise<{ brand: string; model: string; trim: string; type: string; vehicleType: string; fuelType: string }> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY no está definida.');
 
@@ -168,7 +168,11 @@ export async function resolveIdentity(
       type: 'object',
       properties: {
         brand: { type: 'string', description: 'Marca con capitalización oficial (ej. "Toyota", "BYD")' },
-        model: { type: 'string', description: 'Modelo canónico SIN marca ni año (ej. "Corolla Cross")' },
+        model: { type: 'string', description: 'Modelo canónico SIN marca, año ni versión (ej. "Corolla Cross", "Onix")' },
+        trim: {
+          type: 'string',
+          description: 'Versión/línea que el usuario pidió (ej. "RS", "XEI", "Premier"), con su nombre comercial en el país. Cadena vacía si no pidió ninguna. No inventes una.',
+        },
         type: { type: 'string', enum: ['Sedán', 'SUV', 'Pickup', 'Deportivo', 'Wagon', 'Hatchback', 'Convertible'] },
         vehicleType: { type: 'string', enum: ['Automóvil', 'Deportivo', 'Todoterreno', 'Lujo', 'Económico'] },
         fuelType: {
@@ -177,7 +181,7 @@ export async function resolveIdentity(
           description: 'Tren motriz de la versión MÁS VENDIDA en el país indicado',
         },
       },
-      required: ['brand', 'model', 'type', 'vehicleType', 'fuelType'],
+      required: ['brand', 'model', 'trim', 'type', 'vehicleType', 'fuelType'],
     },
   };
 
@@ -189,7 +193,7 @@ export async function resolveIdentity(
       messages: [
         {
           role: 'user',
-          content: `Vehículo: ${brand} ${model} ${year}, mercado ${country}. Normaliza su identidad. Si el modelo tiene un nombre comercial distinto en ese mercado, usa el del mercado.`,
+          content: `Vehículo: ${brand ? `${brand} ` : ''}${model} ${year}, mercado ${country}. Normaliza su identidad.${brand ? '' : ' La marca no vino: dedúcela del modelo.'} Si el modelo tiene un nombre comercial distinto en ese mercado, usa el del mercado. Separa la versión del modelo: "Onix RS" es modelo "Onix", versión "RS".`,
         },
       ],
       functions: [fn],
@@ -205,6 +209,7 @@ export async function resolveIdentity(
   return {
     brand: args.brand || brand,
     model: args.model || model,
+    trim: typeof args.trim === 'string' ? args.trim.trim() : '',
     type: args.type || 'Sedán',
     vehicleType: args.vehicleType || 'Automóvil',
     fuelType: args.fuelType || 'Gasolina',
