@@ -5,10 +5,7 @@ import Link from 'next/link';
 import { ArrowUpRight, Check } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
-import { CompareMatrix } from '@/components/compare/CompareMatrix';
-import { CompareRadar } from '@/components/compare/CompareRadar';
-import { CompareIntelligence } from '@/components/compare/CompareIntelligence';
-import { FrenteAFrente } from '@/components/compare/FrenteAFrente';
+import { Comparador } from '@/components/compare/Comparador';
 import { CarRender } from '@/components/car/CarRender';
 import { millones } from '@/lib/vehiculo-datos';
 
@@ -17,16 +14,7 @@ import { millones } from '@/lib/vehiculo-datos';
 // la comparación arranca de una con los primeros marcados.
 // ============================================================================
 
-type Vista = 'frente' | 'tabla' | 'radar' | 'ia';
-
 const MAX = 4;
-
-const VISTAS: { clave: Vista; texto: string }[] = [
-  { clave: 'frente', texto: 'Frente a frente' },
-  { clave: 'tabla', texto: 'Tabla completa' },
-  { clave: 'radar', texto: 'Radar' },
-  { clave: 'ia', texto: 'Análisis IA' },
-];
 
 function Vacio({ titulo, texto, children }: { titulo: string; texto: string; children: React.ReactNode }) {
   return (
@@ -47,7 +35,6 @@ export default function ComparePage() {
   const { user } = useAuth();
   const { favorites, loading } = useFavorites();
   const [seleccion, setSeleccion] = useState<string[]>([]);
-  const [vista, setVista] = useState<Vista>('frente');
 
   useEffect(() => {
     setSeleccion(favorites.slice(0, 2).map(v => v.id));
@@ -95,7 +82,7 @@ export default function ComparePage() {
         <h1 className="t-titulo text-[48px] md:text-[80px]">
           Frente a frente <span className="t-ligero text-tinta-2/50">({datos.length})</span>
         </h1>
-        <p className="max-w-[36ch] text-[15px] text-tinta-2">Elige de 2 a {MAX} de tus favoritos. Lo que no aplica o nos falta, lo decimos.</p>
+        <p className="max-w-[40ch] text-[15px] text-tinta-2">Elige de 2 a {MAX} de tus favoritos. La IA te dice para quién es cada uno y las gráficas muestran en qué gana cada cual.</p>
       </div>
 
       {/* Selección */}
@@ -136,21 +123,9 @@ export default function ComparePage() {
           <p className="mt-1 text-tinta-2">Con uno solo no hay nada que poner frente a frente.</p>
         </div>
       ) : (
-        <>
-          <div className="mt-10 flex flex-wrap gap-2">
-            {VISTAS.map(v => (
-              <button key={v.clave} onClick={() => setVista(v.clave)} className="pastilla h-11 px-5" data-activa={vista === v.clave}>
-                {v.texto}
-              </button>
-            ))}
-          </div>
-          <div className="mt-8">
-            {vista === 'frente' && <FrenteAFrente vehiculos={datos as any} />}
-            {vista === 'tabla' && <CompareMatrix vehicles={datos as any} />}
-            {vista === 'radar' && <CompareRadar vehicles={datos as any} />}
-            {vista === 'ia' && <CompareIntelligence vehicles={datos as any} />}
-          </div>
-        </>
+        <div className="mt-10">
+          <Comparador vehiculos={datos as any} />
+        </div>
       )}
     </div>
   );

@@ -12,6 +12,11 @@
 //   la autonomía de un eléctrico.
 // ============================================================================
 
+import { rendimiento } from '@/lib/vehiculo-datos';
+
+/** Un decimal con coma, sin ",0" sobrante: 8,1 · 19,5 · 12 */
+const dec1 = (n: number) => new Intl.NumberFormat('es-CO', { maximumFractionDigits: 1 }).format(n);
+
 export interface DuelVehicle {
   id: string;
   brand: string;
@@ -93,7 +98,7 @@ const esElectrico = (v: DuelVehicle) => v.fuelType === 'Eléctrico';
 
 const millones = (n: number) => {
   const m = n / 1_000_000;
-  return `$${m >= 100 ? Math.round(m) : m.toFixed(1).replace('.0', '')} millones`;
+  return `$${m >= 100 ? Math.round(m) : dec1(m)} millones`;
 };
 
 /** Maleta de cabina estándar ≈ 40 L: la unidad que cualquiera entiende. */
@@ -107,7 +112,7 @@ export const DUEL_ROUNDS: RoundDef[] = [
     porQue: 'Se nota al incorporarte a una autopista o adelantar un camión.',
     direction: 'lower',
     read: (_v, s) => num(s, 'performance.acceleration0to100'),
-    display: n => `${n.toFixed(1).replace('.0', '')} s de 0 a 100`,
+    display: n => `${dec1(n)} s de 0 a 100`,
   },
   {
     id: 'musculo',
@@ -136,7 +141,7 @@ export const DUEL_ROUNDS: RoundDef[] = [
     direction: 'higher',
     aplica: v => !esElectrico(v),
     motivoNoAplica: 'Es eléctrico: no gasta galones (mira la ronda de Autonomía).',
-    read: (_v, s) => num(s, 'combustion.combinedConsumption'),
+    read: (_v, s) => rendimiento(s),
     display: n => `${Math.round(n)} km por galón`,
   },
   {
@@ -187,7 +192,7 @@ export const DUEL_ROUNDS: RoundDef[] = [
     porQue: 'Más altura al piso = menos sustos con huecos y policías acostados.',
     direction: 'higher',
     read: (_v, s) => num(s, 'chassis.groundClearance'),
-    display: n => `${(n / 10).toFixed(1).replace('.0', '')} cm del piso`,
+    display: n => `${dec1(n / 10)} cm del piso`,
   },
 ];
 

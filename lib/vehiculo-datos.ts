@@ -37,6 +37,27 @@ export function leer(specs: Record<string, any>, ...paths: string[]): number | n
   return null;
 }
 
+/**
+ * Km por galón combinados. Híbridos y PHEV suelen publicar solo ciudad y
+ * carretera: el combinado se toma como el promedio de los dos (derivado, no
+ * inventado).
+ */
+export function rendimiento(specs: Record<string, any>): number | null {
+  const combinado = leer(specs, 'combustion.combinedConsumption', 'hybrid.combinedConsumption', 'phev.combinedConsumption');
+  if (combinado !== null) return combinado;
+  for (const tren of ['combustion', 'hybrid', 'phev']) {
+    const c = leer(specs, `${tren}.cityConsumption`);
+    const h = leer(specs, `${tren}.highwayConsumption`);
+    if (c !== null && h !== null) return Math.round((c + h) / 2);
+  }
+  return null;
+}
+
+/** Galones del tanque, en el tren motriz que sea. */
+export function tanque(specs: Record<string, any>): number | null {
+  return leer(specs, 'combustion.fuelTankCapacity', 'hybrid.fuelTankCapacity', 'phev.fuelTankCapacity');
+}
+
 const fmt = (n: number, dec = 0) =>
   new Intl.NumberFormat('es-CO', { maximumFractionDigits: dec, minimumFractionDigits: dec }).format(n);
 
@@ -64,7 +85,7 @@ export function datosClave(vehiculo: { fuelType?: string; specifications?: unkno
   if (electrico) {
     add('autonomia', 'Autonomía', leer(s, 'electric.realRangeMixed', 'electric.electricRange'), 'km');
   } else {
-    add('consumo', 'Rinde', leer(s, 'combustion.combinedConsumption'), 'km/gal');
+    add('consumo', 'Rinde', rendimiento(s), 'km/gal');
   }
   add('baul', 'Baúl', leer(s, 'dimensions.cargoCapacity'), 'L');
   add('torque', 'Torque', leer(s, 'combustion.maxTorque', 'hybrid.maxTorque', 'electric.maxTorque'), 'Nm');

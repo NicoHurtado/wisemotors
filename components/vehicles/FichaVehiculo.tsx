@@ -34,12 +34,13 @@ import {
 import { CarRender } from '@/components/car/CarRender';
 import { TarjetaCarro, type VehiculoTarjeta } from '@/components/car/TarjetaCarro';
 import { DataProvenance } from '@/components/vehicles/DataProvenance';
+import { SeccionesFicha } from '@/components/vehicles/ficha/SeccionesFicha';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWhatsAppLeads } from '@/hooks/useWhatsAppLeads';
 import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
-import { datosClave, leer, millones, precioCompleto, specsDe } from '@/lib/vehiculo-datos';
+import { leer, millones, precioCompleto, rendimiento, specsDe } from '@/lib/vehiculo-datos';
 import { fotoDe, pinturaDe } from '@/components/car/CarRender';
 
 const WHATSAPP = '573103818615';
@@ -143,10 +144,10 @@ function categorias(fuelType: string, s: Record<string, any>): Categoria[] {
             h(P.capo, n(['electric.dcChargingTime'], x => `Carga rápida en ${fmt(x)} min`)),
           ].filter((x): x is Hotspot => !!x)
         : [
-            h(P.cabina, n(['combustion.combinedConsumption'], x => `${fmt(x)} km por galón`)),
-            h(P.capo, n(['combustion.displacement'], x => `Motor de ${fmt(x)} cc`)),
+            h(P.cabina, rendimiento(s) !== null ? `${fmt(rendimiento(s)!)} km por galón` : null),
+            h(P.capo, n(['combustion.displacement', 'hybrid.displacement', 'phev.displacement'], x => `Motor de ${fmt(x)} cc`)),
             h(P.cola, n(['combustion.fuelTankCapacity', 'hybrid.fuelTankCapacity'], x => `Tanque de ${fmt(x, 1)} galones`)),
-            h(P.ruedaR, texto('combustion.transmissionType')),
+            h(P.ruedaR, texto('combustion.transmissionType') ?? texto('hybrid.transmissionType')),
           ].filter((x): x is Hotspot => !!x),
     },
     {
@@ -164,78 +165,6 @@ function categorias(fuelType: string, s: Record<string, any>): Categoria[] {
     },
   ];
   return lista.filter(c => c.puntos.length > 0);
-}
-
-const ICONOS: Record<string, LucideIcon> = {
-  potencia: Zap,
-  aceleracion: Timer,
-  consumo: Fuel,
-  autonomia: Zap,
-  baul: Luggage,
-  torque: Gauge,
-  velocidad: Gauge,
-  altura: Armchair,
-  airbags: Shield,
-  pasajeros: Users,
-};
-
-/** Cuatro tarjetas en palabras de persona antes de la ficha técnica. */
-function resumenHumano(fuelType: string, s: Record<string, any>) {
-  const v = (...p: string[]) => leer(s, ...p);
-  const si = (path: string) => {
-    let cur: any = s;
-    for (const k of path.split('.')) cur = cur?.[k];
-    return cur === true;
-  };
-  const tarjetas = [
-    {
-      titulo: 'Espacio',
-      lineas: [
-        v('interior.passengerCapacity') && `Caben ${fmt(v('interior.passengerCapacity')!)} personas`,
-        v('dimensions.cargoCapacity') && `Baúl para ≈ ${Math.max(1, Math.round(v('dimensions.cargoCapacity')! / 40))} maletas de cabina`,
-        v('chassis.groundClearance') && `${fmt(v('chassis.groundClearance')! / 10, 1)} cm del piso para huecos y reductores`,
-      ],
-    },
-    {
-      titulo: 'Seguridad',
-      lineas: [
-        v('safety.airbags') && `${fmt(v('safety.airbags')!)} airbags`,
-        v('safety.ncapRating') && `${fmt(v('safety.ncapRating')!)} estrellas en pruebas de choque`,
-        si('safety.autonomousEmergencyBraking') && 'Frena solo si detecta un choque',
-        si('safety.stabilityControl') && 'Control de estabilidad',
-      ],
-    },
-    fuelType === 'Eléctrico'
-      ? {
-          titulo: 'Batería',
-          lineas: [
-            v('electric.realRangeMixed', 'electric.electricRange') && `${fmt(v('electric.realRangeMixed', 'electric.electricRange')!)} km por carga`,
-            v('electric.batteryCapacity') && `Batería de ${fmt(v('electric.batteryCapacity')!, 1)} kWh`,
-          ],
-        }
-      : {
-          titulo: 'Consumo',
-          lineas: [
-            v('combustion.combinedConsumption') && `${fmt(v('combustion.combinedConsumption')!)} km por galón`,
-            v('combustion.fuelTankCapacity') && `Tanque de ${fmt(v('combustion.fuelTankCapacity')!, 1)} galones`,
-            // Dato derivado, no inventado: tanque × rendimiento
-            v('combustion.fuelTankCapacity') &&
-              v('combustion.combinedConsumption') &&
-              `≈ ${fmt(Math.round((v('combustion.fuelTankCapacity')! * v('combustion.combinedConsumption')!) / 10) * 10)} km con el tanque lleno`,
-          ],
-        },
-    {
-      titulo: 'Manejo',
-      lineas: [
-        v('combustion.maxPower', 'hybrid.maxPower', 'phev.maxPower') && `${fmt(v('combustion.maxPower', 'hybrid.maxPower', 'phev.maxPower')!)} caballos de fuerza`,
-        v('performance.acceleration0to100') && `De 0 a 100 en ${fmt(v('performance.acceleration0to100')!, 1)} s`,
-        si('assistance.reverseCamera') && 'Cámara de reversa',
-      ],
-    },
-  ];
-  return tarjetas
-    .map(t => ({ titulo: t.titulo, lineas: t.lineas.filter((l): l is string => typeof l === 'string') }))
-    .filter(t => t.lineas.length > 0);
 }
 
 /** Ficha técnica completa agrupada por el registro de atributos. */
@@ -269,10 +198,7 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
   const s = useMemo(() => specsDe(vehicle.specifications), [vehicle.specifications]);
   const cats = useMemo(() => categorias(vehicle.fuelType, s), [vehicle.fuelType, s]);
   const [cat, setCat] = useState(0);
-  const datos = useMemo(() => datosClave(vehicle), [vehicle]);
   const ficha = useMemo(() => fichaTecnica(s), [s]);
-  const resumen = useMemo(() => resumenHumano(vehicle.fuelType, s), [vehicle.fuelType, s]);
-  const fila = useRef<HTMLDivElement>(null);
   const [contacto, setContacto] = useState(false);
   const [fichaAbierta, setFichaAbierta] = useState(false);
   const [nombre, setNombre] = useState(user?.username ?? '');
@@ -312,8 +238,6 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
     window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(mensaje)}`, '_blank');
     setContacto(false);
   };
-
-  const desplazar = (dir: 1 | -1) => fila.current?.scrollBy({ left: dir * 320, behavior: 'smooth' });
 
   return (
     <div className="pb-10">
@@ -465,82 +389,16 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
         </div>
       </section>
 
-      {/* ── Datos destacados ─────────────────────────────────────────────── */}
-      {datos.length > 0 && (
-        <section className="mx-auto mt-16 max-w-[1440px] px-5 md:px-8">
-          <div className="flex items-end justify-between gap-4">
-            <h2 className="t-titulo text-[32px] md:text-[44px]">En cifras</h2>
-            <div className="hidden gap-2 md:flex">
-              <button onClick={() => desplazar(-1)} className="flecha flecha--fija" aria-label="Anterior">
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-              <button onClick={() => desplazar(1)} className="flecha flecha--fija" aria-label="Siguiente">
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-          <div
-            ref={fila}
-            className="mt-6 grid grid-cols-2 gap-3 pb-4 md:flex md:snap-x md:gap-4 md:overflow-x-auto md:[mask-image:linear-gradient(90deg,#000_88%,transparent)] [scrollbar-width:none]"
-          >
-            <div className="col-span-2 flex shrink-0 snap-start flex-col justify-between rounded-[28px] bg-tinta p-6 text-white md:w-[260px]">
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10">
-                <Fuel className="h-5 w-5" />
-              </span>
-              <div className="mt-6 md:mt-10">
-                <p className="text-[13px] text-white/60">Tren motriz</p>
-                <p className="mt-1 text-[30px] font-semibold tracking-[-0.03em]">{vehicle.fuelType}</p>
-                <p className="text-[13px] text-white/50">{vehicle.type}</p>
-              </div>
-            </div>
-            {datos.map((d, i) => {
-              const Icono = ICONOS[d.clave] ?? Gauge;
-              const huerfana = datos.length % 2 === 1 && i === datos.length - 1;
-              return (
-                <div key={d.clave} className={`flex shrink-0 snap-start flex-col justify-between rounded-[24px] border border-linea bg-blanco p-4 md:w-[240px] md:rounded-[28px] md:p-6 ${huerfana ? 'col-span-2 md:col-span-1' : ''}`}>
-                  <div className="flex items-start justify-between">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-full border border-linea">
-                      <Icono className="h-5 w-5" />
-                    </span>
-                    <span className="text-right text-[14px] text-tinta-2">{d.etiqueta}</span>
-                  </div>
-                  <p className="mt-6 text-[34px] font-light leading-none tracking-[-0.05em] md:mt-10 md:text-[52px]">
-                    {d.valor}
-                    {d.unidad && <span className="ml-1.5 text-[18px] text-tinta-2">{d.unidad}</span>}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
+      <SeccionesFicha vehicle={vehicle} />
 
       {/* ── Ficha técnica completa (plegada: es para quien la quiera) ───── */}
       {ficha.length > 0 && (
-        <section className="mx-auto mt-20 max-w-[1440px] px-5 md:px-8">
+        <section className="mx-auto mt-24 max-w-[1440px] px-5 md:px-8">
           <div className="grid gap-6 border-t border-linea pt-10 md:grid-cols-12">
-            <p className="t-meta text-tinta-2 md:col-span-3">(Ficha técnica)</p>
-            <h2 className="t-titulo text-[32px] md:col-span-9 md:text-[44px]">
-              Todo lo que sabemos. <span className="text-tinta-2/50">Y nada que no.</span>
+            <h2 className="t-titulo text-[32px] md:col-span-12 md:text-[44px]">
+              Ficha técnica completa. <span className="text-tinta-2/50">Para quien quiera cada detalle.</span>
             </h2>
           </div>
-          {resumen.length > 0 && (
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {resumen.map(r => (
-                <div key={r.titulo} className="h-full rounded-[24px] bg-blanco p-6">
-                  <p className="text-[17px] font-semibold tracking-[-0.02em]">{r.titulo}</p>
-                  <ul className="mt-4 space-y-2.5">
-                    {r.lineas.map(l => (
-                      <li key={l} className="flex items-start gap-2.5 text-[14px] leading-snug text-tinta/85">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-wise" strokeWidth={2.5} />
-                        {l}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          )}
           <button onClick={() => setFichaAbierta(v => !v)} className="pastilla mt-8 h-12 px-6" aria-expanded={fichaAbierta}>
             {fichaAbierta ? 'Ocultar la ficha técnica' : 'Ver todos los datos técnicos'}
             <ArrowUpRight className={`h-4 w-4 transition-transform duration-500 ${fichaAbierta ? 'rotate-[135deg]' : ''}`} />
