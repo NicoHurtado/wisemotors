@@ -218,6 +218,10 @@ function resumenHumano(fuelType: string, s: Record<string, any>) {
           lineas: [
             v('combustion.combinedConsumption') && `${fmt(v('combustion.combinedConsumption')!)} km por galón`,
             v('combustion.fuelTankCapacity') && `Tanque de ${fmt(v('combustion.fuelTankCapacity')!, 1)} galones`,
+            // Dato derivado, no inventado: tanque × rendimiento
+            v('combustion.fuelTankCapacity') &&
+              v('combustion.combinedConsumption') &&
+              `≈ ${fmt(Math.round((v('combustion.fuelTankCapacity')! * v('combustion.combinedConsumption')!) / 10) * 10)} km con el tanque lleno`,
           ],
         },
     {
@@ -475,7 +479,10 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
               </button>
             </div>
           </div>
-          <div ref={fila} className="mt-6 grid grid-cols-2 gap-3 pb-4 md:flex md:snap-x md:gap-4 md:overflow-x-auto [scrollbar-width:none]">
+          <div
+            ref={fila}
+            className="mt-6 grid grid-cols-2 gap-3 pb-4 md:flex md:snap-x md:gap-4 md:overflow-x-auto md:[mask-image:linear-gradient(90deg,#000_88%,transparent)] [scrollbar-width:none]"
+          >
             <div className="col-span-2 flex shrink-0 snap-start flex-col justify-between rounded-[28px] bg-tinta p-6 text-white md:w-[260px]">
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10">
                 <Fuel className="h-5 w-5" />
@@ -520,7 +527,7 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
           {resumen.length > 0 && (
             <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {resumen.map(r => (
-                <div key={r.titulo} className="rounded-[24px] bg-blanco p-6">
+                <div key={r.titulo} className="h-full rounded-[24px] bg-blanco p-6">
                   <p className="text-[17px] font-semibold tracking-[-0.02em]">{r.titulo}</p>
                   <ul className="mt-4 space-y-2.5">
                     {r.lineas.map(l => (

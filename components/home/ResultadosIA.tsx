@@ -27,10 +27,13 @@ function razonesRelativas(v: any, podio: any[]): string[] {
     if (mio === null || vals.length < 2) return false;
     return menor ? mio === Math.min(...vals) : mio === Math.max(...vals);
   };
+  const cifra = (k: string) => datosClave(v).find(d => d.clave === k);
   if (v.price === Math.min(...podio.map(x => x.price))) out.push(`El de menor precio de tus ${podio.length} mejores opciones`);
-  if (mejor('consumo')) out.push('El que más rinde por galón de los tres');
-  if (mejor('baul')) out.push('El baúl más grande de los tres');
-  if (mejor('potencia')) out.push('El de más fuerza de los tres');
+  if (mejor('consumo')) out.push(`El que más rinde por galón de los tres: ${cifra('consumo')!.valor} km`);
+  if (mejor('autonomia')) out.push(`El que más lejos llega con una carga: ${cifra('autonomia')!.valor} km`);
+  if (mejor('baul')) out.push(`El baúl más grande de los tres: ${cifra('baul')!.valor} L`);
+  if (mejor('potencia')) out.push(`El de más fuerza de los tres: ${cifra('potencia')!.valor} hp`);
+  if (mejor('aceleracion', true)) out.push(`El que arranca más rápido de los tres`);
   return out;
 }
 
@@ -80,7 +83,7 @@ export function ResultadosIA({
             <p
               aria-hidden
               className="t-display pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-[clamp(110px,14vw,220px)] leading-none"
-              style={{ color: 'transparent', WebkitTextStroke: '1.5px #cfcdd5' }}
+              style={{ color: 'transparent', WebkitTextStroke: '1.5px color-mix(in srgb, #881cb7 30%, #d9d7de)' }}
             >
               {palabraGigante(primero.model, primero.brand)}
             </p>
@@ -167,7 +170,19 @@ export function ResultadosIA({
                     <p className="mt-1 text-[12px] text-tinta-2">{v.matchPercentage}% de afinidad</p>
                   </div>
                 )}
-                {v.reasons?.[0] && <p className="mt-3 text-[13px] leading-snug text-tinta-2">{v.reasons[0]}</p>}
+                {(() => {
+                  // Una razón propia y comparativa; si no hay, la diferencia de precio con el #1.
+                  const propia = razonesRelativas(v, podio)[0];
+                  const diff = Math.round((v.price - primero.price) / 1e6);
+                  const texto =
+                    propia ??
+                    (diff > 0
+                      ? `$${diff} M más que el ${primero.model}`
+                      : diff < 0
+                        ? `$${-diff} M menos que el ${primero.model}`
+                        : v.reasons?.[0]);
+                  return texto ? <p className="mt-3 text-[13px] leading-snug text-tinta-2">{texto}</p> : null;
+                })()}
               </div>
             </Link>
           ))}

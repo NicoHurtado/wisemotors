@@ -112,7 +112,7 @@ export function TarjetaCarro({
         >
           {palabraGigante(vehiculo.model, vehiculo.brand)}
         </span>
-        <CarRender car={vehiculo} className="carro relative h-full w-full" />
+        <CarRender car={vehiculo} ajustado className="carro relative h-full w-[92%]" />
       </div>
 
       <div className="relative z-10 flex items-end justify-between gap-3">

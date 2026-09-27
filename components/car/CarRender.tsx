@@ -148,37 +148,40 @@ const SILUETAS: Record<Carroceria, Silueta> = {
 
   suv: {
     cuerpo:
-      'M54 144 L48 114 C47 98 52 86 62 74 L80 50 C86 41 96 36 112 35 L250 26 C266 25 276 29 286 37 L324 80 C360 84 400 90 428 98 C438 102 442 110 442 120 L440 138 C439 142 436 144 430 144 L390.6 144 A39 39 0 1 0 321.4 144 L148.6 144 A39 39 0 1 0 79.4 144 L60 144 C56 144 54 144 54 144 Z',
-    vidrio: 'M84 74 L96 50 C99 45 104 42 112 42 L248 33 C261 33 269 36 277 43 L307 76 Z',
-    pilares: [[196, 36, 194, 75], [128, 41, 118, 74]],
+      'M54 144 L50 116 C49 100 54 84 64 72 L100 38 C106 33 112 31 122 31 L250 26 C266 25 276 29 286 37 L322 76 C360 82 400 88 428 96 C438 100 442 108 442 118 L440 138 C439 142 436 144 430 144 L390.6 144 A39 39 0 1 0 321.4 144 L148.6 144 A39 39 0 1 0 79.4 144 L60 144 C56 144 54 144 54 144 Z',
+    vidrio: 'M88 70 L110 44 C114 40 118 38 126 38 L248 33 C261 33 269 36 277 43 L304 70 Z',
+    pilares: [[196, 34, 195, 70], [142, 37, 128, 70]],
     ruedas: [114, 356],
     ry: 126,
     r: 33,
     arco: 39,
     faldon: 144,
-    hombro: 'M54 88 C160 84 300 86 432 104',
-    faro: 'M404 94 C420 97 432 102 439 109',
-    stop: 'M50 90 L62 86',
-    espejo: 'M312 78 L330 75 L333 85 L316 87 Z',
-    manijas: [[160, 90], [248, 90]],
+    hombro: 'M58 84 C160 80 300 80 432 100',
+    faro: 'M404 92 C420 95 432 100 439 107',
+    stop: 'M52 92 L64 88',
+    espejo: 'M308 72 L326 69 L329 79 L312 81 Z',
+    manijas: [[164, 82], [250, 82]],
     revestimiento: true,
   },
+
   suvCoupe: {
     cuerpo:
-      'M54 144 L48 114 C47 104 51 94 60 88 C74 62 100 44 134 35 C170 26 228 23 260 27 C274 29 284 33 292 40 L326 80 C360 84 400 90 428 98 C438 102 442 110 442 120 L440 138 C439 142 436 144 430 144 L390.6 144 A39 39 0 1 0 321.4 144 L148.6 144 A39 39 0 1 0 79.4 144 L60 144 C56 144 54 144 54 144 Z',
-    vidrio: 'M86 82 C98 64 116 50 138 43 C172 34 226 32 256 35 C268 37 277 41 284 48 L309 78 Z',
-    pilares: [[204, 35, 202, 77]],
+      'M54 144 L50 114 C50 102 54 92 62 84 C84 56 116 34 160 28 C200 23 240 23 266 27 C278 29 286 33 294 40 L326 78 C360 82 400 88 428 96 C438 100 442 108 442 118 L440 138 C439 142 436 144 430 144 L390.6 144 A39 39 0 1 0 321.4 144 L148.6 144 A39 39 0 1 0 79.4 144 L60 144 C56 144 54 144 54 144 Z',
+    vidrio: 'M92 74 C110 54 134 40 164 35 C200 29 238 29 262 33 C272 35 280 40 286 46 L306 72 Z',
+    pilares: [[212, 31, 211, 73]],
     ruedas: [114, 356],
     ry: 126,
     r: 33,
     arco: 39,
     faldon: 144,
-    hombro: 'M56 94 C160 88 300 86 432 104',
-    faro: 'M404 94 C420 97 432 102 439 109',
-    stop: 'M52 94 C60 92 68 90 76 88',
-    espejo: 'M314 80 L332 77 L335 87 L318 89 Z',
-    manijas: [[156, 92], [250, 92]],
+    hombro: 'M58 90 C160 84 300 82 432 100',
+    faro: 'M404 92 C420 95 432 100 439 107',
+    stop: 'M56 90 C62 88 68 86 74 84',
+    espejo: 'M314 76 L332 73 L335 83 L318 85 Z',
+    manijas: [[160, 86], [252, 86]],
+    revestimiento: true,
   },
+
 
   pickup: {
     cuerpo:
@@ -237,7 +240,7 @@ function Rueda({ cx, cy, r, id, acento }: { cx: number; cy: number; r: number; i
   );
 }
 
-function RenderSvg({ car, className }: { car: CarLike; className?: string }) {
+function RenderSvg({ car, className, ajustado = false }: { car: CarLike; className?: string; ajustado?: boolean }) {
   const id = useId().replace(/:/g, '');
   const { forma, escala } = carroceriaDe(car.type, car);
   const base = SILUETAS[forma];
@@ -262,7 +265,7 @@ function RenderSvg({ car, className }: { car: CarLike; className?: string }) {
   });
 
   return (
-    <svg viewBox="0 0 480 180" className={className} role="img" aria-label={`${car.brand ?? ''} ${car.model ?? ''}`}>
+    <svg viewBox={ajustado ? '30 6 424 164' : '0 0 480 180'} className={className} role="img" aria-label={`${car.brand ?? ''} ${car.model ?? ''}`}>
       <defs>
         <linearGradient id={`pintura-${id}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={alto} />
@@ -349,6 +352,22 @@ function RenderSvg({ car, className }: { car: CarLike; className?: string }) {
         <path d="M196 90 L276 0 L288 0 L208 90 Z" fill="#fff" opacity={0.07} />
       </g>
 
+      {/* Juntas de puertas y estribo: lo que hace que se lea como lámina ensamblada */}
+      <g clipPath={`url(#cuerpo-${id})`} fill="none" stroke="#000" strokeOpacity={0.22} strokeWidth={1}>
+        {s.pilares.slice(0, 1).map(([, , x2, y2], i) => (
+          <path key={i} d={`M${x2} ${y2} L${x2 - 3} ${s.faldon - 7}`} />
+        ))}
+        <path d={`M${base.ruedas[1] - base.arco - 4} ${s.pilares[0][3] + 2} L${base.ruedas[1] - base.arco - 6} ${s.faldon - 8}`} />
+        <path d={`M${base.ruedas[0] + base.arco} ${s.faldon - 7} L${base.ruedas[1] - base.arco} ${s.faldon - 7}`} strokeOpacity={0.3} />
+      </g>
+      <path
+        d={`M${base.ruedas[0] + base.arco} ${s.faldon - 5.5} L${base.ruedas[1] - base.arco} ${s.faldon - 5.5}`}
+        stroke="#fff"
+        strokeOpacity={oscura ? 0.12 : 0.35}
+        strokeWidth={1}
+        clipPath={`url(#cuerpo-${id})`}
+      />
+
       {/* Espejo y manijas */}
       <path d={s.espejo} fill={bajo} />
       {s.manijas.map(([x, y]) => (
@@ -361,7 +380,9 @@ function RenderSvg({ car, className }: { car: CarLike; className?: string }) {
       <path d={s.stop} fill="none" stroke="#be123c" strokeWidth={3.2} strokeLinecap="round" />
       </g>
 
-      <Rueda cx={r1} cy={s.ry} r={s.r} id={id} acento={acento} />
+      <g opacity={0.9}>
+        <Rueda cx={r1} cy={s.ry} r={s.r} id={id} acento={acento} />
+      </g>
       <Rueda cx={r2} cy={s.ry} r={s.r} id={id} acento={acento} />
     </svg>
   );
@@ -377,6 +398,7 @@ export function CarRender({
   reflejo = false,
   prioridad = false,
   abajo = false,
+  ajustado = false,
 }: {
   car: CarLike;
   className?: string;
@@ -384,6 +406,8 @@ export function CarRender({
   prioridad?: boolean;
   /** Asienta la foto en la base de su caja (para que pise el piso, no flote). */
   abajo?: boolean;
+  /** Render recortado al carro (sin margen): llena la caja como una foto recortada. */
+  ajustado?: boolean;
 }) {
   const foto = fotoDe(car);
   const alt = `${car.brand ?? ''} ${car.model ?? ''}`.trim();
@@ -398,7 +422,7 @@ export function CarRender({
       draggable={false}
     />
   ) : (
-    <RenderSvg car={car} className="block h-full w-full" />
+    <RenderSvg car={car} ajustado={ajustado} className="block h-full w-full" />
   );
 
   if (!reflejo) return <div className={className}>{pieza}</div>;
