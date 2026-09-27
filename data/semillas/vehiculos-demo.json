@@ -1,0 +1,3984 @@
+[
+ {
+  "brand": "Chevrolet",
+  "model": "Tracker RS",
+  "year": 2026,
+  "type": "SUV",
+  "vehicleType": "Automóvil",
+  "fuelType": "Gasolina",
+  "price": 113000000,
+  "priceEstimated": true,
+  "priceReasoningEs": "Precio DEMO aproximado: no verificado con el concesionario.",
+  "history": "DEMO — datos aproximados para probar el diseño; no verificados.",
+  "fotos": [],
+  "facts": [
+   {
+    "key": "commercial.warrantyYears",
+    "value": 3,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "commercial.warrantyKm",
+    "value": 100000,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.acceleration0to100",
+    "value": 10.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.maxSpeed",
+    "value": 185,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.powerToWeight",
+    "value": 102,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.groundClearance",
+    "value": 175,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.suspensionSetup",
+    "value": "Independiente McPherson adelante / eje torsional atrás",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.length",
+    "value": 4270,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.width",
+    "value": 1791,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.height",
+    "value": 1616,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.wheelbase",
+    "value": 2570,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.curbWeight",
+    "value": 1295,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.cargoCapacity",
+    "value": 393,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.trunkCapacitySeatsDown",
+    "value": 1250,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.seatRows",
+    "value": 2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.passengerCapacity",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.airbags",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.ncapRating",
+    "value": 4,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.brakingSystem",
+    "value": "Discos ventilados adelante / discos sólidos atrás con ABS y EBD",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.stabilityControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tractionControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tirePressureMonitoring",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "lighting.headlightType",
+    "value": "LED",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.brakeAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.hillStartAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.reverseCamera",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.parkingSensors",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.airConditioning",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.automaticClimateControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.bluetooth",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.touchscreen",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.smartphoneIntegration",
+    "value": "Apple CarPlay y Android Auto inalámbricos",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.wirelessCharger",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.startStop",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.displacement",
+    "value": 1199,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.turbo",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.engineConfiguration",
+    "value": "3 cilindros en línea",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.inductionType",
+    "value": "Turbo",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.octanajeRecomendado",
+    "value": "91 octanos o superior",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.maxPower",
+    "value": 132,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.maxTorque",
+    "value": 220,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.transmissionType",
+    "value": "Automática",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.gears",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.fuelTankCapacity",
+    "value": 11.6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.powerAtRpm",
+    "value": 5500,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.cityConsumption",
+    "value": 38,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.highwayConsumption",
+    "value": 52,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.combinedConsumption",
+    "value": 44,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.emissionStandard",
+    "value": "Euro 5",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.startStop",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.drivingFun",
+    "value": 6.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.technology",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.reliability",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.qualityPriceRatio",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.comfort",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.usability",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.efficiency",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.prestige",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.userRating",
+    "value": 4.2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.easeOfParking",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.practicality",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.serviceConvenience",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.familyFriendly",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   }
+  ]
+ },
+ {
+  "brand": "Renault",
+  "model": "Duster",
+  "year": 2026,
+  "type": "SUV",
+  "vehicleType": "Automóvil",
+  "fuelType": "Gasolina",
+  "price": 95000000,
+  "priceEstimated": true,
+  "priceReasoningEs": "Precio DEMO aproximado: no verificado con el concesionario.",
+  "history": "DEMO — datos aproximados para probar el diseño; no verificados.",
+  "fotos": [],
+  "facts": [
+   {
+    "key": "commercial.warrantyYears",
+    "value": 3,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "commercial.warrantyKm",
+    "value": 100000,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.displacement",
+    "value": 1598,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.engineConfiguration",
+    "value": "4 cilindros en línea",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.inductionType",
+    "value": "Atmosférico",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.maxPower",
+    "value": 114,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.maxTorque",
+    "value": 156,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.powerAtRpm",
+    "value": 5500,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.transmissionType",
+    "value": "Manual",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.gears",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.fuelTankCapacity",
+    "value": 13.2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.octanajeRecomendado",
+    "value": "87 octanos (corriente)",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.cityConsumption",
+    "value": 38,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.highwayConsumption",
+    "value": 52,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.combinedConsumption",
+    "value": 44,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.emissionStandard",
+    "value": "Euro 6",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.acceleration0to100",
+    "value": 11.9,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.maxSpeed",
+    "value": 175,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.length",
+    "value": 4343,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.width",
+    "value": 1813,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.height",
+    "value": 1656,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.wheelbase",
+    "value": 2657,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.curbWeight",
+    "value": 1310,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.cargoCapacity",
+    "value": 472,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.trunkCapacitySeatsDown",
+    "value": 1600,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.seatRows",
+    "value": 2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.passengerCapacity",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.groundClearance",
+    "value": 209,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.suspensionSetup",
+    "value": "McPherson adelante / eje torsional atrás",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "offRoad.approachAngle",
+    "value": 31,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "offRoad.departureAngle",
+    "value": 36,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "offRoad.breakoverAngle",
+    "value": 24,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "weight.towingCapacity",
+    "value": 1300,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.airbags",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.ncapRating",
+    "value": 3,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.brakingSystem",
+    "value": "Discos ventilados adelante / tambores atrás con ABS",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.stabilityControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tractionControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.autonomousEmergencyBraking",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.forwardCollisionWarning",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.laneAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tirePressureMonitoring",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.brakeAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.hillStartAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.reverseCamera",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.parkingSensors",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "lighting.headlightType",
+    "value": "LED",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.airConditioning",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.bluetooth",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.touchscreen",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.smartphoneIntegration",
+    "value": "Apple CarPlay y Android Auto inalámbricos",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.ecoMode",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.qualityPriceRatio",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.practicality",
+    "value": 8.2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.reliability",
+    "value": 7.8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.comfort",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.technology",
+    "value": 6.8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.efficiency",
+    "value": 7.4,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.familyFriendly",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.userRating",
+    "value": 4.2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   }
+  ]
+ },
+ {
+  "brand": "BYD",
+  "model": "Dolphin",
+  "year": 2026,
+  "type": "Hatchback",
+  "vehicleType": "Económico",
+  "fuelType": "Eléctrico",
+  "price": 124900000,
+  "priceEstimated": true,
+  "priceReasoningEs": "Precio DEMO aproximado: no verificado con el concesionario.",
+  "history": "DEMO — datos aproximados para probar el diseño; no verificados.",
+  "fotos": [
+   {
+    "url": "/images/demo/byd-dolphin.png",
+    "alt": "BYD Dolphin"
+   }
+  ],
+  "facts": [
+   {
+    "key": "commercial.warrantyYears",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "commercial.warrantyKm",
+    "value": 150000,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.acceleration0to100",
+    "value": 12.3,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.maxSpeed",
+    "value": 150,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.powerToWeight",
+    "value": 68,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.length",
+    "value": 4290,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.width",
+    "value": 1770,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.height",
+    "value": 1570,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.wheelbase",
+    "value": 2700,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.curbWeight",
+    "value": 1405,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.cargoCapacity",
+    "value": 345,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.trunkCapacitySeatsDown",
+    "value": 1310,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.seatRows",
+    "value": 2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.passengerCapacity",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.groundClearance",
+    "value": 130,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.suspensionSetup",
+    "value": "McPherson adelante / eje de torsión atrás",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.airbags",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.ncapRating",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.adultSafetyScore",
+    "value": 89,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.childSafetyScore",
+    "value": 86,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.brakingSystem",
+    "value": "Discos ventilados adelante y discos atrás con ABS+EBD",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.stabilityControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tractionControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.autonomousEmergencyBraking",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.forwardCollisionWarning",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.laneAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.adaptiveCruiseControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.blindSpotDetection",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.crossTrafficAlert",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tirePressureMonitoring",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "lighting.headlightType",
+    "value": "LED",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.brakeAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.hillStartAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.reverseCamera",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.parkingSensors",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.cameras360",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.airConditioning",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.automaticClimateControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.bluetooth",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.touchscreen",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.navigation",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.smartphoneIntegration",
+    "value": "Apple CarPlay y Android Auto",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.batteryCapacity",
+    "value": 44.9,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.electricRange",
+    "value": 405,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.realRangeMixed",
+    "value": 300,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.realRangeCity",
+    "value": 340,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.realRangeHighway",
+    "value": 240,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.cityElectricConsumption",
+    "value": 13.2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.highwayElectricConsumption",
+    "value": 18.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.acChargingTime",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.dcChargingTime",
+    "value": 40,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.chargingTime1080",
+    "value": 37,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.regenerativeBraking",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.homeChargerCost",
+    "value": 4500000,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.drivingFun",
+    "value": 6.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.technology",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.environmentalImpact",
+    "value": 9,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.reliability",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.qualityPriceRatio",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.comfort",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.usability",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.efficiency",
+    "value": 9,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.prestige",
+    "value": 5.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.userRating",
+    "value": 4.3,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.easeOfParking",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.practicality",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.familyFriendly",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   }
+  ]
+ },
+ {
+  "brand": "Toyota",
+  "model": "RAV4 Híbrida",
+  "year": 2026,
+  "type": "SUV",
+  "vehicleType": "Automóvil",
+  "fuelType": "Híbrido",
+  "price": 214900000,
+  "priceEstimated": true,
+  "priceReasoningEs": "Precio DEMO aproximado: no verificado con el concesionario.",
+  "history": "DEMO — datos aproximados para probar el diseño; no verificados.",
+  "fotos": [
+   {
+    "url": "/images/demo/toyota-rav4.png",
+    "alt": "Toyota RAV4 Híbrida"
+   }
+  ],
+  "facts": [
+   {
+    "key": "hybrid.startStop",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "commercial.warrantyYears",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "commercial.warrantyKm",
+    "value": 100000,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.acceleration0to100",
+    "value": 8.1,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.maxSpeed",
+    "value": 180,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.powerToWeight",
+    "value": 128,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.length",
+    "value": 4600,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.width",
+    "value": 1855,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.height",
+    "value": 1685,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.wheelbase",
+    "value": 2690,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.curbWeight",
+    "value": 1730,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.cargoCapacity",
+    "value": 580,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.trunkCapacitySeatsDown",
+    "value": 1690,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.seatRows",
+    "value": 2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.passengerCapacity",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.groundClearance",
+    "value": 195,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.suspensionSetup",
+    "value": "Independiente McPherson adelante / multibrazo atrás",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "weight.towingCapacity",
+    "value": 800,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "hybrid.displacement",
+    "value": 2487,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "hybrid.engineConfiguration",
+    "value": "4 cilindros en línea",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "hybrid.maxPower",
+    "value": 222,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "hybrid.maxTorque",
+    "value": 221,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "hybrid.transmissionType",
+    "value": "Automática e-CVT",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "hybrid.fuelTankCapacity",
+    "value": 14.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "hybrid.cityConsumption",
+    "value": 62,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "hybrid.highwayConsumption",
+    "value": 55,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "hybrid.batteryCapacity",
+    "value": 1.6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "hybrid.regenerativeBraking",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "hybrid.ecoMode",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.airbags",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.ncapRating",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.brakingSystem",
+    "value": "Discos ventilados adelante y discos atrás con ABS, EBD y BA",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.stabilityControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tractionControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.autonomousEmergencyBraking",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.forwardCollisionWarning",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.laneAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.adaptiveCruiseControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tirePressureMonitoring",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "lighting.headlightType",
+    "value": "LED",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.brakeAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.hillStartAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.reverseCamera",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.parkingSensors",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.airConditioning",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.automaticClimateControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.automaticHighBeam",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.bluetooth",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.touchscreen",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.smartphoneIntegration",
+    "value": "Apple CarPlay y Android Auto inalámbricos",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.reliability",
+    "value": 9.4,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.efficiency",
+    "value": 9,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.comfort",
+    "value": 8.3,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.practicality",
+    "value": 8.7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.familyFriendly",
+    "value": 8.8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.userRating",
+    "value": 4.6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   }
+  ]
+ },
+ {
+  "brand": "Mazda",
+  "model": "CX-30",
+  "year": 2026,
+  "type": "SUV",
+  "vehicleType": "Automóvil",
+  "fuelType": "Gasolina",
+  "price": 132900000,
+  "priceEstimated": true,
+  "priceReasoningEs": "Precio DEMO aproximado: no verificado con el concesionario.",
+  "history": "DEMO — datos aproximados para probar el diseño; no verificados.",
+  "fotos": [],
+  "facts": [
+   {
+    "key": "commercial.warrantyYears",
+    "value": 3,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "commercial.warrantyKm",
+    "value": 100000,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.length",
+    "value": 4395,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.width",
+    "value": 1795,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.height",
+    "value": 1540,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.wheelbase",
+    "value": 2655,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.curbWeight",
+    "value": 1420,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.cargoCapacity",
+    "value": 430,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.trunkCapacitySeatsDown",
+    "value": 1280,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.seatRows",
+    "value": 2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.passengerCapacity",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.groundClearance",
+    "value": 175,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.suspensionSetup",
+    "value": "Independiente McPherson adelante / eje de torsión atrás",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.acceleration0to100",
+    "value": 10.3,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.maxSpeed",
+    "value": 186,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.powerToWeight",
+    "value": 108,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.displacement",
+    "value": 1998,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.engineConfiguration",
+    "value": "4 en línea",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.inductionType",
+    "value": "Atmosférico",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.compressionRatio",
+    "value": 13,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.octanajeRecomendado",
+    "value": "91 octanos",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.maxPower",
+    "value": 153,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.maxTorque",
+    "value": 200,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.powerAtRpm",
+    "value": 6000,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.transmissionType",
+    "value": "Automática",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.gears",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.fuelTankCapacity",
+    "value": 13.2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.cityConsumption",
+    "value": 38,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.highwayConsumption",
+    "value": 52,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.combinedConsumption",
+    "value": 44,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.emissionStandard",
+    "value": "Euro 5",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.startStop",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.airbags",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.ncapRating",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.stabilityControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tractionControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.brakingSystem",
+    "value": "Discos ventilados adelante / discos atrás con ABS, EBD",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.autonomousEmergencyBraking",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.forwardCollisionWarning",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tirePressureMonitoring",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "lighting.headlightType",
+    "value": "LED",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.brakeAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.hillStartAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.reverseCamera",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.parkingSensors",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.airConditioning",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.automaticClimateControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.bluetooth",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.touchscreen",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.smartphoneIntegration",
+    "value": "Apple CarPlay y Android Auto",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.startStop",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.drivingFun",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.technology",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.reliability",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.qualityPriceRatio",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.comfort",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.interiorQuality",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.easeOfParking",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.practicality",
+    "value": 6.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.visibility",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.userRating",
+    "value": 4.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   }
+  ]
+ },
+ {
+  "brand": "Kia",
+  "model": "Picanto",
+  "year": 2026,
+  "type": "Hatchback",
+  "vehicleType": "Económico",
+  "fuelType": "Gasolina",
+  "price": 65000000,
+  "priceEstimated": true,
+  "priceReasoningEs": "Precio DEMO aproximado: no verificado con el concesionario.",
+  "history": "DEMO — datos aproximados para probar el diseño; no verificados.",
+  "fotos": [],
+  "facts": [
+   {
+    "key": "commercial.warrantyYears",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "commercial.warrantyKm",
+    "value": 100000,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.length",
+    "value": 3595,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.width",
+    "value": 1595,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.height",
+    "value": 1485,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.wheelbase",
+    "value": 2400,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.curbWeight",
+    "value": 950,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.cargoCapacity",
+    "value": 255,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.trunkCapacitySeatsDown",
+    "value": 1010,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.seatRows",
+    "value": 2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.passengerCapacity",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.groundClearance",
+    "value": 151,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.suspensionSetup",
+    "value": "Independiente McPherson adelante / eje torsional atrás",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.acceleration0to100",
+    "value": 14.6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.maxSpeed",
+    "value": 161,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.powerToWeight",
+    "value": 70,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.displacement",
+    "value": 998,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.engineConfiguration",
+    "value": "3 cilindros en línea",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.inductionType",
+    "value": "Atmosférico",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.compressionRatio",
+    "value": 10.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.octanajeRecomendado",
+    "value": "87 octanos (corriente)",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.maxPower",
+    "value": 67,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.maxTorque",
+    "value": 96,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.powerAtRpm",
+    "value": 5500,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.transmissionType",
+    "value": "Manual",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.gears",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.fuelTankCapacity",
+    "value": 9.2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.cityConsumption",
+    "value": 45,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.highwayConsumption",
+    "value": 62,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.combinedConsumption",
+    "value": 52,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.emissionStandard",
+    "value": "Euro 5",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.airbags",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.brakingSystem",
+    "value": "Discos ventilados adelante / tambores atrás con ABS y EBD",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.stabilityControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tractionControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tirePressureMonitoring",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.brakeAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.hillStartAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.reverseCamera",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.parkingSensors",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.airConditioning",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.bluetooth",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.touchscreen",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.smartphoneIntegration",
+    "value": "Apple CarPlay y Android Auto",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "lighting.headlightType",
+    "value": "Halógenos",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.drivingFun",
+    "value": 5.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.technology",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.environmentalImpact",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.reliability",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.qualityPriceRatio",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.comfort",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.usability",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.efficiency",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.prestige",
+    "value": 4,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.userRating",
+    "value": 4.2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.easeOfParking",
+    "value": 9.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.easeOfUse",
+    "value": 9,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.practicality",
+    "value": 6.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.serviceConvenience",
+    "value": 9,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.visibility",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.familyFriendly",
+    "value": 5.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   }
+  ]
+ },
+ {
+  "brand": "Mazda",
+  "model": "3 Sedán",
+  "year": 2026,
+  "type": "Sedán",
+  "vehicleType": "Automóvil",
+  "fuelType": "Gasolina",
+  "price": 120000000,
+  "priceEstimated": true,
+  "priceReasoningEs": "Precio DEMO aproximado: no verificado con el concesionario.",
+  "history": "DEMO — datos aproximados para probar el diseño; no verificados.",
+  "fotos": [],
+  "facts": [
+   {
+    "key": "commercial.warrantyYears",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "commercial.warrantyKm",
+    "value": 100000,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.acceleration0to100",
+    "value": 9.4,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.maxSpeed",
+    "value": 195,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.powerToWeight",
+    "value": 114,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.length",
+    "value": 4662,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.width",
+    "value": 1797,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.height",
+    "value": 1445,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.wheelbase",
+    "value": 2725,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.curbWeight",
+    "value": 1340,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.cargoCapacity",
+    "value": 444,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.groundClearance",
+    "value": 140,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.suspensionSetup",
+    "value": "Independiente McPherson adelante / eje de torsión atrás",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.seatRows",
+    "value": 2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.passengerCapacity",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.displacement",
+    "value": 1998,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.engineConfiguration",
+    "value": "4 cilindros en línea",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.inductionType",
+    "value": "Atmosférico",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.compressionRatio",
+    "value": 13,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.octanajeRecomendado",
+    "value": "87-91 octanos",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.maxPower",
+    "value": 153,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.maxTorque",
+    "value": 200,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.powerAtRpm",
+    "value": 6000,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.transmissionType",
+    "value": "Automática",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.gears",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.fuelTankCapacity",
+    "value": 13.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.cityConsumption",
+    "value": 36,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.highwayConsumption",
+    "value": 52,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.combinedConsumption",
+    "value": 42,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.emissionStandard",
+    "value": "Euro 5",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.startStop",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.airbags",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.ncapRating",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.adultSafetyScore",
+    "value": 92,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.childSafetyScore",
+    "value": 89,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.brakingSystem",
+    "value": "Discos ventilados adelante y discos sólidos atrás con ABS, EBD",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.stabilityControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tractionControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tirePressureMonitoring",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "lighting.headlightType",
+    "value": "LED",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.brakeAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.hillStartAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.reverseCamera",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.parkingSensors",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.airConditioning",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.automaticClimateControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.bluetooth",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.smartphoneIntegration",
+    "value": "Apple CarPlay y Android Auto",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.startStop",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.drivingFun",
+    "value": 8.2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.technology",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.reliability",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.qualityPriceRatio",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.comfort",
+    "value": 7.8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.efficiency",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.prestige",
+    "value": 7.2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.interiorQuality",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.easeOfParking",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.practicality",
+    "value": 6.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.visibility",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.familyFriendly",
+    "value": 6.8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.userRating",
+    "value": 4.4,
+    "confidence": 0.4,
+    "sourceTier": 3
+   }
+  ]
+ },
+ {
+  "brand": "Toyota",
+  "model": "Hilux",
+  "year": 2026,
+  "type": "Pickup",
+  "vehicleType": "Todoterreno",
+  "fuelType": "Diesel",
+  "price": 159900000,
+  "priceEstimated": true,
+  "priceReasoningEs": "Precio DEMO aproximado: no verificado con el concesionario.",
+  "history": "DEMO — datos aproximados para probar el diseño; no verificados.",
+  "fotos": [],
+  "facts": [
+   {
+    "key": "commercial.warrantyYears",
+    "value": 3,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "commercial.warrantyKm",
+    "value": 100000,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.displacement",
+    "value": 2393,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.turbo",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.engineConfiguration",
+    "value": "L4",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.inductionType",
+    "value": "Turbo",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.compressionRatio",
+    "value": 15.6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.maxPower",
+    "value": 150,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.maxTorque",
+    "value": 343,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.powerAtRpm",
+    "value": 3400,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.transmissionType",
+    "value": "Manual",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.gears",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.fuelTankCapacity",
+    "value": 21.1,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.cityConsumption",
+    "value": 38,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.highwayConsumption",
+    "value": 52,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.combinedConsumption",
+    "value": 44,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.emissionStandard",
+    "value": "Euro 5",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.octanajeRecomendado",
+    "value": "Diésel ACPM (bajo azufre)",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.acceleration0to100",
+    "value": 12.8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.maxSpeed",
+    "value": 170,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.powerToWeight",
+    "value": 73,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.length",
+    "value": 5325,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.width",
+    "value": 1855,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.height",
+    "value": 1815,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.wheelbase",
+    "value": 3085,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.curbWeight",
+    "value": 2050,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.groundClearance",
+    "value": 216,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.suspensionSetup",
+    "value": "Independiente doble horquilla adelante / eje rígido con ballestas atrás",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "offRoad.approachAngle",
+    "value": 29,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "offRoad.departureAngle",
+    "value": 26,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "offRoad.breakoverAngle",
+    "value": 24,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "offRoad.wadingDepth",
+    "value": 700,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "weight.payload",
+    "value": 1000,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "weight.towingCapacity",
+    "value": 3500,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "weight.grossCombinedWeight",
+    "value": 5850,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.seatRows",
+    "value": 2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.passengerCapacity",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.airbags",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.ncapRating",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.adultSafetyScore",
+    "value": 84,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.childSafetyScore",
+    "value": 82,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.brakingSystem",
+    "value": "Discos ventilados adelante / tambor atrás con ABS y EBD",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.stabilityControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tractionControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tirePressureMonitoring",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "lighting.headlightType",
+    "value": "Halógeno",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.brakeAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.hillStartAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.reverseCamera",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.airConditioning",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.bluetooth",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.touchscreen",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.smartphoneIntegration",
+    "value": "Apple CarPlay y Android Auto",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.drivingFun",
+    "value": 6.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.technology",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.environmentalImpact",
+    "value": 4,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.reliability",
+    "value": 9.4,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.qualityPriceRatio",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.comfort",
+    "value": 6.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.usability",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.efficiency",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.prestige",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.userRating",
+    "value": 4.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.interiorQuality",
+    "value": 6.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.easeOfUse",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.easeOfParking",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.practicality",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.serviceConvenience",
+    "value": 9.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.visibility",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.easeOfCleaning",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.petFriendly",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.familyFriendly",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   }
+  ]
+ },
+ {
+  "brand": "Tesla",
+  "model": "Model Y",
+  "year": 2026,
+  "type": "SUV",
+  "vehicleType": "Automóvil",
+  "fuelType": "Eléctrico",
+  "price": 230000000,
+  "priceEstimated": true,
+  "priceReasoningEs": "Precio DEMO aproximado: no verificado con el concesionario.",
+  "history": "DEMO — datos aproximados para probar el diseño; no verificados.",
+  "fotos": [],
+  "facts": [
+   {
+    "key": "commercial.warrantyYears",
+    "value": 4,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "commercial.warrantyKm",
+    "value": 80000,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.acceleration0to100",
+    "value": 5.9,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.maxSpeed",
+    "value": 201,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.powerToWeight",
+    "value": 155,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.length",
+    "value": 4797,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.width",
+    "value": 1982,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.height",
+    "value": 1624,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.wheelbase",
+    "value": 2890,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.curbWeight",
+    "value": 1921,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.cargoCapacity",
+    "value": 854,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.trunkCapacitySeatsDown",
+    "value": 2138,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.seatRows",
+    "value": 2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.passengerCapacity",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.groundClearance",
+    "value": 167,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.suspensionSetup",
+    "value": "Independiente: McPherson adelante / multibrazo atrás con resortes helicoidales",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.brakingDistance100to0",
+    "value": 37,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "weight.towingCapacity",
+    "value": 1600,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "weight.payload",
+    "value": 440,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.batteryCapacity",
+    "value": 62.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.electricRange",
+    "value": 500,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.realRangeMixed",
+    "value": 430,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.realRangeCity",
+    "value": 480,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.realRangeHighway",
+    "value": 370,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.cityElectricConsumption",
+    "value": 13.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.highwayElectricConsumption",
+    "value": 17.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.acChargingTime",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.chargingTime1080",
+    "value": 27,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.dcChargingTime",
+    "value": 30,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.regenerativeBraking",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "electric.homeChargerCost",
+    "value": 5500000,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.airbags",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.ncapRating",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.adultSafetyScore",
+    "value": 90,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.childSafetyScore",
+    "value": 93,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.assistanceScore",
+    "value": 88,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.brakingSystem",
+    "value": "Discos ventilados en las 4 ruedas con ABS, EBD y regeneración",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.stabilityControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tractionControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.autonomousEmergencyBraking",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.forwardCollisionWarning",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.laneAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.adaptiveCruiseControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.blindSpotDetection",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.fatigueMonitor",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tirePressureMonitoring",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "lighting.headlightType",
+    "value": "LED",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.brakeAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.hillStartAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.reverseCamera",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.parkingSensors",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.cameras360",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.airConditioning",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.automaticClimateControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.heatedSeats",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.ventilatedSeats",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.automaticHighBeam",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.bluetooth",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.touchscreen",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.navigation",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.smartphoneIntegration",
+    "value": "No disponible (sistema Tesla propio con app y Bluetooth)",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.wirelessCharger",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.drivingFun",
+    "value": 8.2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.technology",
+    "value": 9.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.environmentalImpact",
+    "value": 9,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.reliability",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.qualityPriceRatio",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.comfort",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.usability",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.efficiency",
+    "value": 9.3,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.prestige",
+    "value": 8.3,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.userRating",
+    "value": 4.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.interiorQuality",
+    "value": 7.8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.easeOfUse",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.easeOfParking",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.practicality",
+    "value": 9,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.familyFriendly",
+    "value": 9,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.petFriendly",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.visibility",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.easeOfCleaning",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   }
+  ]
+ },
+ {
+  "brand": "Volkswagen",
+  "model": "Polo Track",
+  "year": 2026,
+  "type": "Hatchback",
+  "vehicleType": "Económico",
+  "fuelType": "Gasolina",
+  "price": 80000000,
+  "priceEstimated": true,
+  "priceReasoningEs": "Precio DEMO aproximado: no verificado con el concesionario.",
+  "history": "DEMO — datos aproximados para probar el diseño; no verificados.",
+  "fotos": [],
+  "facts": [
+   {
+    "key": "commercial.warrantyYears",
+    "value": 3,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "commercial.warrantyKm",
+    "value": 100000,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.acceleration0to100",
+    "value": 10.8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.maxSpeed",
+    "value": 184,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "performance.powerToWeight",
+    "value": 101,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.groundClearance",
+    "value": 160,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "chassis.suspensionSetup",
+    "value": "McPherson adelante / eje torsional atrás",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.length",
+    "value": 4079,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.width",
+    "value": 1751,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.height",
+    "value": 1476,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.wheelbase",
+    "value": 2566,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.curbWeight",
+    "value": 1085,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "dimensions.cargoCapacity",
+    "value": 300,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.seatRows",
+    "value": 2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "interior.passengerCapacity",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "weight.payload",
+    "value": 460,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.airbags",
+    "value": 4,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.brakingSystem",
+    "value": "Discos ventilados adelante, tambores atrás con ABS",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.stabilityControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "safety.tractionControl",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.brakeAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.hillStartAssist",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.reverseCamera",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "assistance.parkingSensors",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "lighting.headlightType",
+    "value": "Halógenos",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "comfort.airConditioning",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.bluetooth",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.touchscreen",
+    "value": true,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "technology.smartphoneIntegration",
+    "value": "Apple CarPlay y Android Auto inalámbricos",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.displacement",
+    "value": 1599,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.engineConfiguration",
+    "value": "4 cilindros en línea",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.inductionType",
+    "value": "Atmosférico",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.octanajeRecomendado",
+    "value": "87 octanos (corriente)",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.maxPower",
+    "value": 110,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.maxTorque",
+    "value": 155,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.powerAtRpm",
+    "value": 5750,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.transmissionType",
+    "value": "Manual",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.gears",
+    "value": 5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.fuelTankCapacity",
+    "value": 13.7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.cityConsumption",
+    "value": 38,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.highwayConsumption",
+    "value": 52,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.combinedConsumption",
+    "value": 44,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "combustion.emissionStandard",
+    "value": "Euro 5",
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.drivingFun",
+    "value": 6.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.technology",
+    "value": 5.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.reliability",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.qualityPriceRatio",
+    "value": 8,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.comfort",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.usability",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.efficiency",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.prestige",
+    "value": 6,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.easeOfParking",
+    "value": 8.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.practicality",
+    "value": 7,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.visibility",
+    "value": 7.5,
+    "confidence": 0.4,
+    "sourceTier": 3
+   },
+   {
+    "key": "wisemetrics.userRating",
+    "value": 4.2,
+    "confidence": 0.4,
+    "sourceTier": 3
+   }
+  ]
+ }
+]
