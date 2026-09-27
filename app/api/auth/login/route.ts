@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { loginSchema } from '@/lib/schemas/auth';
 import { verifyPassword, generateToken } from '@/lib/auth';
-import { crearAdminInicial, esAdminInicial } from '@/lib/db/admin-inicial';
+import { esAdminInicial, reclamarAdminInicial } from '@/lib/db/admin-inicial';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,10 +19,11 @@ export async function POST(request: NextRequest) {
     // Validar datos de entrada
     const validatedData = loginSchema.parse(body);
     
-    // Primer ingreso del admin inicial (ADMIN_EMAIL + ADMIN_PASSWORD en Vercel):
-    // si la cuenta aún no existe, se crea aquí. Ver lib/db/admin-inicial.ts.
+    // Ingreso con el admin inicial (ADMIN_EMAIL + ADMIN_PASSWORD en Vercel):
+    // crea la cuenta o, si ya existía, la deja como admin. Ver lib/db/admin-inicial.ts.
     if (esAdminInicial(validatedData.emailOrUsername, validatedData.password)) {
-      await crearAdminInicial(prisma);
+      const r = await reclamarAdminInicial(prisma);
+      if (r !== 'ya_era_admin') console.log(`[login] admin inicial: ${r}`);
     }
 
     // Buscar usuario por email o username (name en la base de datos)

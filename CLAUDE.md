@@ -146,7 +146,8 @@ cobertura, migración, seeds, motor de cohortes.
 - Variables de base: `lib/db/url.ts` las busca por el FINAL del nombre (…DATABASE_URL,
   …POSTGRES_PRISMA_URL…), sirva el prefijo que sea. Diagnóstico sin secretos: `GET /api/salud`.
 - Admin inicial: con `ADMIN_EMAIL` + `ADMIN_PASSWORD` (≥10) en Vercel, el deploy (o el primer
-  login con exactamente esas credenciales) crea esa cuenta como admin SI NO EXISTE. Nunca asciende cuentas existentes ni cambia contraseñas
+  login con exactamente esas credenciales) crea esa cuenta como admin. Si ya existía, SOLO el
+  login con esas credenciales exactas la reclama (rol admin + esa contraseña). Nunca asciende cuentas existentes ni cambia contraseñas
   (el registro no verifica correos). Otros admins: `scripts/set-admin.js`.
 - Deploy Vercel `iad1`, funciones `maxDuration: 30s`. Env vars: `WISE_DATABASE_URL`(+`_UNPOOLED`),
   `JWT_SECRET`, `ANTHROPIC_API_KEY` (+ `ANTHROPIC_WORKSPACE_ID` si la clave no es

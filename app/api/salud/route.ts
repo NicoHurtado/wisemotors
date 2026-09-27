@@ -39,7 +39,7 @@ export async function GET() {
         : null;
       salud.tablas = true;
       salud.conteos = { usuarios, carros, atributos };
-      salud.cuentaAdmin = !cfg ? 'sin configurar' : !admin ? 'no existe aún (se crea al iniciar sesión con ADMIN_EMAIL/ADMIN_PASSWORD)' : admin.role === 'admin' ? 'existe y es admin' : 'existe pero NO es admin';
+      salud.cuentaAdmin = !cfg ? 'sin configurar' : !admin ? 'no existe aún (se crea al iniciar sesión con ADMIN_EMAIL/ADMIN_PASSWORD)' : admin.role === 'admin' ? 'existe y es admin' : 'existe pero NO es admin (se vuelve admin al iniciar sesión con ADMIN_EMAIL/ADMIN_PASSWORD)';
     } catch (e: any) {
       salud.tablas = false;
       salud.error = `Faltan tablas (${e?.code ?? 'error'}): el deploy de producción las crea con scripts/preparar-bd.ts`;
