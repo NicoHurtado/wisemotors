@@ -196,6 +196,9 @@
 }
 .group:hover .flecha svg,
 .flecha:hover svg { transform: rotate(45deg); }
+.flecha--fija:hover svg,
+.group:hover .flecha--fija svg { transform: none; }
+.flecha--fija:active { transform: scale(0.94); }
 
 /* CTA con corte diagonal (LaFerrari) */
 .cta-corte {
@@ -243,7 +246,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(var(--wise-glow), 0.22), rgba(var(--wise-glow), 0) 62%);
+  background: linear-gradient(180deg, rgba(var(--wise-glow), 0.13), rgba(var(--wise-glow), 0) 62%);
   opacity: 0;
   transition: opacity 500ms var(--ease-out-soft);
   pointer-events: none;
@@ -254,6 +257,9 @@
 }
 .tarjeta-carro:hover::before,
 .tarjeta-carro[data-destacada='true']::before { opacity: 1; }
+/* Un solo activo a la vez: si el cursor está en otra tarjeta, la destacada se apaga */
+.grid:has(.tarjeta-carro:hover) .tarjeta-carro[data-destacada='true']:not(:hover)::before { opacity: 0; }
+.grid:has(.tarjeta-carro:hover) .tarjeta-carro[data-destacada='true']:not(:hover) .marca-agua { opacity: 0; }
 
 /* Nombre del modelo gigante detrás del carro */
 .marca-agua {
@@ -341,10 +347,11 @@
 .hotspot__etiqueta {
   padding: 9px 16px;
   border-radius: 9999px;
-  background: rgba(251, 251, 252, 0.86);
+  /* Tinta con filo blanco: se lee igual sobre pintura clara, oscura o foto */
+  background: rgba(14, 12, 17, 0.82);
   backdrop-filter: blur(12px);
-  box-shadow: 0 10px 24px -12px rgba(14, 12, 17, 0.45);
-  color: var(--tinta);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28), 0 10px 24px -12px rgba(14, 12, 17, 0.6);
+  color: #fff;
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;

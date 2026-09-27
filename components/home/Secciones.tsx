@@ -203,11 +203,11 @@ export function BandaComparar({ vehiculos }: { vehiculos: VehiculoTarjeta[] }) {
             <div className="relative grid grid-cols-2 items-end gap-4">
               <div>
                 <CarRender car={a} className="aspect-[480/180] w-full" />
-                <p className="mt-4 text-[20px] font-semibold tracking-[-0.03em]">{a.brand} {a.model}</p>
+                <p className="mt-4 text-[17px] font-semibold tracking-[-0.03em] md:text-[20px]">{a.brand} {a.model}</p>
               </div>
               <div className="text-right">
                 <CarRender car={b} className="aspect-[480/180] w-full -scale-x-100" />
-                <p className="mt-4 text-[20px] font-semibold tracking-[-0.03em]">{b.brand} {b.model}</p>
+                <p className="mt-4 text-[17px] font-semibold tracking-[-0.03em] md:text-[20px]">{b.brand} {b.model}</p>
               </div>
               <span className="cifra absolute left-1/2 top-[34%] flex h-12 w-12 -translate-x-1/2 items-center justify-center rounded-full border border-white/20 bg-showroom text-[13px] text-white/70">
                 vs
@@ -219,15 +219,15 @@ export function BandaComparar({ vehiculos }: { vehiculos: VehiculoTarjeta[] }) {
                 const max = Math.max(f.va, f.vb);
                 const gana = f.menor ? (f.va <= f.vb ? 'a' : 'b') : f.va >= f.vb ? 'a' : 'b';
                 return (
-                  <div key={f.etiqueta} className="grid grid-cols-[1fr_120px_1fr] items-center gap-4">
+                  <div key={f.etiqueta} className="grid grid-cols-[1fr_64px_1fr] items-center gap-2 md:grid-cols-[1fr_120px_1fr] md:gap-4">
                     <div className="flex items-center gap-3">
-                      <span className={`cifra w-24 shrink-0 text-[15px] ${gana === 'a' ? 'text-white' : 'text-white/45'}`}>{f.ta}</span>
+                      <span className={`cifra w-20 shrink-0 text-[14px] md:w-24 md:text-[15px] ${gana === 'a' ? 'text-white' : 'text-white/60'}`}>{f.ta}</span>
                       <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
                         <div
                           className="barra-izq h-full w-full rounded-full"
                           style={{
                             '--v': f.va / max,
-                            background: gana === 'a' ? '#a855f7' : 'rgba(255,255,255,0.28)',
+                            background: gana === 'a' ? '#a855f7' : 'rgba(255,255,255,0.4)',
                             transitionDelay: `${i * 120}ms`,
                           } as React.CSSProperties}
                         />
@@ -240,12 +240,12 @@ export function BandaComparar({ vehiculos }: { vehiculos: VehiculoTarjeta[] }) {
                           className="barra-der h-full w-full rounded-full"
                           style={{
                             '--v': f.vb / max,
-                            background: gana === 'b' ? '#a855f7' : 'rgba(255,255,255,0.28)',
+                            background: gana === 'b' ? '#a855f7' : 'rgba(255,255,255,0.4)',
                             transitionDelay: `${i * 120}ms`,
                           } as React.CSSProperties}
                         />
                       </div>
-                      <span className={`cifra w-24 shrink-0 text-right text-[15px] ${gana === 'b' ? 'text-white' : 'text-white/45'}`}>{f.tb}</span>
+                      <span className={`cifra w-20 shrink-0 text-right text-[14px] md:w-24 md:text-[15px] ${gana === 'b' ? 'text-white' : 'text-white/60'}`}>{f.tb}</span>
                     </div>
                   </div>
                 );

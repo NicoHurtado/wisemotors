@@ -102,14 +102,19 @@ export function HeroShowroom({ vehiculos, consulta }: { vehiculos: VehiculoTarje
             <Palabra texto={palabra} color="#5b1a82" />
           </div>
           {v && (
-            <div key={v.id} className="carro-entra absolute bottom-0 right-0 h-[62%] w-full lg:bottom-[-3%] lg:right-[2vw] lg:h-[78%] lg:w-[62vw] lg:max-w-[920px]">
-              {/* Sombra de piso: el carro se posa, no flota */}
+            <div key={v.id} className="carro-entra absolute bottom-0 right-0 h-[62%] w-full lg:bottom-[-13%] lg:right-[2vw] lg:h-[84%] lg:w-[62vw] lg:max-w-[940px]">
+              {/* Halo morado y sombra de piso: el carro se posa, no flota */}
               <div
                 aria-hidden
-                className="absolute inset-x-[8%] bottom-[2%] h-[14%] rounded-[50%]"
-                style={{ background: 'radial-gradient(closest-side, rgba(0,0,0,0.75), transparent)', filter: 'blur(6px)' }}
+                className="absolute inset-x-[4%] bottom-[-6%] h-[40%] rounded-[50%]"
+                style={{ background: 'radial-gradient(closest-side, rgba(136,28,183,0.28), transparent)', filter: 'blur(18px)' }}
               />
-              <CarRender car={v} prioridad className="relative h-full w-full" />
+              <div
+                aria-hidden
+                className="absolute inset-x-[15%] bottom-[4%] h-[12%] rounded-[50%]"
+                style={{ background: 'radial-gradient(closest-side, rgba(0,0,0,0.7), transparent)', filter: 'blur(10px)' }}
+              />
+              <CarRender car={v} prioridad abajo className="relative h-full w-full" />
             </div>
           )}
         </div>
@@ -145,14 +150,14 @@ export function HeroShowroom({ vehiculos, consulta }: { vehiculos: VehiculoTarje
                 <button
                   onClick={() => setI(x => (x - 1 + total) % total)}
                   aria-label="Carro anterior"
-                  className="flecha !border-white/15 !bg-white/5 !text-white hover:!bg-wise"
+                  className="flecha flecha--fija !border-white/15 !bg-white/5 !text-white hover:!bg-wise"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setI(x => (x + 1) % total)}
                   aria-label="Carro siguiente"
-                  className="flecha !border-white/15 !bg-white/5 !text-white hover:!bg-wise"
+                  className="flecha flecha--fija !border-white/15 !bg-white/5 !text-white hover:!bg-wise"
                 >
                   <ArrowRight className="h-4 w-4" />
                 </button>

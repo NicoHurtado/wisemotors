@@ -105,7 +105,7 @@ export function TarjetaCarro({
         </div>
       </div>
 
-      <div className={`relative my-4 flex items-center justify-center ${destacada ? "aspect-[16/7]" : "aspect-[16/7.5]"}`}>
+      <div className={`relative my-4 flex items-center justify-center overflow-hidden ${destacada ? "aspect-[16/7]" : "aspect-[16/7.5]"}`}>
         <span
           aria-hidden
           className="marca-agua absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-[clamp(72px,11vw,150px)]"

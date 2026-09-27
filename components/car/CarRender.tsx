@@ -19,18 +19,41 @@ export interface CarLike {
   model?: string;
   type?: string;
   fuelType?: string;
+  specifications?: unknown;
   imageUrl?: string | null;
   images?: { url: string; type?: string | null; isThumbnail?: boolean | null }[] | null;
 }
 
-type Carroceria = 'sedan' | 'hatch' | 'suv' | 'pickup';
+type Carroceria = 'sedan' | 'hatch' | 'suv' | 'suvCoupe' | 'pickup';
 
-export function carroceriaDe(type?: string): Carroceria {
+function dimension(car: CarLike, clave: 'length' | 'height'): number | null {
+  let s: any = car.specifications;
+  if (typeof s === 'string') {
+    try {
+      s = JSON.parse(s);
+    } catch {
+      return null;
+    }
+  }
+  const v = Number(s?.dimensions?.[clave]);
+  return Number.isFinite(v) && v > 0 ? v : null;
+}
+
+/** Silueta y escala horizontal según carrocería, nombre y dimensiones reales. */
+export function carroceriaDe(type?: string, car?: CarLike): { forma: Carroceria; escala: number } {
   const t = (type ?? '').toLowerCase();
-  if (t.includes('suv') || t.includes('todoterreno') || t.includes('crossover')) return 'suv';
-  if (t.includes('pickup') || t.includes('camioneta')) return 'pickup';
-  if (t.includes('hatch')) return 'hatch';
-  return 'sedan';
+  const largo = car ? dimension(car, 'length') : null;
+  const alto = car ? dimension(car, 'height') : null;
+  const nombre = `${car?.model ?? ''}`.toLowerCase();
+  if (t.includes('pickup') || t.includes('camioneta')) return { forma: 'pickup', escala: 1 };
+  if (t.includes('suv') || t.includes('todoterreno') || t.includes('crossover')) {
+    // SUV de techo que cae (tipo coupé): baja o con nombre conocido
+    const coupe = /model y|cx-30|cx30|coup|x4|x6|gle|q3 sport|arkana|fastback/.test(nombre) || (alto !== null && alto < 1590);
+    const escala = largo !== null && largo < 4350 ? 0.93 : 1;
+    return { forma: coupe ? 'suvCoupe' : 'suv', escala };
+  }
+  if (t.includes('hatch')) return { forma: 'hatch', escala: largo !== null && largo < 3800 ? 0.92 : 1 };
+  return { forma: 'sedan', escala: 1 };
 }
 
 /** Pinturas de estudio (sin verdes ni azules). Estable por vehículo. */
@@ -105,35 +128,52 @@ const SILUETAS: Record<Carroceria, Silueta> = {
   },
   hatch: {
     cuerpo:
-      'M72 145 L66 120 C64 104 66 92 72 82 C76 66 84 50 96 38 C102 32 110 30 120 29 L250 27 C266 27 276 31 286 39 L322 76 C350 80 380 86 402 94 C412 98 418 108 417 120 L415 138 C414 143 410 145 404 145 L378.1 145 A35 35 0 1 0 313.9 145 L154.1 145 A35 35 0 1 0 89.9 145 L76 145 C73 145 72 145 72 145 Z',
-    vidrio: 'M86 76 C90 62 98 48 108 40 C112 36 116 35 122 35 L248 33 C262 33 270 36 279 44 L308 76 Z',
-    pilares: [[202, 34, 200, 76], [118, 36, 104, 76]],
+      'M72 145 L66 122 C64 108 66 98 72 90 C80 70 92 52 108 40 C114 34 122 31 134 30 L250 28 C266 28 276 32 286 40 L322 76 C350 80 380 86 402 94 C412 98 418 108 417 120 L415 138 C414 143 410 145 404 145 L378.1 145 A35 35 0 1 0 313.9 145 L154.1 145 A35 35 0 1 0 89.9 145 L76 145 C73 145 72 145 72 145 Z',
+    vidrio: 'M92 78 C100 63 110 51 122 43 C126 40 130 39 138 38 L248 36 C262 36 270 39 279 47 L304 74 Z',
+    pilares: [[202, 37, 200, 75], [124, 42, 112, 76]],
     ruedas: [122, 346],
     ry: 131,
     r: 29,
     arco: 35,
-    hombro: 'M70 94 C170 88 300 86 412 102',
+    hombro: 'M70 92 C170 86 300 84 412 100',
     faro: 'M388 92 C400 94 410 99 415 106',
-    stop: 'M68 90 L76 78',
-    espejo: 'M304 74 L320 71 L323 80 L308 82 Z',
-    manijas: [[166, 88], [240, 88]],
+    stop: 'M68 94 L76 80',
+    espejo: 'M300 72 L316 69 L319 78 L304 80 Z',
+    manijas: [[166, 86], [240, 86]],
   },
+
   suv: {
     cuerpo:
-      'M48 146 L44 116 C43 96 46 76 54 62 L70 34 C74 27 82 24 94 24 L250 22 C266 22 276 26 286 34 L324 82 C360 86 400 92 428 100 C438 104 442 112 442 122 L440 142 C439 146 436 148 430 148 L389.5 148 A39 39 0 1 0 322.5 148 L147.5 148 A39 39 0 1 0 80.5 148 L56 148 C50 148 48 147 48 146 Z',
-    vidrio: 'M82 70 L92 36 C94 32 98 31 104 31 L248 30 C261 30 269 33 277 40 L309 80 Z',
-    pilares: [[198, 31, 196, 79], [124, 31, 116, 72]],
+      'M52 146 L48 118 C47 100 50 86 58 74 L76 50 C82 41 92 36 108 35 L250 26 C266 25 276 29 286 37 L324 82 C360 86 400 92 428 100 C438 104 442 112 442 122 L440 142 C439 146 436 148 430 148 L389.5 148 A39 39 0 1 0 322.5 148 L147.5 148 A39 39 0 1 0 80.5 148 L60 148 C54 148 52 147 52 146 Z',
+    vidrio: 'M84 74 L96 50 C99 45 104 42 112 42 L248 33 C261 33 269 36 277 43 L307 76 Z',
+    pilares: [[196, 36, 194, 75], [128, 41, 118, 74]],
     ruedas: [114, 356],
     ry: 128,
     r: 32,
     arco: 39,
-    hombro: 'M50 90 C160 86 300 88 432 104',
+    hombro: 'M54 88 C160 84 300 86 432 104',
     faro: 'M404 94 C420 97 432 102 439 109',
-    stop: 'M46 86 L58 84',
-    espejo: 'M312 80 L330 77 L333 87 L316 89 Z',
-    manijas: [[160, 92], [248, 94]],
+    stop: 'M50 90 L62 86',
+    espejo: 'M312 78 L330 75 L333 85 L316 87 Z',
+    manijas: [[160, 90], [248, 90]],
     revestimiento: true,
   },
+  suvCoupe: {
+    cuerpo:
+      'M52 146 L48 118 C47 106 50 96 58 90 C72 64 98 44 132 35 C170 26 228 23 260 27 C274 29 284 33 292 40 L326 82 C360 86 400 92 428 100 C438 104 442 112 442 122 L440 142 C439 146 436 148 430 148 L389.5 148 A39 39 0 1 0 322.5 148 L147.5 148 A39 39 0 1 0 80.5 148 L60 148 C54 148 52 147 52 146 Z',
+    vidrio: 'M86 82 C98 64 116 50 138 43 C172 34 226 32 256 35 C268 37 277 41 284 48 L309 78 Z',
+    pilares: [[204, 35, 202, 77]],
+    ruedas: [114, 356],
+    ry: 128,
+    r: 32,
+    arco: 39,
+    hombro: 'M56 94 C160 88 300 86 432 104',
+    faro: 'M404 94 C420 97 432 102 439 109',
+    stop: 'M52 94 C60 92 68 90 76 88',
+    espejo: 'M314 80 L332 77 L335 87 L318 89 Z',
+    manijas: [[156, 92], [250, 92]],
+  },
+
   pickup: {
     cuerpo:
       'M28 146 L22 118 L24 72 L198 70 L202 26 C203 18 208 14 216 14 L310 12 C324 12 332 16 340 24 L372 72 C404 76 436 82 452 90 C460 94 462 104 461 116 L459 140 C458 145 454 147 448 147 L419 147 A40 40 0 1 0 351 147 L163 147 A40 40 0 1 0 95 147 L32 147 C29 147 28 147 28 146 Z',
@@ -192,7 +232,14 @@ function Rueda({ cx, cy, r, id, acento }: { cx: number; cy: number; r: number; i
 
 function RenderSvg({ car, className }: { car: CarLike; className?: string }) {
   const id = useId().replace(/:/g, '');
-  const s = SILUETAS[carroceriaDe(car.type)];
+  const { forma, escala } = carroceriaDe(car.type, car);
+  const base = SILUETAS[forma];
+  // Escala horizontal para compactos: la carrocería se angosta alrededor del
+  // centro y las ruedas se reubican (sin deformarse).
+  const cx0 = 240;
+  const sx = (x: number) => cx0 + (x - cx0) * escala;
+  const s = { ...base, ruedas: [sx(base.ruedas[0]), sx(base.ruedas[1])] as [number, number] };
+  const transformar = escala === 1 ? undefined : `translate(${cx0} 0) scale(${escala} 1) translate(${-cx0} 0)`;
   const pintura = pinturaDe(car);
   const oscura = ['grafito', 'negro', 'morado', 'vino'].includes(pintura.nombre);
   const alto = mezclar(pintura.base, '#ffffff', oscura ? 0.32 : 0.6);
@@ -201,7 +248,7 @@ function RenderSvg({ car, className }: { car: CarLike; className?: string }) {
   const [r1, r2] = s.ruedas;
   const centro = (r1 + r2) / 2;
 
-  const arcos = s.ruedas.map(cx => {
+  const arcos = base.ruedas.map(cx => {
     const dy = 160 - 12 - s.ry;
     const dx = Math.sqrt(s.arco * s.arco - dy * dy);
     return `M${cx + dx} ${s.ry + dy} A${s.arco} ${s.arco} 0 1 0 ${cx - dx} ${s.ry + dy}`;
@@ -260,6 +307,7 @@ function RenderSvg({ car, className }: { car: CarLike; className?: string }) {
         ))}
       </g>
 
+      <g transform={transformar}>
       {/* Carrocería con volumen: degradado vertical + luz lateral */}
       <path d={s.cuerpo} fill={`url(#pintura-${id})`} />
       <g clipPath={`url(#cuerpo-${id})`}>
@@ -298,6 +346,7 @@ function RenderSvg({ car, className }: { car: CarLike; className?: string }) {
       <path d={s.faro} fill="none" stroke="#fbf7ff" strokeWidth={3} strokeLinecap="round" />
       <path d={s.faro} fill="none" stroke="#e9d5ff" strokeWidth={7} strokeLinecap="round" opacity={0.45} filter={`url(#brillo-${id})`} />
       <path d={s.stop} fill="none" stroke="#be123c" strokeWidth={3.2} strokeLinecap="round" />
+      </g>
 
       <Rueda cx={r1} cy={s.ry} r={s.r} id={id} acento={acento} />
       <Rueda cx={r2} cy={s.ry} r={s.r} id={id} acento={acento} />
@@ -314,11 +363,14 @@ export function CarRender({
   className = '',
   reflejo = false,
   prioridad = false,
+  abajo = false,
 }: {
   car: CarLike;
   className?: string;
   reflejo?: boolean;
   prioridad?: boolean;
+  /** Asienta la foto en la base de su caja (para que pise el piso, no flote). */
+  abajo?: boolean;
 }) {
   const foto = fotoDe(car);
   const alt = `${car.brand ?? ''} ${car.model ?? ''}`.trim();
@@ -329,7 +381,7 @@ export function CarRender({
       src={foto}
       alt={alt}
       loading={prioridad ? 'eager' : 'lazy'}
-      className="block h-full w-full object-contain drop-shadow-[0_18px_22px_rgba(0,0,0,0.28)]"
+      className={`block h-full w-full object-contain drop-shadow-[0_18px_22px_rgba(0,0,0,0.28)] ${abajo ? 'object-bottom' : ''}`}
       draggable={false}
     />
   ) : (

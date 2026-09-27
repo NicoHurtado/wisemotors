@@ -40,7 +40,7 @@ export function Footer() {
         <div className="grid gap-12 md:grid-cols-12">
           <div className="md:col-span-6">
             <h2 className="t-titulo text-[44px] md:text-[64px]">
-              <span className="text-white/55">No tienes que saber de carros.</span>{' '}
+              <span className="text-white/60">No tienes que saber de carros.</span>{' '}
               <span>Para eso estamos.</span>
             </h2>
             <Link href="/vehicles" className="cta-corte mt-10">

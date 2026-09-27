@@ -7,7 +7,7 @@ import { BandaComparar, ComoFunciona, Destacados, Marquesina } from '@/component
 import type { VehiculoTarjeta } from '@/components/car/TarjetaCarro';
 import { fotoDe } from '@/components/car/CarRender';
 import { AIResultsLoader } from '@/components/vehicles/AIResultsLoader';
-import { AdaptiveResults } from '@/components/vehicles/AdaptiveResults';
+import { ResultadosIA } from '@/components/home/ResultadosIA';
 import { FilterButtons } from '@/components/landing/FilterButtons';
 
 function Inicio() {
@@ -20,7 +20,7 @@ function Inicio() {
   const [resultados, setResultados] = useState<any[] | null>(null);
 
   useEffect(() => {
-    fetch('/api/vehicles?limit=24')
+    fetch('/api/vehicles?limit=200')
       .then(r => r.json())
       .then(d => {
         setVehiculos(d.vehicles ?? []);
@@ -64,7 +64,9 @@ function Inicio() {
             <h2 className="t-titulo mt-3 max-w-[22ch] text-[36px] md:text-[52px]">“{query}”</h2>
             <div className="mt-10">
               {cargandoIA && <AIResultsLoader />}
-              {!cargandoIA && hayResultados && <AdaptiveResults results={resultados!} query={query} onFilterClick={irA} />}
+              {!cargandoIA && hayResultados && (
+                <ResultadosIA resultados={resultados} consulta={query} catalogo={vehiculos} onRefinar={irA} />
+              )}
               {!cargandoIA && resultados && !hayResultados && (
                 <div className="rounded-[28px] bg-tarjeta p-10">
                   <p className="text-[22px] font-semibold tracking-[-0.03em]">No encontramos carros con esa combinación.</p>

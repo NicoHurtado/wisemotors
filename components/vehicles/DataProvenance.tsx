@@ -111,7 +111,12 @@ export function DataProvenance({
           </h3>
           <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">
             {total > 0
-              ? `${total} datos registrados con su fuente. ${verificados} revisados por una persona.`
+              ? (() => {
+                  const conFuente = total - (datos?.sinFuente ?? 0);
+                  return conFuente > 0
+                    ? `${total} datos registrados, ${conFuente} con su fuente enlazada.`
+                    : `${total} datos registrados · fuentes en verificación.`;
+                })()
               : 'Ficha cargada manualmente, sin registro de fuentes por dato.'}
             {cobertura != null && ` Cobertura de ficha: ${cobertura}%.`}
           </p>
@@ -140,7 +145,10 @@ export function DataProvenance({
       {total > 0 && (
         <dl className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { k: 'Datos con fuente', v: `${total - (datos?.sinFuente ?? 0)}/${total}` },
+            {
+              k: 'Datos con fuente',
+              v: total - (datos?.sinFuente ?? 0) > 0 ? `${total - (datos?.sinFuente ?? 0)}/${total}` : 'En verificación',
+            },
             // Un cero aquí no significa "malo": significa que nadie lo ha revisado aún.
             { k: 'Revisados a mano', v: verificados > 0 ? `${verificados}` : 'En verificación' },
             {

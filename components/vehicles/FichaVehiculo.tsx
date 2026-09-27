@@ -39,7 +39,8 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWhatsAppLeads } from '@/hooks/useWhatsAppLeads';
 import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
-import { datosClave, leer, precioCompleto, specsDe } from '@/lib/vehiculo-datos';
+import { datosClave, leer, millones, precioCompleto, specsDe } from '@/lib/vehiculo-datos';
+import { fotoDe, pinturaDe } from '@/components/car/CarRender';
 
 const WHATSAPP = '573103818615';
 
@@ -144,7 +145,7 @@ function categorias(fuelType: string, s: Record<string, any>): Categoria[] {
         : [
             h(P.cabina, n(['combustion.combinedConsumption'], x => `${fmt(x)} km por galón`)),
             h(P.capo, n(['combustion.displacement'], x => `Motor de ${fmt(x)} cc`)),
-            h(P.cola, n(['combustion.fuelTankCapacity'], x => `Tanque de ${fmt(x)} L`)),
+            h(P.cola, n(['combustion.fuelTankCapacity', 'hybrid.fuelTankCapacity'], x => `Tanque de ${fmt(x, 1)} galones`)),
             h(P.ruedaR, texto('combustion.transmissionType')),
           ].filter((x): x is Hotspot => !!x),
     },
@@ -177,6 +178,61 @@ const ICONOS: Record<string, LucideIcon> = {
   airbags: Shield,
   pasajeros: Users,
 };
+
+/** Cuatro tarjetas en palabras de persona antes de la ficha técnica. */
+function resumenHumano(fuelType: string, s: Record<string, any>) {
+  const v = (...p: string[]) => leer(s, ...p);
+  const si = (path: string) => {
+    let cur: any = s;
+    for (const k of path.split('.')) cur = cur?.[k];
+    return cur === true;
+  };
+  const tarjetas = [
+    {
+      titulo: 'Espacio',
+      lineas: [
+        v('interior.passengerCapacity') && `Caben ${fmt(v('interior.passengerCapacity')!)} personas`,
+        v('dimensions.cargoCapacity') && `Baúl para ≈ ${Math.max(1, Math.round(v('dimensions.cargoCapacity')! / 40))} maletas de cabina`,
+        v('chassis.groundClearance') && `${fmt(v('chassis.groundClearance')! / 10, 1)} cm del piso para huecos y reductores`,
+      ],
+    },
+    {
+      titulo: 'Seguridad',
+      lineas: [
+        v('safety.airbags') && `${fmt(v('safety.airbags')!)} airbags`,
+        v('safety.ncapRating') && `${fmt(v('safety.ncapRating')!)} estrellas en pruebas de choque`,
+        si('safety.autonomousEmergencyBraking') && 'Frena solo si detecta un choque',
+        si('safety.stabilityControl') && 'Control de estabilidad',
+      ],
+    },
+    fuelType === 'Eléctrico'
+      ? {
+          titulo: 'Batería',
+          lineas: [
+            v('electric.realRangeMixed', 'electric.electricRange') && `${fmt(v('electric.realRangeMixed', 'electric.electricRange')!)} km por carga`,
+            v('electric.batteryCapacity') && `Batería de ${fmt(v('electric.batteryCapacity')!, 1)} kWh`,
+          ],
+        }
+      : {
+          titulo: 'Consumo',
+          lineas: [
+            v('combustion.combinedConsumption') && `${fmt(v('combustion.combinedConsumption')!)} km por galón`,
+            v('combustion.fuelTankCapacity') && `Tanque de ${fmt(v('combustion.fuelTankCapacity')!, 1)} galones`,
+          ],
+        },
+    {
+      titulo: 'Manejo',
+      lineas: [
+        v('combustion.maxPower', 'hybrid.maxPower', 'phev.maxPower') && `${fmt(v('combustion.maxPower', 'hybrid.maxPower', 'phev.maxPower')!)} caballos de fuerza`,
+        v('performance.acceleration0to100') && `De 0 a 100 en ${fmt(v('performance.acceleration0to100')!, 1)} s`,
+        si('assistance.reverseCamera') && 'Cámara de reversa',
+      ],
+    },
+  ];
+  return tarjetas
+    .map(t => ({ titulo: t.titulo, lineas: t.lineas.filter((l): l is string => typeof l === 'string') }))
+    .filter(t => t.lineas.length > 0);
+}
 
 /** Ficha técnica completa agrupada por el registro de atributos. */
 function fichaTecnica(s: Record<string, any>) {
@@ -211,6 +267,7 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
   const [cat, setCat] = useState(0);
   const datos = useMemo(() => datosClave(vehicle), [vehicle]);
   const ficha = useMemo(() => fichaTecnica(s), [s]);
+  const resumen = useMemo(() => resumenHumano(vehicle.fuelType, s), [vehicle.fuelType, s]);
   const fila = useRef<HTMLDivElement>(null);
   const [contacto, setContacto] = useState(false);
   const [fichaAbierta, setFichaAbierta] = useState(false);
@@ -270,11 +327,19 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
           </div>
           <div className="sube flex flex-col items-start gap-4 md:items-end" style={{ '--d': '120ms' } as React.CSSProperties}>
             <div className="md:text-right">
-              <p className="text-[13px] text-tinta-2">
-                Precio de lista{commercial.priceEstimated ? ' · estimado' : ''}
+              <p className="flex items-center gap-2 text-[13px] text-tinta-2 md:justify-end">
+                Precio de lista
+                {commercial.priceEstimated && (
+                  <span className="rounded-full border border-linea bg-blanco px-2.5 py-0.5 text-[12px] text-tinta">Estimado</span>
+                )}
               </p>
               <p className="cifra text-[32px] font-semibold md:text-[40px]">
-                <AnimatedNumber value={vehicle.price} format={n => precioCompleto(Math.round(n))} durationMs={1100} />
+                {/* Un precio estimado no merece falsa precisión: se redondea */}
+                {commercial.priceEstimated ? (
+                  <>≈ {millones(vehicle.price)}</>
+                ) : (
+                  <AnimatedNumber value={vehicle.price} format={n => precioCompleto(Math.round(n))} durationMs={1100} />
+                )}
               </p>
             </div>
             <div className="flex gap-2">
@@ -322,7 +387,12 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
         <div className="estudio relative overflow-hidden rounded-[36px] px-4 py-8 md:px-8 md:py-14">
           <p
             aria-hidden
-            className="t-display pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 select-none text-center text-[clamp(120px,19vw,300px)] leading-none text-[#d4d2da]"
+            className="t-display pointer-events-none absolute inset-x-0 top-1/2 hidden -translate-y-1/2 select-none text-center text-[clamp(120px,19vw,300px)] leading-none md:block"
+            style={
+              !fotoDe(vehicle) && ['perla', 'plata'].includes(pinturaDe(vehicle).nombre)
+                ? { color: 'transparent', WebkitTextStroke: '1.5px #cfcdd5' }
+                : { color: '#dcdae0' }
+            }
           >
             {vehicle.brand.toUpperCase()}
           </p>
@@ -396,22 +466,22 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
         <section className="mx-auto mt-16 max-w-[1440px] px-5 md:px-8">
           <div className="flex items-end justify-between gap-4">
             <h2 className="t-titulo text-[32px] md:text-[44px]">En cifras</h2>
-            <div className="flex gap-2">
-              <button onClick={() => desplazar(-1)} className="flecha" aria-label="Anterior">
+            <div className="hidden gap-2 md:flex">
+              <button onClick={() => desplazar(-1)} className="flecha flecha--fija" aria-label="Anterior">
                 <ArrowLeft className="h-4 w-4" />
               </button>
-              <button onClick={() => desplazar(1)} className="flecha" aria-label="Siguiente">
+              <button onClick={() => desplazar(1)} className="flecha flecha--fija" aria-label="Siguiente">
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           </div>
-          <div ref={fila} className="mt-6 flex snap-x gap-4 overflow-x-auto pb-4 [scrollbar-width:none]">
-            <div className="flex w-[260px] shrink-0 snap-start flex-col justify-between rounded-[28px] bg-tinta p-6 text-white">
+          <div ref={fila} className="mt-6 grid grid-cols-2 gap-3 pb-4 md:flex md:snap-x md:gap-4 md:overflow-x-auto [scrollbar-width:none]">
+            <div className="col-span-2 flex shrink-0 snap-start flex-col justify-between rounded-[28px] bg-tinta p-6 text-white md:w-[260px]">
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10">
                 <Fuel className="h-5 w-5" />
               </span>
-              <div className="mt-10">
-                <p className="text-[13px] text-white/50">Tren motriz</p>
+              <div className="mt-6 md:mt-10">
+                <p className="text-[13px] text-white/60">Tren motriz</p>
                 <p className="mt-1 text-[30px] font-semibold tracking-[-0.03em]">{vehicle.fuelType}</p>
                 <p className="text-[13px] text-white/50">{vehicle.type}</p>
               </div>
@@ -419,14 +489,14 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
             {datos.map(d => {
               const Icono = ICONOS[d.clave] ?? Gauge;
               return (
-                <div key={d.clave} className="flex w-[240px] shrink-0 snap-start flex-col justify-between rounded-[28px] border border-linea bg-blanco p-6">
+                <div key={d.clave} className="flex shrink-0 snap-start flex-col justify-between rounded-[24px] border border-linea bg-blanco p-4 md:w-[240px] md:rounded-[28px] md:p-6">
                   <div className="flex items-start justify-between">
                     <span className="flex h-12 w-12 items-center justify-center rounded-full border border-linea">
                       <Icono className="h-5 w-5" />
                     </span>
                     <span className="text-right text-[14px] text-tinta-2">{d.etiqueta}</span>
                   </div>
-                  <p className="mt-10 text-[52px] font-light leading-none tracking-[-0.05em]">
+                  <p className="mt-6 text-[34px] font-light leading-none tracking-[-0.05em] md:mt-10 md:text-[52px]">
                     {d.valor}
                     {d.unidad && <span className="ml-1.5 text-[18px] text-tinta-2">{d.unidad}</span>}
                   </p>
@@ -446,8 +516,25 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
               Todo lo que sabemos. <span className="text-tinta-2/50">Y nada que no.</span>
             </h2>
           </div>
+          {resumen.length > 0 && (
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {resumen.map(r => (
+                <div key={r.titulo} className="rounded-[24px] bg-blanco p-6">
+                  <p className="text-[17px] font-semibold tracking-[-0.02em]">{r.titulo}</p>
+                  <ul className="mt-4 space-y-2.5">
+                    {r.lineas.map(l => (
+                      <li key={l} className="flex items-start gap-2.5 text-[14px] leading-snug text-tinta/85">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-wise" strokeWidth={2.5} />
+                        {l}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
           <button onClick={() => setFichaAbierta(v => !v)} className="pastilla mt-8 h-12 px-6" aria-expanded={fichaAbierta}>
-            {fichaAbierta ? 'Ocultar ficha técnica' : `Ver ficha técnica completa (${ficha.reduce((n, [, f]) => n + f.length, 0)} datos)`}
+            {fichaAbierta ? 'Ocultar la ficha técnica' : 'Ver todos los datos técnicos'}
             <ArrowUpRight className={`h-4 w-4 transition-transform duration-500 ${fichaAbierta ? 'rotate-[135deg]' : ''}`} />
           </button>
           {fichaAbierta && (

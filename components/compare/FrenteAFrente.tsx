@@ -121,7 +121,7 @@ export function FrenteAFrente({ vehiculos }: { vehiculos: Vehiculo[] }) {
           {vehiculos.map((v, i) => (
             <div key={v.id} className={`sube ${dos && i === 1 ? 'text-right' : ''}`} style={{ '--d': `${i * 120}ms` } as React.CSSProperties}>
               {/* Misma caja para foto y render: ninguno domina por tamaño */}
-              <div className="relative h-[120px] md:h-[200px]">
+              <div className="relative aspect-[480/180] md:aspect-auto md:h-[200px]">
                 <div
                   aria-hidden
                   className="absolute inset-x-[10%] bottom-0 h-[12%] rounded-[50%]"
