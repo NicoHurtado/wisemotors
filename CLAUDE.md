@@ -138,6 +138,10 @@ cobertura, migración, seeds, motor de cohortes.
 - Sin tests. Cualquier trabajo en `lib/ai/` o `lib/attributes/` debería estrenar los primeros.
 - Docs viejos engañosos: `BUSQUEDA_OBJETIVA_CAMPOS.md` describe código que ya no existe.
 - Deploy Vercel `iad1`, funciones `maxDuration: 30s`. Env vars: `DATABASE_URL`,
-  `JWT_SECRET`, `OPENAI_API_KEY`, `CLOUDINARY_*`, `NEXT_PUBLIC_APP_URL`.
+  `JWT_SECRET`, `ANTHROPIC_API_KEY` (+ `ANTHROPIC_WORKSPACE_ID` si la clave no es
+  de un workspace), `OPENAI_API_KEY`, `CLOUDINARY_*`, `NEXT_PUBLIC_APP_URL`.
+- LLM: la ingesta (`lib/ingest/`) usa Claude vía `lib/ai/claude.ts` (`pedirJson` +
+  esquema Zod, salida estructurada). La búsqueda (`lib/ai/categorization.ts`,
+  `rerank.ts`, `comparison.ts`) sigue en OpenAI hasta migrarla.
 - Stakeholder que da feedback: Olarte. Público objetivo: compradores NO expertos —
   el copy nunca asume conocimiento técnico.

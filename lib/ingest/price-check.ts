@@ -14,6 +14,8 @@
 // el humano tiene que poder ver que hubo una corrección y por qué.
 // ============================================================================
 
+import { z } from 'zod/v4';
+import { pedirJson } from '@/lib/ai/claude';
 import { prisma } from '@/lib/prisma';
 import type { PriceDraft } from './types';
 
@@ -66,7 +68,7 @@ function mediana(valores: number[]): number {
 
 export async function verificarPrecio(
   price: PriceDraft,
-  identidad: { brand: string; model: string; year: number; type: string; fuelType: string }
+  identidad: { brand: string; model: string; trim?: string; year: number; type: string; fuelType: string }
 ): Promise<PriceCheck> {
   // Un precio con fuente verificable no se toca: la fuente manda.
   if (!price.estimated) {
@@ -181,13 +183,12 @@ export async function verificarPrecio(
 /** Segunda pasada: mismo modelo, pero con los precios reales del catálogo delante. */
 async function reconsiderarConAnclas(
   original: PriceDraft,
-  identidad: { brand: string; model: string; year: number; type: string; fuelType: string },
+  identidad: { brand: string; model: string; trim?: string; year: number; type: string; fuelType: string },
   comparables: { etiqueta: string; precio: number }[],
   med: number | null,
   bandas: { labelEs: string; minPrice: number; maxPrice: number | null }[]
 ): Promise<PriceDraft | null> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
+  if (!process.env.ANTHROPIC_API_KEY) return null;
 
   const listaComparables =
     comparables.length > 0
@@ -204,34 +205,21 @@ async function reconsiderarConAnclas(
     )
     .join('\n');
 
-  const fn = {
-    name: 'reconsiderar_precio',
-    description: 'Revisa la estimación con los comparables reales delante',
-    parameters: {
-      type: 'object',
-      properties: {
-        priceCop: { type: 'number', description: 'Precio corregido en COP, versión de entrada' },
-        reasoning: {
-          type: 'string',
-          description:
-            'Español, 2-3 frases: por qué se mantiene o se corrige, citando comparables concretos',
-        },
-        confidence: { type: 'number', minimum: 0, maximum: 1 },
-      },
-      required: ['priceCop', 'reasoning', 'confidence'],
-    },
-  };
+  const RevisionSchema = z.object({
+    priceCop: z.number().describe('Precio corregido en COP (número completo), misma versión que se estimó'),
+    reasoning: z
+      .string()
+      .describe('Español, 2-3 frases: por qué se mantiene o se corrige, citando comparables concretos'),
+    confidence: z.number().describe('Entre 0 y 1'),
+  });
+
+  const version = identidad.trim ? `la versión ${identidad.trim}` : 'la VERSIÓN DE ENTRADA';
 
   try {
-    const respuesta = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'user',
-            content: `Estimaste el ${identidad.brand} ${identidad.model} ${identidad.year} (${identidad.fuelType}, ${identidad.type}) en ${millones(original.value)} para Colombia.
+    const args = await pedirJson({
+      schema: RevisionSchema,
+      maxTokens: 8000,
+      prompt: `Estimaste el ${identidad.brand} ${identidad.model}${identidad.trim ? ` ${identidad.trim}` : ''} ${identidad.year} (${identidad.fuelType}, ${identidad.type}) en ${millones(original.value)} para Colombia.
 
 ${
   med != null
@@ -254,20 +242,10 @@ REFERENCIAS DE MERCADO COLOMBIA H1-2026:
 - Un SUV compacto de marca masiva rara vez pasa de $140M en versión de entrada
 
 REGLAS:
-1. Usa SIEMPRE el precio de la VERSIÓN DE ENTRADA, no el tope de gama. Ese es el error más común y el que más daño hace.
+1. Usa SIEMPRE el precio de ${version}, no otra de la gama. Confundir versiones es el error más común y el que más daño hace.
 2. No asumas que el modelo se importa por cuenta propia: muchas marcas que parecen ausentes sí tienen distribución oficial en Colombia. Solo suma arancel e IVA si estás seguro de que no se vende localmente.
 3. Si tu estimación estaba mal, corrígela sin defenderla. Si estaba bien, sostenla y explica qué justifica el nivel.`,
-          },
-        ],
-        functions: [fn],
-        function_call: { name: 'reconsiderar_precio' },
-        temperature: 0.1,
-      }),
     });
-
-    if (!respuesta.ok) return null;
-    const datos = await respuesta.json();
-    const args = JSON.parse(datos.choices?.[0]?.message?.function_call?.arguments ?? '{}');
 
     // Si la cifra no pasa el saneo, se descarta la corrección entera: la
     // estimación previa, aunque discutible, al menos es del orden correcto.
@@ -284,7 +262,7 @@ REGLAS:
         (cambio
           ? `Corregido de ${millones(original.value)} a ${millones(corregido)} tras contrastar con el catálogo. `
           : `Sostenido en ${millones(corregido)} tras contrastar con el catálogo. `) +
-        String(args.reasoning ?? ''),
+        args.reasoning,
     };
   } catch {
     return null;

@@ -7,46 +7,27 @@
 // ============================================================================
 
 import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
+import { z } from 'zod/v4';
+import { pedirJson } from '@/lib/ai/claude';
 import type { RawFact, SourceTier } from './types';
-
-const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
-/** Modelo económico para extracción; el presupuesto es ~15-25 llamadas por vehículo. */
-const EXTRACT_MODEL = 'gpt-4o-mini';
 
 // Solo atributos que se publican en Colombia y con keys válidas
 const EXTRACTABLE = ATTRIBUTE_REGISTRY.filter(d => d.coAvailability !== 'never_published');
 const VALID_KEYS = new Set(EXTRACTABLE.map(d => d.key));
 
-const extractFunction = {
-  name: 'report_extracted_specs',
-  description: 'Reporta las especificaciones encontradas en el texto, solo keys del catálogo',
-  parameters: {
-    type: 'object',
-    properties: {
-      facts: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            key: {
-              type: 'string',
-              description: 'Key EXACTA del catálogo de atributos proporcionado',
-            },
-            value: {
-              description: 'Valor: número puro para numéricos (sin unidad), true/false para booleanos, string para texto/enum',
-            },
-            quote: {
-              type: 'string',
-              description: 'Cita textual (máx 140 caracteres) del fragmento del texto que respalda el valor',
-            },
-          },
-          required: ['key', 'value', 'quote'],
-        },
-      },
-    },
-    required: ['facts'],
-  },
-};
+const ExtraccionSchema = z.object({
+  facts: z
+    .array(
+      z.object({
+        key: z.string().describe('Key EXACTA del catálogo de atributos proporcionado'),
+        value: z
+          .union([z.number(), z.string(), z.boolean()])
+          .describe('Número puro para numéricos (sin unidad), true para booleanos presentes, string para texto/enum'),
+        quote: z.string().describe('Cita textual (máx 140 caracteres) del fragmento del texto que respalda el valor'),
+      })
+    )
+    .describe('Especificaciones encontradas en el texto, solo keys del catálogo'),
+});
 
 function buildCatalog(): string {
   // Catálogo compacto: key | etiqueta | unidad esperada | tipo
@@ -72,9 +53,6 @@ export async function extractFromPage(
   tier: SourceTier,
   vehicleLabel: string
 ): Promise<RawFact[]> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error('OPENAI_API_KEY no está definida: la ingesta necesita el extractor.');
-
   const userPrompt = `VEHÍCULO OBJETIVO: ${vehicleLabel}
 
 CATÁLOGO DE ATRIBUTOS (key | etiqueta | tipo):
@@ -87,34 +65,11 @@ ${pageText}
 
 Extrae las especificaciones del vehículo objetivo presentes en el texto. Si el texto habla de otro vehículo, no reportes nada.`;
 
-  const response = await fetch(OPENAI_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: EXTRACT_MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userPrompt },
-      ],
-      functions: [extractFunction],
-      function_call: { name: 'report_extracted_specs' },
-      temperature: 0,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`OpenAI ${response.status} extrayendo de ${sourceUrl}`);
-  }
-
-  const data = await response.json();
-  const call = data.choices?.[0]?.message?.function_call;
-  if (!call?.arguments) return [];
-
-  let parsed: any;
+  let parsed: z.infer<typeof ExtraccionSchema>;
   try {
-    parsed = JSON.parse(call.arguments);
-  } catch {
-    return [];
+    parsed = await pedirJson({ schema: ExtraccionSchema, system: SYSTEM_PROMPT, prompt: userPrompt });
+  } catch (err) {
+    throw new Error(`Claude falló extrayendo de ${sourceUrl}: ${err instanceof Error ? err.message : err}`);
   }
 
   const facts: RawFact[] = [];
@@ -158,58 +113,29 @@ export async function resolveIdentity(
   year: number,
   country: string
 ): Promise<{ brand: string; model: string; trim: string; type: string; vehicleType: string; fuelType: string }> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error('OPENAI_API_KEY no está definida.');
-
-  const fn = {
-    name: 'resolve_identity',
-    description: 'Normaliza la identidad del vehículo a los valores canónicos',
-    parameters: {
-      type: 'object',
-      properties: {
-        brand: { type: 'string', description: 'Marca con capitalización oficial (ej. "Toyota", "BYD")' },
-        model: { type: 'string', description: 'Modelo canónico SIN marca, año ni versión (ej. "Corolla Cross", "Onix")' },
-        trim: {
-          type: 'string',
-          description: 'Versión/línea que el usuario pidió (ej. "RS", "XEI", "Premier"), con su nombre comercial en el país. Cadena vacía si no pidió ninguna. No inventes una.',
-        },
-        type: { type: 'string', enum: ['Sedán', 'SUV', 'Pickup', 'Deportivo', 'Wagon', 'Hatchback', 'Convertible'] },
-        vehicleType: { type: 'string', enum: ['Automóvil', 'Deportivo', 'Todoterreno', 'Lujo', 'Económico'] },
-        fuelType: {
-          type: 'string',
-          enum: ['Gasolina', 'Diesel', 'Eléctrico', 'Híbrido', 'Híbrido Enchufable'],
-          description: 'Tren motriz de la versión MÁS VENDIDA en el país indicado',
-        },
-      },
-      required: ['brand', 'model', 'trim', 'type', 'vehicleType', 'fuelType'],
-    },
-  };
-
-  const response = await fetch(OPENAI_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: EXTRACT_MODEL,
-      messages: [
-        {
-          role: 'user',
-          content: `Vehículo: ${brand ? `${brand} ` : ''}${model} ${year}, mercado ${country}. Normaliza su identidad.${brand ? '' : ' La marca no vino: dedúcela del modelo.'} Si el modelo tiene un nombre comercial distinto en ese mercado, usa el del mercado. Separa la versión del modelo: "Onix RS" es modelo "Onix", versión "RS".`,
-        },
-      ],
-      functions: [fn],
-      function_call: { name: 'resolve_identity' },
-      temperature: 0,
-    }),
+  const IdentidadSchema = z.object({
+    brand: z.string().describe('Marca con capitalización oficial (ej. "Toyota", "BYD")'),
+    model: z.string().describe('Modelo canónico SIN marca, año ni versión (ej. "Corolla Cross", "Onix")'),
+    trim: z
+      .string()
+      .describe('Versión/línea que el usuario pidió (ej. "RS", "XEI", "Premier"), con su nombre comercial en el país. Cadena vacía si no pidió ninguna. No inventes una.'),
+    type: z.enum(['Sedán', 'SUV', 'Pickup', 'Deportivo', 'Wagon', 'Hatchback', 'Convertible']),
+    vehicleType: z.enum(['Automóvil', 'Deportivo', 'Todoterreno', 'Lujo', 'Económico']),
+    fuelType: z
+      .enum(['Gasolina', 'Diesel', 'Eléctrico', 'Híbrido', 'Híbrido Enchufable'])
+      .describe('Tren motriz de la versión pedida; si no se pidió versión, el de la MÁS VENDIDA en el país'),
   });
 
-  if (!response.ok) throw new Error(`OpenAI ${response.status} resolviendo identidad`);
-  const data = await response.json();
-  const args = JSON.parse(data.choices?.[0]?.message?.function_call?.arguments ?? '{}');
+  const args = await pedirJson({
+    schema: IdentidadSchema,
+    maxTokens: 4000,
+    prompt: `Vehículo: ${brand ? `${brand} ` : ''}${model} ${year}, mercado ${country}. Normaliza su identidad.${brand ? '' : ' La marca no vino: dedúcela del modelo.'} Si el modelo tiene un nombre comercial distinto en ese mercado, usa el del mercado. Separa la versión del modelo: "Onix RS" es modelo "Onix", versión "RS".`,
+  });
 
   return {
     brand: args.brand || brand,
     model: args.model || model,
-    trim: typeof args.trim === 'string' ? args.trim.trim() : '',
+    trim: args.trim.trim(),
     type: args.type || 'Sedán',
     vehicleType: args.vehicleType || 'Automóvil',
     fuelType: args.fuelType || 'Gasolina',
