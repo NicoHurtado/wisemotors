@@ -117,22 +117,26 @@ export function FrenteAFrente({ vehiculos }: { vehiculos: Vehiculo[] }) {
     <div>
       {/* Escenario */}
       <div className="estudio relative overflow-hidden rounded-[36px] px-6 pb-10 pt-8 md:px-10">
-        <div className={`grid gap-6 ${dos ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3'}`}>
+        <div className={`grid ${dos ? 'grid-cols-2 gap-16 md:gap-28' : 'grid-cols-2 gap-6 lg:grid-cols-3'}`}>
           {vehiculos.map((v, i) => (
             <div key={v.id} className={`sube ${dos && i === 1 ? 'text-right' : ''}`} style={{ '--d': `${i * 120}ms` } as React.CSSProperties}>
-              <CarRender
-                car={v}
-                reflejo
-                className={`aspect-[480/190] w-full ${dos && i === 1 ? '-scale-x-100' : ''}`}
-              />
-              <p className="mt-10 text-[13px] text-tinta-2">{v.brand}</p>
+              {/* Misma caja para foto y render: ninguno domina por tamaño */}
+              <div className="relative h-[120px] md:h-[200px]">
+                <div
+                  aria-hidden
+                  className="absolute inset-x-[10%] bottom-0 h-[12%] rounded-[50%]"
+                  style={{ background: 'radial-gradient(closest-side, rgba(0,0,0,0.35), transparent)' }}
+                />
+                <CarRender car={v} className={`relative h-full w-full ${dos && i === 1 ? '-scale-x-100' : ''}`} />
+              </div>
+              <p className="mt-8 text-[13px] text-tinta-2">{v.brand}</p>
               <p className="text-[24px] font-semibold tracking-[-0.03em] md:text-[30px]">{v.model}</p>
               <p className="cifra mt-1 text-[15px]">{millones(v.price)}</p>
             </div>
           ))}
         </div>
         {dos && (
-          <span className="cifra absolute left-1/2 top-[30%] flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full border border-linea bg-blanco text-[14px] text-tinta-2 shadow-sm">
+          <span className="cifra absolute left-1/2 top-[22%] flex h-14 w-14 md:top-[26%] -translate-x-1/2 items-center justify-center rounded-full border border-linea bg-blanco text-[14px] text-tinta-2 shadow-sm">
             vs
           </span>
         )}

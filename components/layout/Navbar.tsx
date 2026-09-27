@@ -11,7 +11,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, Heart, LogOut, Menu, Search, Sparkles, User, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -23,6 +23,23 @@ export function Navbar() {
   const pathname = usePathname();
   const [abierto, setAbierto] = useState(false);
   const [bajo, setBajo] = useState(false);
+  const [menu, setMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Cerrar el menú de usuario al hacer clic afuera o con Escape
+  useEffect(() => {
+    if (!menu) return;
+    const fuera = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenu(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setMenu(false);
+    document.addEventListener('mousedown', fuera);
+    document.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('mousedown', fuera);
+      document.removeEventListener('keydown', esc);
+    };
+  }, [menu]);
 
   useEffect(() => {
     let frame = 0;
@@ -42,7 +59,10 @@ export function Navbar() {
     };
   }, [pathname]);
 
-  useEffect(() => setAbierto(false), [pathname]);
+  useEffect(() => {
+    setAbierto(false);
+    setMenu(false);
+  }, [pathname]);
   useEffect(() => {
     document.body.style.overflow = abierto ? 'hidden' : '';
     return () => {
@@ -56,7 +76,6 @@ export function Navbar() {
     { href: '/', texto: 'Inicio' },
     { href: '/vehicles', texto: 'Catálogo' },
     { href: '/compare', texto: 'Comparar' },
-    ...(isAuthenticated ? [{ href: '/favorites', texto: 'Favoritos' }] : []),
   ];
 
   const activo = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
@@ -109,33 +128,40 @@ export function Navbar() {
               <Search className="h-4 w-4" />
             </Link>
 
-            {isFullyAuthorized && (
-              <>
-                <Link href="/admin/ingest" className={`pastilla h-10 px-4 ${oscuro ? 'pastilla--oscura' : ''}`}>
-                  <Sparkles className="h-4 w-4 text-wise" /> Subir con IA
-                </Link>
-                <Link href="/admin" className={`pastilla h-10 px-4 ${oscuro ? 'pastilla--oscura' : ''}`}>
-                  Panel
-                </Link>
-              </>
-            )}
-
             {isAuthenticated ? (
-              <>
-                <Link href="/favorites" aria-label="Favoritos" className={`flecha h-10 w-10 ${oscuro ? '!border-white/20 !bg-white/5 !text-white' : ''}`}>
-                  <Heart className="h-4 w-4" />
-                </Link>
-                <span className={`pastilla h-10 cursor-default px-4 ${oscuro ? 'pastilla--oscura' : ''}`}>
-                  <User className="h-4 w-4" /> {user?.username}
-                </span>
+              <div className="relative" ref={menuRef}>
                 <button
-                  onClick={salir}
-                  aria-label="Cerrar sesión"
-                  className={`flecha h-10 w-10 ${oscuro ? '!border-white/20 !bg-white/5 !text-white' : ''}`}
+                  onClick={() => setMenu(m => !m)}
+                  aria-expanded={menu}
+                  aria-haspopup="menu"
+                  className={`pastilla h-10 pl-1.5 pr-4 ${oscuro ? 'pastilla--oscura' : ''}`}
                 >
-                  <LogOut className="h-4 w-4" />
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-wise text-[12px] font-semibold uppercase text-white">
+                    {user?.username?.charAt(0) ?? <User className="h-4 w-4" />}
+                  </span>
+                  {user?.username}
                 </button>
-              </>
+                {menu && (
+                  <div role="menu" className="menu-usuario absolute right-0 top-[calc(100%+8px)] w-56 overflow-hidden rounded-[22px] border border-linea bg-blanco p-2 text-tinta shadow-[0_24px_50px_-24px_rgba(14,12,17,0.45)]">
+                    {[
+                      { href: '/favorites', texto: 'Favoritos', icono: Heart },
+                      ...(isFullyAuthorized
+                        ? [
+                            { href: '/admin/ingest', texto: 'Subir con IA', icono: Sparkles },
+                            { href: '/admin', texto: 'Panel', icono: User },
+                          ]
+                        : []),
+                    ].map(o => (
+                      <Link key={o.href} href={o.href} role="menuitem" className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-[14px] hover:bg-papel">
+                        <o.icono className="h-4 w-4 text-tinta-2" /> {o.texto}
+                      </Link>
+                    ))}
+                    <button role="menuitem" onClick={salir} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-[14px] hover:bg-papel">
+                      <LogOut className="h-4 w-4 text-tinta-2" /> Cerrar sesión
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <>
                 <Link href="/login" className={`pastilla h-10 px-5 ${oscuro ? 'pastilla--oscura' : ''}`}>
@@ -170,7 +196,11 @@ export function Navbar() {
           </div>
 
           <nav className="mt-14 flex flex-col" aria-label="Principal">
-            {[...enlaces, ...(isFullyAuthorized ? [{ href: '/admin/ingest', texto: 'Subir con IA' }, { href: '/admin', texto: 'Panel' }] : [])].map(
+            {[
+              ...enlaces,
+              ...(isAuthenticated ? [{ href: '/favorites', texto: 'Favoritos' }] : []),
+              ...(isFullyAuthorized ? [{ href: '/admin/ingest', texto: 'Subir con IA' }, { href: '/admin', texto: 'Panel' }] : []),
+            ].map(
               (e, i) => (
                 <Link
                   key={e.href}

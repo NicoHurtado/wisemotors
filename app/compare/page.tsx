@@ -110,7 +110,7 @@ export default function ComparePage() {
               disabled={lleno}
               aria-pressed={on}
               className={`group relative w-[220px] shrink-0 snap-start rounded-[24px] border p-4 text-left transition-all duration-300 ${
-                on ? 'border-tinta bg-blanco shadow-[0_18px_40px_-28px_rgba(14,12,17,0.6)]' : 'border-transparent bg-tarjeta hover:bg-blanco'
+                on ? 'border-tinta bg-blanco' : 'border-transparent bg-tarjeta hover:bg-blanco'
               } ${lleno ? 'cursor-not-allowed opacity-40' : ''}`}
             >
               <span

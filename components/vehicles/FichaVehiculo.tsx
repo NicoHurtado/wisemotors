@@ -19,6 +19,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   Armchair,
+  Check,
   Fuel,
   Gauge,
   Heart,
@@ -179,7 +180,7 @@ const ICONOS: Record<string, LucideIcon> = {
 
 /** Ficha técnica completa agrupada por el registro de atributos. */
 function fichaTecnica(s: Record<string, any>) {
-  const grupos = new Map<string, { etiqueta: string; valor: string }[]>();
+  const grupos = new Map<string, { etiqueta: string; valor: string; numero: boolean }[]>();
   for (const def of ATTRIBUTE_REGISTRY) {
     if (def.displayGroup === 'WiseMetrics' || def.key === 'commercial.priceCop') continue;
     let cur: any = s;
@@ -193,7 +194,8 @@ function fichaTecnica(s: Record<string, any>) {
       valor = `${fmt(nnum, 1)}${def.unit ? ` ${def.unit}` : ''}`;
     } else valor = String(cur);
     const lista = grupos.get(def.displayGroup) ?? [];
-    lista.push({ etiqueta: def.labelEs, valor });
+    // "(HEV)", "(PHEV)"... es jerga: el tren motriz ya se dice arriba.
+    lista.push({ etiqueta: def.labelEs.replace(/\s*\((HEV|PHEV|EV|ICE)\)/g, ''), valor, numero: def.dataType === 'numeric' });
     grupos.set(def.displayGroup, lista);
   }
   return Array.from(grupos.entries());
@@ -211,6 +213,7 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
   const ficha = useMemo(() => fichaTecnica(s), [s]);
   const fila = useRef<HTMLDivElement>(null);
   const [contacto, setContacto] = useState(false);
+  const [fichaAbierta, setFichaAbierta] = useState(false);
   const [nombre, setNombre] = useState(user?.username ?? '');
   const fav = isFavorite(vehicle.id);
   const actual = cats[cat];
@@ -316,10 +319,10 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
 
       {/* ── Escenario con puntos de interés ─────────────────────────────── */}
       <section className="mx-auto mt-8 max-w-[1440px] px-5 md:px-8">
-        <div className="estudio relative overflow-hidden rounded-[36px] px-4 pb-8 pt-6 md:px-8 md:pb-10">
+        <div className="estudio relative overflow-hidden rounded-[36px] px-4 py-8 md:px-8 md:py-14">
           <p
             aria-hidden
-            className="t-display pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 select-none text-center text-[22vw] leading-none text-tinta/[0.045]"
+            className="t-display pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 select-none text-center text-[clamp(120px,19vw,300px)] leading-none text-[#d4d2da]"
           >
             {vehicle.brand.toUpperCase()}
           </p>
@@ -338,14 +341,14 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
               ))}
             </nav>
 
-            <div className="relative mx-auto aspect-[480/200] w-full max-w-[860px]">
-              <CarRender car={vehicle} prioridad className="carro-entra absolute inset-0" />
+            <div className="relative mx-auto aspect-[480/220] w-full max-w-[860px]">
+              <CarRender car={vehicle} prioridad className="carro-entra absolute inset-x-0 bottom-0 top-[6%]" />
               {actual?.puntos.map((p, i) => {
                 const izquierda = p.donde.x > 58;
                 return (
                   <div
                     key={`${actual.id}-${i}`}
-                    className="hotspot"
+                    className="hotspot !hidden md:!flex"
                     style={
                       {
                         left: `${p.donde.x}%`,
@@ -362,6 +365,16 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
                 );
               })}
             </div>
+
+            {actual && (
+              <ul className="grid grid-cols-2 gap-2 md:hidden">
+                {actual.puntos.map(p => (
+                  <li key={p.texto} className="rounded-2xl bg-blanco/90 px-3 py-2.5 text-[13px] font-medium">
+                    {p.texto}
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {actual && (
               <div key={actual.id} className="sube overflow-hidden rounded-[28px] bg-blanco shadow-[0_30px_60px_-40px_rgba(14,12,17,0.5)]">
@@ -424,7 +437,7 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
         </section>
       )}
 
-      {/* ── Ficha técnica completa ───────────────────────────────────────── */}
+      {/* ── Ficha técnica completa (plegada: es para quien la quiera) ───── */}
       {ficha.length > 0 && (
         <section className="mx-auto mt-20 max-w-[1440px] px-5 md:px-8">
           <div className="grid gap-6 border-t border-linea pt-10 md:grid-cols-12">
@@ -433,7 +446,12 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
               Todo lo que sabemos. <span className="text-tinta-2/50">Y nada que no.</span>
             </h2>
           </div>
-          <div className="mt-10 columns-1 gap-8 md:columns-2 xl:columns-3">
+          <button onClick={() => setFichaAbierta(v => !v)} className="pastilla mt-8 h-12 px-6" aria-expanded={fichaAbierta}>
+            {fichaAbierta ? 'Ocultar ficha técnica' : `Ver ficha técnica completa (${ficha.reduce((n, [, f]) => n + f.length, 0)} datos)`}
+            <ArrowUpRight className={`h-4 w-4 transition-transform duration-500 ${fichaAbierta ? 'rotate-[135deg]' : ''}`} />
+          </button>
+          {fichaAbierta && (
+          <div className="sube mt-10 columns-1 gap-8 md:columns-2 xl:columns-3">
             {ficha.map(([grupo, filas]) => (
               <div key={grupo} className="mb-8 break-inside-avoid rounded-[24px] bg-blanco p-6">
                 <p className="text-[17px] font-semibold tracking-[-0.02em]">{grupo}</p>
@@ -441,13 +459,16 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
                   {filas.map(f => (
                     <div key={f.etiqueta} className="flex items-baseline justify-between gap-4 border-b border-linea/70 py-2.5 last:border-0">
                       <dt className="text-[14px] text-tinta-2">{f.etiqueta}</dt>
-                      <dd className="cifra text-right text-[14px] text-tinta">{f.valor}</dd>
+                      <dd className={`text-right text-[14px] text-tinta ${f.numero ? 'cifra' : ''}`}>
+                        {f.valor === 'Sí' ? <Check className="ml-auto h-4 w-4 text-wise" strokeWidth={2.5} aria-label="Sí" /> : f.valor}
+                      </dd>
                     </div>
                   ))}
                 </dl>
               </div>
             ))}
           </div>
+          )}
         </section>
       )}
 

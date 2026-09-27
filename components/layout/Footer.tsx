@@ -40,7 +40,7 @@ export function Footer() {
         <div className="grid gap-12 md:grid-cols-12">
           <div className="md:col-span-6">
             <h2 className="t-titulo text-[44px] md:text-[64px]">
-              <span className="text-white/35">No tienes que saber de carros.</span>{' '}
+              <span className="text-white/55">No tienes que saber de carros.</span>{' '}
               <span>Para eso estamos.</span>
             </h2>
             <Link href="/vehicles" className="cta-corte mt-10">
@@ -51,7 +51,7 @@ export function Footer() {
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:col-span-6 md:pt-3">
             {COLUMNAS.map(c => (
               <div key={c.titulo}>
-                <p className="t-meta text-white/40">{c.titulo}</p>
+                <p className="t-meta text-white/55">{c.titulo}</p>
                 <ul className="mt-5 space-y-3">
                   {c.enlaces.map(e => (
                     <li key={e.href}>
@@ -74,7 +74,7 @@ export function Footer() {
 
         <div className="flex flex-wrap items-center justify-between gap-4 py-6">
           <Logo oscuro />
-          <p className="t-meta text-white/40">(Medellín · Colombia) · © {new Date().getFullYear()} WiseMotors</p>
+          <p className="t-meta text-white/55">(Medellín · Colombia) · © {new Date().getFullYear()} WiseMotors</p>
           <a
             href="https://instagram.com/wisemotors.co"
             target="_blank"
@@ -90,7 +90,7 @@ export function Footer() {
       {/* Marca gigante que se sale por abajo */}
       <p
         aria-hidden
-        className="t-display pointer-events-none -mb-[0.2em] select-none whitespace-nowrap px-4 text-center text-[21vw] leading-[0.8] text-white/[0.06]"
+        className="t-display pointer-events-none -mb-[0.2em] select-none whitespace-nowrap px-4 text-center text-[17vw] leading-[0.8] text-white/[0.06]"
       >
         WISEMOTORS
       </p>

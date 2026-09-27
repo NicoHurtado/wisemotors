@@ -40,8 +40,8 @@ interface Props {
 
 const ETIQUETA_TIER: Record<number, { texto: string; clase: string }> = {
   1: { texto: 'Fabricante', clase: 'bg-purple-50 text-purple-700 ring-purple-600/15' },
-  2: { texto: 'Prensa especializada', clase: 'bg-sky-50 text-sky-700 ring-sky-600/15' },
-  3: { texto: 'Comunidad, sin verificar', clase: 'bg-amber-50 text-amber-800 ring-amber-600/20' },
+  2: { texto: 'Prensa especializada', clase: 'bg-fuchsia-50 text-fuchsia-800 ring-fuchsia-600/15' },
+  3: { texto: 'Comunidad, sin verificar', clase: 'bg-rose-50 text-rose-800 ring-rose-600/20' },
 };
 
 function dominio(url: string): string {
@@ -100,13 +100,13 @@ export function DataProvenance({
         : null;
 
   return (
-    <Reveal className="glass rounded-3xl p-6 md:p-8">
+    <Reveal className="rounded-[28px] bg-blanco p-6 md:p-8">
       <div className="mb-5 flex items-start gap-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-wise/10">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-linea">
           <ShieldCheck className="h-5 w-5 text-wise" strokeWidth={1.75} />
         </div>
         <div>
-          <h3 className="text-[20px] font-semibold tracking-tight text-gray-900">
+          <h3 className="text-[22px] font-semibold tracking-[-0.03em] text-tinta">
             De dónde salen estos datos
           </h3>
           <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">
@@ -120,17 +120,17 @@ export function DataProvenance({
 
       {/* Aviso de precio estimado: lo más importante de todo este panel */}
       {precioEstimado && (
-        <div className="mb-5 rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-600/15">
-          <p className="flex items-center gap-2 text-[14px] font-semibold text-amber-900">
-            <CircleAlert className="h-4 w-4 shrink-0" strokeWidth={2} />
+        <div className="mb-5 rounded-2xl bg-papel p-4">
+          <p className="flex items-center gap-2 text-[14px] font-semibold text-tinta">
+            <CircleAlert className="h-4 w-4 shrink-0 text-wise" strokeWidth={2} />
             Este precio es una estimación, no una cotización
           </p>
           {razonamientoPrecio && (
-            <p className="mt-2 whitespace-pre-line text-[13px] leading-relaxed text-amber-900/80">
+            <p className="mt-2 whitespace-pre-line text-[13px] leading-relaxed text-tinta-2">
               {razonamientoPrecio}
             </p>
           )}
-          <p className="mt-2 text-[13px] text-amber-900/70">
+          <p className="mt-2 text-[13px] text-tinta-2">
             Confírmalo con el concesionario antes de tomar cualquier decisión.
           </p>
         </div>
@@ -141,15 +141,16 @@ export function DataProvenance({
         <dl className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { k: 'Datos con fuente', v: `${total - (datos?.sinFuente ?? 0)}/${total}` },
-            { k: 'Revisados a mano', v: `${verificados}` },
+            // Un cero aquí no significa "malo": significa que nadie lo ha revisado aún.
+            { k: 'Revisados a mano', v: verificados > 0 ? `${verificados}` : 'En verificación' },
             {
               k: 'Confianza media',
               v: datos?.confianzaMedia != null ? `${Math.round(datos.confianzaMedia * 100)}%` : '—',
             },
             { k: 'Cobertura', v: cobertura != null ? `${cobertura}%` : '—' },
           ].map(m => (
-            <div key={m.k} className="rounded-2xl bg-foreground/[0.03] px-3 py-2.5">
-              <dt className="text-[10px] font-medium uppercase tracking-[0.07em] text-muted-foreground">
+            <div key={m.k} className="rounded-2xl bg-papel px-3 py-2.5">
+              <dt className="t-meta text-tinta-2">
                 {m.k}
               </dt>
               <dd className="mt-0.5 font-mono text-[17px] font-semibold tabular-nums text-foreground">

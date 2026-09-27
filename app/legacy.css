@@ -647,52 +647,10 @@
   z-index: 9999 !important;
 }
 
-/* Mobile optimizations */
+/* Mobile optimizations
+   (Se quitó el forzado de p/span/div a 16px y de tamaño mínimo en botones:
+   pisaba toda la tipografía móvil del sistema nuevo.) */
 @media (max-width: 768px) {
-
-  /* Ensure minimum touch target size */
-  button,
-  [role="button"],
-  input[type="button"],
-  input[type="submit"] {
-    min-height: 44px;
-    min-width: 44px;
-  }
-
-  /* Better text readability on mobile */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    line-height: 1.2;
-  }
-
-  /* Prevent text from being too small */
-  p,
-  span,
-  div {
-    font-size: 16px;
-    line-height: 1.5;
-  }
-
-  /* ...pero un span dentro de un titular debe heredar el tamaño del titular.
-     Sin esto, "WiseMotors" dentro del h1 caía a 16px y partía la portada. */
-  h1 span,
-  h2 span,
-  h3 span,
-  h4 span,
-  h5 span,
-  h6 span,
-  button span,
-  h1 div,
-  h2 div,
-  h3 div {
-    font-size: inherit;
-    line-height: inherit;
-  }
-
   /* Better container padding for mobile */
   .container {
     padding-left: 1rem;

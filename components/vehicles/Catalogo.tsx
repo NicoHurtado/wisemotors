@@ -133,7 +133,7 @@ export function Catalogo({ vehiculos }: { vehiculos: VehiculoTarjeta[] }) {
 
       <fieldset>
         <legend className="t-meta mb-4 text-tinta-2">Precio</legend>
-        <div className="flex h-16 items-end gap-[3px]" aria-hidden>
+        <div className="flex h-12 items-end gap-[4px]" aria-hidden>
           {barras.b.map((b, i) => {
             const dentro = b.desde + barras.paso >= rango[0] && b.desde <= rango[1];
             return (
@@ -142,7 +142,7 @@ export function Catalogo({ vehiculos }: { vehiculos: VehiculoTarjeta[] }) {
                 className="histo-barra flex-1 rounded-t-[2px]"
                 style={{
                   height: `${b.n ? 18 + (b.n / barras.max) * 82 : 6}%`,
-                  background: dentro ? 'var(--tinta)' : 'var(--linea)',
+                  background: dentro ? '#6f6b77' : '#dcdae0',
                   transitionDelay: `${i * 12}ms`,
                 }}
               />
@@ -252,7 +252,7 @@ export function Catalogo({ vehiculos }: { vehiculos: VehiculoTarjeta[] }) {
           {filtrados.length > 0 ? (
             <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
               {filtrados.map((v, i) => (
-                <TarjetaCarro key={v.id} vehiculo={v} indice={i} />
+                <TarjetaCarro key={v.id} vehiculo={v} indice={i} destacada={i === 0} />
               ))}
             </div>
           ) : (

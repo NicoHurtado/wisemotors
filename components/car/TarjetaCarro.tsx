@@ -86,6 +86,7 @@ export function TarjetaCarro({
       onMouseMove={mover}
       onMouseLeave={salir}
       className="tarjeta-carro group block p-5 md:p-6"
+      data-destacada={destacada}
     >
       <div className="relative z-10 flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -119,11 +120,11 @@ export function TarjetaCarro({
           <div className="fila-datos flex-1">
             {datos.map(d => (
               <div key={d.clave} className="px-3 text-center first:pl-0 last:pr-0">
-                <p className="cifra text-[15px] font-semibold text-tinta">
+                <p className="cifra text-[17px] font-semibold text-tinta">
                   {d.valor}
                   {d.unidad && <span className="ml-0.5 text-[12px] font-normal text-tinta-2">{d.unidad}</span>}
                 </p>
-                <p className="mt-0.5 text-[11px] text-tinta-2">{d.etiqueta}</p>
+                <p className="mt-0.5 text-[12px] text-tinta-2">{d.etiqueta}</p>
               </div>
             ))}
           </div>
