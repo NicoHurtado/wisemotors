@@ -21,19 +21,32 @@ function razonesRelativas(v: any, podio: any[]): string[] {
   if (podio.length < 2) return [];
   const out: string[] = [];
   const dato = (x: any, k: string) => datosClave(x).find(d => d.clave === k)?.numero ?? null;
+  // Superlativo solo si es ESTRICTAMENTE mejor que todos los demás; en empate
+  // se dice que empata (dos carros "el que más rinde" con la misma cifra se contradicen).
+  const otros = podio.filter(x => x.id !== v.id);
   const mejor = (k: string, menor = false) => {
-    const vals = podio.map(x => dato(x, k)).filter((n): n is number => n !== null);
     const mio = dato(v, k);
-    if (mio === null || vals.length < 2) return false;
-    return menor ? mio === Math.min(...vals) : mio === Math.max(...vals);
+    const vals = otros.map(x => dato(x, k)).filter((n): n is number => n !== null);
+    if (mio === null || vals.length === 0) return false;
+    return menor ? vals.every(n => mio < n) : vals.every(n => mio > n);
+  };
+  const empata = (k: string) => {
+    const mio = dato(v, k);
+    if (mio === null) return null;
+    const todos = podio.map(x => dato(x, k)).filter((n): n is number => n !== null);
+    const tope = Math.max(...todos);
+    const igual = otros.find(x => dato(x, k) === mio);
+    return mio === tope && igual ? igual : null;
   };
   const cifra = (k: string) => datosClave(v).find(d => d.clave === k);
-  if (v.price === Math.min(...podio.map(x => x.price))) out.push(`El de menor precio de tus ${podio.length} mejores opciones`);
+  if (otros.every(x => v.price < x.price)) out.push(`El de menor precio de tus ${podio.length} mejores opciones`);
   if (mejor('consumo')) out.push(`El que más rinde por galón de los tres: ${cifra('consumo')!.valor} km`);
   if (mejor('autonomia')) out.push(`El que más lejos llega con una carga: ${cifra('autonomia')!.valor} km`);
   if (mejor('baul')) out.push(`El baúl más grande de los tres: ${cifra('baul')!.valor} L`);
   if (mejor('potencia')) out.push(`El de más fuerza de los tres: ${cifra('potencia')!.valor} hp`);
   if (mejor('aceleracion', true)) out.push(`El que arranca más rápido de los tres`);
+  const empateConsumo = empata('consumo');
+  if (empateConsumo) out.push(`Empata con el ${empateConsumo.model} en consumo: ${cifra('consumo')!.valor} km/gal`);
   return out;
 }
 
@@ -98,15 +111,15 @@ export function ResultadosIA({
             </p>
 
             <div className="mt-8 flex items-end gap-8">
-              {primero.matchPercentage != null && (
-                <div>
-                  <p className="t-ligero text-[64px] leading-none">
-                    {primero.matchPercentage}
-                    <span className="text-[28px] text-tinta-2">%</span>
-                  </p>
-                  <p className="mt-1 text-[13px] text-tinta-2">afinidad con lo que pediste</p>
-                </div>
-              )}
+              <div>
+                <p className="t-ligero text-[44px] leading-none md:text-[52px]">
+                  1.º <span className="text-[22px] text-tinta-2">de {resultados.total_matches ?? podio.length + resto.length}</span>
+                </p>
+                <p className="mt-1 text-[13px] text-tinta-2">
+                  la mejor opción para lo que pediste
+                  {primero.matchPercentage != null && ` · ${primero.matchPercentage}% de coincidencia`}
+                </p>
+              </div>
               <div>
                 <p className="cifra text-[26px] font-semibold">{millones(primero.price)}</p>
                 <p className="mt-1 text-[13px] text-tinta-2">precio de lista</p>

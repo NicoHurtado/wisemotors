@@ -221,7 +221,7 @@ export function BandaComparar({ vehiculos }: { vehiculos: VehiculoTarjeta[] }) {
                 return (
                   <div key={f.etiqueta} className="grid grid-cols-[1fr_64px_1fr] items-center gap-2 md:grid-cols-[1fr_120px_1fr] md:gap-4">
                     <div className="flex items-center gap-3">
-                      <span className={`cifra w-20 shrink-0 text-[14px] md:w-24 md:text-[15px] ${gana === 'a' ? 'text-white' : 'text-white/60'}`}>{f.ta}</span>
+                      <span className={`cifra w-20 shrink-0 text-[14px] md:w-24 md:text-[15px] ${gana === 'a' ? 'text-white' : 'text-[#a39fab]'}`}>{f.ta}</span>
                       <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
                         <div
                           className="barra-izq h-full w-full rounded-full"
@@ -245,7 +245,7 @@ export function BandaComparar({ vehiculos }: { vehiculos: VehiculoTarjeta[] }) {
                           } as React.CSSProperties}
                         />
                       </div>
-                      <span className={`cifra w-20 shrink-0 text-right text-[14px] md:w-24 md:text-[15px] ${gana === 'b' ? 'text-white' : 'text-white/60'}`}>{f.tb}</span>
+                      <span className={`cifra w-20 shrink-0 text-right text-[14px] md:w-24 md:text-[15px] ${gana === 'b' ? 'text-white' : 'text-[#a39fab]'}`}>{f.tb}</span>
                     </div>
                   </div>
                 );

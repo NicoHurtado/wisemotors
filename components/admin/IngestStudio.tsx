@@ -68,7 +68,7 @@ function host(url: string): string {
 }
 
 function TierBadge({ tier }: { tier: number }) {
-  const styles = tier === 1 ? 'bg-green-100 text-green-800' : tier === 2 ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800';
+  const styles = tier === 1 ? 'bg-purple-100 text-purple-800' : tier === 2 ? 'bg-fuchsia-100 text-fuchsia-800' : 'bg-rose-100 text-rose-800';
   const label = tier === 1 ? 'Fabricante' : tier === 2 ? 'Prensa' : 'Comunidad';
   return <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${styles}`}>T{tier} · {label}</span>;
 }
@@ -76,7 +76,7 @@ function TierBadge({ tier }: { tier: number }) {
 function EstadoIcono({ estado }: { estado: EstadoItem }) {
   if (estado === 'buscando') return <Loader2 className="w-4 h-4 text-wise animate-spin shrink-0" />;
   if (estado === 'listo') return <Sparkles className="w-4 h-4 text-wise shrink-0" />;
-  if (estado === 'publicado') return <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />;
+  if (estado === 'publicado') return <CheckCircle2 className="w-4 h-4 text-purple-500 shrink-0" />;
   if (estado === 'error') return <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />;
   return <Clock className="w-4 h-4 text-gray-300 shrink-0" />;
 }
@@ -245,13 +245,13 @@ export function IngestStudio() {
     const pendientes = cola.filter(i => i.estado === 'en cola' || i.estado === 'buscando').length;
     return (
       <div className="max-w-3xl mx-auto space-y-6">
-        <div className="bg-white rounded-2xl shadow-soft border border-gray-200 p-8">
+        <div className="bg-blanco rounded-[28px] border border-linea p-8">
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-5 h-5 text-wise" />
-            <h2 className="text-xl font-bold text-gray-900">¿Qué vehículos subimos?</h2>
+            <h2 className="text-xl font-bold text-tinta">¿Qué vehículos subimos?</h2>
           </div>
-          <p className="text-sm text-gray-500 mb-5">
-            Uno por línea, como lo diría el concesionario: <span className="font-medium text-gray-700">Onix RS 2026</span>.
+          <p className="text-sm text-tinta-2 mb-5">
+            Uno por línea, como lo diría el concesionario: <span className="font-medium text-tinta/80">Onix RS 2026</span>.
             La IA busca en el fabricante y la prensa colombiana, extrae cada dato con su cita y te lo deja para
             verificar. Si no pones año, se asume el modelo vigente.
           </p>
@@ -265,7 +265,7 @@ export function IngestStudio() {
               }}
               rows={4}
               placeholder={EJEMPLO}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl text-[15px] leading-relaxed focus:ring-2 focus:ring-wise focus:border-wise"
+              className="w-full px-4 py-3 border border-linea rounded-xl text-[15px] leading-relaxed focus:ring-2 focus:ring-wise focus:border-wise"
             />
 
             {vistaPrevia.length > 0 && (
@@ -283,12 +283,12 @@ export function IngestStudio() {
 
             <div className="flex items-center gap-3">
               <select value={country} onChange={e => setCountry(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-wise focus:border-wise">
+                className="px-3 py-2 border border-linea rounded-lg text-sm focus:ring-2 focus:ring-wise focus:border-wise">
                 <option value="CO">Colombia</option>
                 <option value="MX">México</option>
                 <option value="US">Estados Unidos</option>
               </select>
-              <Button type="submit" className="flex-1 bg-wise hover:bg-wise-dark">
+              <Button type="submit" variant="wise" className="flex-1">
                 {vistaPrevia.length > 1 ? `Agregar ${vistaPrevia.length} a la cola` : 'Buscar y extraer datos'}
               </Button>
             </div>
@@ -298,22 +298,22 @@ export function IngestStudio() {
         </div>
 
         {cola.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-soft border border-gray-200 p-6">
+          <div className="bg-blanco rounded-[28px] border border-linea p-6">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-gray-900">Cola</h3>
-              <span className="text-xs text-gray-500">
+              <h3 className="font-bold text-tinta">Cola</h3>
+              <span className="text-xs text-tinta-2">
                 {pendientes > 0 ? `${pendientes} por procesar · ~45 s cada uno` : 'Todo procesado'}
               </span>
             </div>
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-linea">
               {cola.map(item => (
                 <li key={item.id} className="py-3 flex items-center gap-3">
                   <EstadoIcono estado={item.estado} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-tinta truncate">
                       {item.draft ? `${item.draft.brand} ${item.draft.model} ${item.draft.year}` : item.raw}
                     </p>
-                    <p className="text-xs text-gray-500 truncate">
+                    <p className="text-xs text-tinta-2 truncate">
                       {item.estado === 'listo' && item.draft
                         ? `${item.draft.facts.length} datos · ${item.draft.sourcesReport.filter(x => x.ok).length} fuentes${item.draft.warningsEs.length ? ` · ${item.draft.warningsEs.length} avisos` : ''}`
                         : item.estado === 'error'
@@ -326,7 +326,7 @@ export function IngestStudio() {
                     </p>
                   </div>
                   {item.estado === 'listo' && (
-                    <Button size="sm" onClick={() => abrirRevision(item)} className="bg-wise hover:bg-wise-dark">
+                    <Button size="sm" onClick={() => abrirRevision(item)} variant="wise">
                       Revisar <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   )}
@@ -356,12 +356,12 @@ export function IngestStudio() {
   // ── Fase: publicado ──
   if (phase === 'done' && published) {
     return (
-      <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-soft border border-gray-200 p-8 text-center">
-        <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-gray-900 mb-2">{published.label} publicado</h2>
-        <p className="text-sm text-gray-500 mb-6">Con los datos que aceptaste, su fuente y su cobertura calculada.</p>
+      <div className="max-w-xl mx-auto bg-blanco rounded-[28px] border border-linea p-8 text-center">
+        <CheckCircle2 className="w-12 h-12 text-purple-500 mx-auto mb-4" />
+        <h2 className="text-xl font-bold text-tinta mb-2">{published.label} publicado</h2>
+        <p className="text-sm text-tinta-2 mb-6">Con los datos que aceptaste, su fuente y su cobertura calculada.</p>
         <div className="flex gap-3 justify-center">
-          <Button onClick={() => router.push(`/vehicles/${published.id}`)} className="bg-wise hover:bg-wise-dark">Ver ficha</Button>
+          <Button onClick={() => router.push(`/vehicles/${published.id}`)} variant="wise">Ver ficha</Button>
           <Button variant="outline" onClick={volverACola}>
             {cola.some(i => i.estado === 'listo' || i.estado === 'en cola' || i.estado === 'buscando') ? 'Siguiente de la cola' : 'Subir otro'}
           </Button>
@@ -376,31 +376,31 @@ export function IngestStudio() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Identidad */}
-      <div className="bg-white rounded-2xl shadow-soft border border-gray-200 p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">
+      <div className="bg-blanco rounded-[28px] border border-linea p-6">
+        <h2 className="text-lg font-bold text-tinta mb-4">
           Revisión: {draft.brand} {draft.model} {draft.year}
-          <span className="ml-3 text-sm font-normal text-gray-500">{acceptedCount} de {draft.facts.length} datos aceptados</span>
+          <span className="ml-3 text-sm font-normal text-tinta-2">{acceptedCount} de {draft.facts.length} datos aceptados</span>
         </h2>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Carrocería</label>
+            <label className="block text-xs font-medium text-tinta-2 mb-1">Carrocería</label>
             <select value={draft.type} onChange={e => setDraft({ ...draft, type: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              className="w-full px-3 py-2 border border-linea rounded-lg text-sm">
               {TYPES.map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Categoría</label>
+            <label className="block text-xs font-medium text-tinta-2 mb-1">Categoría</label>
             <select value={draft.vehicleType} onChange={e => setDraft({ ...draft, vehicleType: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              className="w-full px-3 py-2 border border-linea rounded-lg text-sm">
               {VEHICLE_TYPES.map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Tren motriz</label>
+            <label className="block text-xs font-medium text-tinta-2 mb-1">Tren motriz</label>
             <select value={draft.fuelType} onChange={e => setDraft({ ...draft, fuelType: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              className="w-full px-3 py-2 border border-linea rounded-lg text-sm">
               {FUEL_TYPES.map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
@@ -409,9 +409,9 @@ export function IngestStudio() {
 
       {/* Advertencias del pipeline */}
       {draft.warningsEs.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4">
           {draft.warningsEs.map((w, i) => (
-            <p key={i} className="text-sm text-amber-800 flex items-start gap-2">
+            <p key={i} className="text-sm text-rose-800 flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" /> {w}
             </p>
           ))}
@@ -419,41 +419,41 @@ export function IngestStudio() {
       )}
 
       {/* Precio */}
-      <div className={`rounded-2xl border p-6 ${draft.price?.estimated ? 'bg-amber-50 border-amber-300' : 'bg-white border-gray-200 shadow-soft'}`}>
+      <div className={`rounded-2xl border p-6 ${draft.price?.estimated ? 'bg-rose-50 border-rose-300' : 'bg-white border-linea shadow-soft'}`}>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-bold text-gray-900">Precio (COP)</h3>
+          <h3 className="font-bold text-tinta">Precio (COP)</h3>
           {draft.price?.estimated
-            ? <span className="px-2 py-1 rounded-full bg-amber-200 text-amber-900 text-xs font-bold">ESTIMADO — verificar</span>
+            ? <span className="px-2 py-1 rounded-full bg-rose-200 text-rose-900 text-xs font-bold">ESTIMADO — verificar</span>
             : draft.price
-              ? <span className="px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-bold">De fuente ({host(draft.price.sourceUrl ?? '')})</span>
+              ? <span className="px-2 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-bold">De fuente ({host(draft.price.sourceUrl ?? '')})</span>
               : <span className="px-2 py-1 rounded-full bg-red-100 text-red-800 text-xs font-bold">Sin dato — ingresar a mano</span>}
         </div>
         <input value={priceValue} onChange={e => setPriceValue(e.target.value.replace(/[^\d]/g, ''))}
           placeholder="135000000" inputMode="numeric"
-          className="w-full md:w-72 px-3 py-2 border border-gray-300 rounded-lg text-lg font-bold mb-2" />
+          className="w-full md:w-72 px-3 py-2 border border-linea rounded-lg text-lg font-bold mb-2" />
         {priceValue && Number(priceValue) > 0 && (
-          <p className="text-sm text-gray-600 mb-2">= ${Math.round(Number(priceValue) / 1_000_000)} millones</p>
+          <p className="text-sm text-tinta-2 mb-2">= ${Math.round(Number(priceValue) / 1_000_000)} millones</p>
         )}
         {draft.price && (
-          <p className="text-sm text-gray-700 leading-relaxed">
+          <p className="text-sm text-tinta/80 leading-relaxed">
             <span className="font-medium">Razonamiento:</span> {draft.price.reasoningEs}
-            <span className="text-gray-400"> · confianza {Math.round(draft.price.confidence * 100)}%</span>
+            <span className="text-tinta-2/80"> · confianza {Math.round(draft.price.confidence * 100)}%</span>
           </p>
         )}
       </div>
 
       {/* Fuentes consultadas */}
-      <div className="bg-white rounded-2xl shadow-soft border border-gray-200 p-6">
-        <h3 className="font-bold text-gray-900 mb-3">Fuentes consultadas</h3>
+      <div className="bg-blanco rounded-[28px] border border-linea p-6">
+        <h3 className="font-bold text-tinta mb-3">Fuentes consultadas</h3>
         <ul className="space-y-2">
           {draft.sourcesReport.map((s, i) => (
             <li key={i} className="flex items-center gap-2 text-sm">
-              {s.ok ? <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" /> : <XCircle className="w-4 h-4 text-gray-300 shrink-0" />}
+              {s.ok ? <CheckCircle2 className="w-4 h-4 text-purple-500 shrink-0" /> : <XCircle className="w-4 h-4 text-gray-300 shrink-0" />}
               <TierBadge tier={s.tier} />
               <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-wise hover:underline flex items-center gap-1">
                 {s.nameEs} <ExternalLink className="w-3 h-3" />
               </a>
-              <span className="text-gray-400 truncate">{s.note}</span>
+              <span className="text-tinta-2/80 truncate">{s.note}</span>
             </li>
           ))}
         </ul>
@@ -461,9 +461,9 @@ export function IngestStudio() {
 
       {/* Hechos por grupo */}
       {groups.map(([group, facts]) => (
-        <div key={group} className="bg-white rounded-2xl shadow-soft border border-gray-200 p-6">
-          <h3 className="font-bold text-gray-900 mb-3">{group}</h3>
-          <div className="divide-y divide-gray-100">
+        <div key={group} className="bg-blanco rounded-[28px] border border-linea p-6">
+          <h3 className="font-bold text-tinta mb-3">{group}</h3>
+          <div className="divide-y divide-linea">
             {facts.map(f => (
               <div key={f.key} className={`py-3 flex flex-wrap items-start gap-3 ${!accepted[f.key] ? 'opacity-45' : ''}`}>
                 <input type="checkbox" checked={!!accepted[f.key]}
@@ -472,13 +472,13 @@ export function IngestStudio() {
 
                 <div className="flex-1 min-w-[220px]">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-gray-900 text-sm">{f.labelEs}</span>
+                    <span className="font-medium text-tinta text-sm">{f.labelEs}</span>
                     <TierBadge tier={f.tier} />
-                    <span className="text-[10px] text-gray-400">confianza {Math.round(f.confidence * 100)}%</span>
+                    <span className="text-[10px] text-tinta-2/80">confianza {Math.round(f.confidence * 100)}%</span>
                     {f.conflict && <span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-800 text-[10px] font-semibold">fuentes en desacuerdo</span>}
                     {f.outOfRange && <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-800 text-[10px] font-semibold">fuera de rango físico</span>}
                   </div>
-                  <p className="text-xs text-gray-400 italic mt-0.5">"{f.quote}" — {host(f.sourceUrl)}</p>
+                  <p className="text-xs text-tinta-2/80 italic mt-0.5">"{f.quote}" — {host(f.sourceUrl)}</p>
                   {f.alternatives.length > 0 && (
                     <p className="text-xs text-orange-600 mt-0.5">
                       Otras fuentes dicen: {f.alternatives.map(a => `${a.value} (${host(a.sourceUrl)})`).join(' · ')}
@@ -494,8 +494,8 @@ export function IngestStudio() {
                       <input
                         value={edited[f.key] ?? String(f.value)}
                         onChange={e => setEdited({ ...edited, [f.key]: e.target.value })}
-                        className="w-full px-2 py-1 border border-gray-200 rounded text-sm text-right font-semibold" />
-                      {f.unit && <span className="text-xs text-gray-400 shrink-0">{f.unit}</span>}
+                        className="w-full px-2 py-1 border border-linea rounded text-sm text-right font-semibold" />
+                      {f.unit && <span className="text-xs text-tinta-2/80 shrink-0">{f.unit}</span>}
                     </div>
                   )}
                 </div>
@@ -508,15 +508,15 @@ export function IngestStudio() {
       {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</p>}
 
       {/* Publicar */}
-      <div className="sticky bottom-4 bg-white/95 backdrop-blur rounded-2xl shadow-lg border border-gray-200 p-4 flex items-center justify-between gap-4">
-        <p className="text-sm text-gray-600">
+      <div className="sticky bottom-4 bg-white/95 backdrop-blur rounded-2xl shadow-lg border border-linea p-4 flex items-center justify-between gap-4">
+        <p className="text-sm text-tinta-2">
           Se publicará con <span className="font-bold">{acceptedCount} datos verificados</span>
-          {draft.price?.estimated && Number(priceValue) > 0 && <span className="text-amber-700"> y precio estimado</span>}.
+          {draft.price?.estimated && Number(priceValue) > 0 && <span className="text-rose-700"> y precio estimado</span>}.
         </p>
         <div className="flex gap-2">
           <Button variant="outline" onClick={volverACola}>Volver a la cola</Button>
           <Button onClick={publish} disabled={phase === 'publishing' || !priceValue || Number(priceValue) <= 0}
-            className="bg-wise hover:bg-wise-dark">
+            variant="wise">
             {phase === 'publishing'
               ? <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Publicando…</span>
               : 'Publicar vehículo'}
