@@ -80,6 +80,8 @@ export default function RootLayout({
                 {children}
               </main>
               <Footer />
+              {/* Espacio para que el dock móvil no tape el final del footer */}
+              <div className="h-24 md:hidden" aria-hidden />
             </div>
           </FavoritesProvider>
         </AuthProvider>

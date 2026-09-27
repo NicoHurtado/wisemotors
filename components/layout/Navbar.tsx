@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/hooks/useAdmin';
-import { User, LogOut, Heart, Target, Settings, Menu, X, MessageSquare } from 'lucide-react';
+import { User, LogOut, Heart, Settings, Menu, X, MessageSquare, Home, CarFront, Swords, Sparkles } from 'lucide-react';
+import { LiquidTabs, type LiquidTab } from '@/components/layout/LiquidTabs';
 import { useEffect, useState } from 'react';
 
 export function Navbar() {
@@ -44,19 +45,20 @@ export function Navbar() {
     window.location.href = '/';
   };
 
-  const enlaces = [
-    { href: '/', texto: 'Inicio', icono: null },
-    { href: '/vehicles', texto: 'Vehículos', icono: null },
+  const enlaces: LiquidTab[] = [
+    { href: '/', texto: 'Inicio', icono: Home },
+    { href: '/vehicles', texto: 'Vehículos', icono: CarFront },
     ...(isAuthenticated
       ? [
           { href: '/favorites', texto: 'Favoritos', icono: Heart },
-          { href: '/compare', texto: 'Comparar', icono: Target },
+          { href: '/compare', texto: 'Comparar', icono: Swords },
         ]
       : []),
   ];
 
   const enlacesAdmin = isFullyAuthorized
     ? [
+        { href: '/admin/ingest', texto: 'Subir con IA', icono: Sparkles },
         { href: '/admin', texto: 'Panel', icono: Settings },
         { href: '/admin/whatsapp-leads', texto: 'Leads', icono: MessageSquare },
       ]
@@ -64,6 +66,12 @@ export function Navbar() {
 
   const esActivo = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);
+
+  // La pestaña activa es la de ruta más específica ("/admin/ingest" gana a "/admin").
+  const activo =
+    enlaces
+      .filter(e => esActivo(e.href))
+      .sort((a, b) => b.href.length - a.href.length)[0]?.href ?? null;
 
   return (
     <nav className="sticky top-0 z-40 px-3 pt-3 md:px-6 md:pt-4">
@@ -82,44 +90,27 @@ export function Navbar() {
             <span className="text-foreground">Motors</span>
           </Link>
 
-          {/* Centro: enlaces con indicador de ruta activa */}
-          <div className="hidden justify-center gap-1 md:flex">
-            {enlaces.map(enlace => {
-              const activo = esActivo(enlace.href);
-              const Icono = enlace.icono;
-              return (
-                <Link
-                  key={enlace.href}
-                  href={enlace.href}
-                  aria-current={activo ? 'page' : undefined}
-                  className="relative flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[14px] font-medium"
-                  style={{
-                    color: activo ? '#881cb7' : '#4B5563',
-                    background: activo ? 'rgba(136,28,183,0.07)' : 'transparent',
-                    transition:
-                      'color var(--motion-instant) ease, background-color var(--motion-instant) ease',
-                  }}
-                >
-                  {Icono && <Icono className="h-4 w-4" strokeWidth={1.75} />}
-                  {enlace.texto}
-                </Link>
-              );
-            })}
+          {/* Centro: pestañas Liquid Glass con lente que se desliza */}
+          <div className="hidden items-center justify-center gap-2 md:flex">
+            <LiquidTabs tabs={enlaces} activo={activo} />
 
             {enlacesAdmin.length > 0 && (
               <>
-                <span className="mx-2 h-5 w-px self-center bg-gray-200" aria-hidden />
+                <span className="mx-1 h-5 w-px self-center bg-gray-200" aria-hidden />
                 {enlacesAdmin.map(enlace => {
                   const Icono = enlace.icono;
+                  const activoAdmin =
+                    enlace.href === '/admin' ? pathname === '/admin' : pathname.startsWith(enlace.href);
                   return (
                     <Link
                       key={enlace.href}
                       href={enlace.href}
-                      className="flex items-center gap-1.5 rounded-full px-3 py-2 text-[13px] font-medium text-gray-500 hover:text-wise"
+                      aria-current={activoAdmin ? 'page' : undefined}
+                      className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-[13px] font-medium hover:text-wise ${activoAdmin ? 'text-wise' : 'text-gray-500'}`}
                       style={{ transition: 'color var(--motion-instant) ease' }}
                     >
                       <Icono className="h-4 w-4" strokeWidth={1.75} />
-                      {enlace.texto}
+                      <span className="hidden lg:inline">{enlace.texto}</span>
                     </Link>
                   );
                 })}
@@ -173,7 +164,7 @@ export function Navbar() {
       {menuAbierto && (
         <div className="glass-bar relative mt-2 rounded-2xl md:hidden">
           <div className="space-y-1 p-3">
-            {[...enlaces, ...enlacesAdmin].map(enlace => {
+            {enlacesAdmin.map(enlace => {
               const Icono = enlace.icono;
               const activo = esActivo(enlace.href);
               return (
@@ -189,7 +180,7 @@ export function Navbar() {
               );
             })}
 
-            <div className="mt-3 border-t border-gray-200 pt-3">
+            <div className={enlacesAdmin.length ? 'mt-3 border-t border-gray-200 pt-3' : ''}>
               {isAuthenticated ? (
                 <>
                   <span className="flex items-center gap-2 px-3 py-2 text-[15px] text-gray-600">
@@ -220,6 +211,14 @@ export function Navbar() {
           </div>
         </div>
       )}
+
+      {/* Dock móvil: las pestañas principales viven abajo, al alcance del pulgar */}
+      <div
+        className="fixed inset-x-3 z-40 md:hidden"
+        style={{ bottom: 'max(12px, env(safe-area-inset-bottom))' }}
+      >
+        <LiquidTabs tabs={enlaces} activo={activo} variante="dock" />
+      </div>
     </nav>
   );
 }
