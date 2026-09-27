@@ -143,8 +143,10 @@ cobertura, migración, seeds, motor de cohortes.
   `scripts/preparar-bd.ts` corre `prisma db push` (nunca con pérdida de datos: si
   la hay, el deploy falla) y siembra los datos base de `lib/db/semillas.ts` si
   faltan. En preview no toca la base. Local: `npm run db:preparar`.
-- Admin inicial: con `ADMIN_EMAIL` + `ADMIN_PASSWORD` (≥10) en Vercel, el deploy crea esa
-  cuenta como admin SI NO EXISTE. Nunca asciende cuentas existentes ni cambia contraseñas
+- Variables de base: `lib/db/url.ts` las busca por el FINAL del nombre (…DATABASE_URL,
+  …POSTGRES_PRISMA_URL…), sirva el prefijo que sea. Diagnóstico sin secretos: `GET /api/salud`.
+- Admin inicial: con `ADMIN_EMAIL` + `ADMIN_PASSWORD` (≥10) en Vercel, el deploy (o el primer
+  login con exactamente esas credenciales) crea esa cuenta como admin SI NO EXISTE. Nunca asciende cuentas existentes ni cambia contraseñas
   (el registro no verifica correos). Otros admins: `scripts/set-admin.js`.
 - Deploy Vercel `iad1`, funciones `maxDuration: 30s`. Env vars: `WISE_DATABASE_URL`(+`_UNPOOLED`),
   `JWT_SECRET`, `ANTHROPIC_API_KEY` (+ `ANTHROPIC_WORKSPACE_ID` si la clave no es
