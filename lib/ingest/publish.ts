@@ -31,6 +31,8 @@ export interface PublishInput {
   facts: AcceptedFact[];
   /** Fotos aprobadas en la revisión, en orden; la de `portada` es la principal. */
   fotos?: { url: string; angulo: string; portada?: boolean }[];
+  /** Concesionarios que lo venden (ids de Dealer). Los que no existan se ignoran. */
+  dealerIds?: string[];
   /** userId del revisor humano; null en cargas automáticas de prueba. */
   verifiedBy: string | null;
 }
@@ -118,6 +120,11 @@ export async function publishDraft(input: PublishInput): Promise<PublishResult> 
 
   const coverage = computeCoverage(fuelType, new Set(clean.map(f => f.key)));
 
+  const pedidos = Array.from(new Set((input.dealerIds ?? []).filter(x => typeof x === 'string'))).slice(0, 50);
+  const dealers = pedidos.length
+    ? await prisma.dealer.findMany({ where: { id: { in: pedidos } }, select: { id: true } })
+    : [];
+
   const vehicle = await prisma.vehicle.create({
     data: {
       brand,
@@ -133,6 +140,9 @@ export async function publishDraft(input: PublishInput): Promise<PublishResult> 
       coverageByDimension: JSON.stringify(coverage.byDimension),
       images: {
         create: fotosLimpias(input.fotos, `${brand} ${model} ${year}`),
+      },
+      vehicleDealers: {
+        create: dealers.map(d => ({ dealerId: d.id })),
       },
       attributes: {
         create: clean.map(f => {

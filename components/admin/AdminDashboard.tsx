@@ -11,16 +11,18 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowUpRight, Building2, Car, MessageCircle, Sparkles, Star } from 'lucide-react';
+import { ArrowUpRight, Building2, Car, ClipboardCheck, MessageCircle, Sparkles, Star } from 'lucide-react';
 import { VehiclesTable } from './VehiclesTable';
 import { DealershipsTable } from './DealershipsTable';
 import { TrendingManagement } from './TrendingManagement';
+import { ColaAuditoria } from './ColaAuditoria';
 import { specsDe } from '@/lib/vehiculo-datos';
 
-type Pestana = 'vehicles' | 'dealerships' | 'trending';
+type Pestana = 'vehicles' | 'auditoria' | 'dealerships' | 'trending';
 
 const PESTANAS: { clave: Pestana; texto: string; icono: typeof Car }[] = [
   { clave: 'vehicles', texto: 'Vehículos', icono: Car },
+  { clave: 'auditoria', texto: 'Por revisar', icono: ClipboardCheck },
   { clave: 'dealerships', texto: 'Concesionarios', icono: Building2 },
   { clave: 'trending', texto: 'Destacados', icono: Star },
 ];
@@ -114,6 +116,8 @@ export function AdminDashboard() {
       <div className="mt-6 overflow-hidden rounded-[28px] bg-blanco">
         {pestana === 'vehicles' ? (
           <VehiclesTable />
+        ) : pestana === 'auditoria' ? (
+          <ColaAuditoria />
         ) : pestana === 'dealerships' ? (
           <DealershipsTable />
         ) : (

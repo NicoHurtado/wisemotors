@@ -149,6 +149,27 @@ export function IngestStudio() {
   const [fotos, setFotos] = useState<FotoRevision[]>([]);
   const [published, setPublished] = useState<{ id: string; label: string } | null>(null);
 
+  // Concesionarios que venden el carro. La última selección se recuerda: en una
+  // carga por lotes casi siempre es el mismo concesionario.
+  const [concesionarios, setConcesionarios] = useState<{ id: string; name: string; location: string }[]>([]);
+  const [dealerIds, setDealerIdsState] = useState<string[]>([]);
+  const setDealerIds = (ids: string[]) => {
+    setDealerIdsState(ids);
+    try {
+      localStorage.setItem('wise.ingest.concesionarios', JSON.stringify(ids));
+    } catch {}
+  };
+  useEffect(() => {
+    try {
+      const guardados = JSON.parse(localStorage.getItem('wise.ingest.concesionarios') ?? '[]');
+      if (Array.isArray(guardados)) setDealerIdsState(guardados.filter((x: unknown) => typeof x === 'string'));
+    } catch {}
+    fetch('/api/dealers')
+      .then(r => (r.ok ? r.json() : []))
+      .then((d: any) => setConcesionarios(Array.isArray(d) ? d : (d.dealers ?? [])))
+      .catch(() => setConcesionarios([]));
+  }, []);
+
   const groups = useMemo(() => {
     if (!draft) return [];
     const map = new Map<string, DraftFact[]>();
@@ -273,6 +294,7 @@ export function IngestStudio() {
           priceEstimated: draft.price?.estimated ?? true,
           priceReasoningEs: draft.price?.reasoningEs ?? 'Precio ingresado a mano en la revisión.',
           facts,
+          dealerIds: dealerIds.filter(id => concesionarios.some(c => c.id === id)),
           // Portada primero; solo fotos ya procesadas (o la original si no hay Cloudinary).
           fotos: [...fotos.filter(f => f.usar && f.portada), ...fotos.filter(f => f.usar && !f.portada)]
             .filter(f => f.procesada)
@@ -505,6 +527,29 @@ export function IngestStudio() {
 
       {/* Fotos */}
       <RevisionFotos fotos={fotos} onChange={setFotos} />
+
+      {/* Concesionarios */}
+      <div className="bg-blanco rounded-[28px] border border-linea p-6">
+        <h3 className="font-bold text-tinta mb-1">¿Quién lo vende?</h3>
+        <p className="text-sm text-tinta-2 mb-3">Los leads de WhatsApp de este carro llegan a los concesionarios que marques.</p>
+        {concesionarios.length === 0 ? (
+          <p className="text-sm text-tinta-2">
+            Aún no hay concesionarios. <a href="/admin/dealerships/new" target="_blank" rel="noopener" className="text-wise hover:underline">Crear uno ↗</a>
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {concesionarios.map(c => {
+              const activo = dealerIds.includes(c.id);
+              return (
+                <button key={c.id} type="button" className="pastilla h-10 px-4" data-activa={activo} aria-pressed={activo}
+                  onClick={() => setDealerIds(activo ? dealerIds.filter(x => x !== c.id) : [...dealerIds, c.id])}>
+                  {c.name}<span className="text-tinta-2/70 text-xs">· {c.location}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Fuentes consultadas */}
       <div className="bg-blanco rounded-[28px] border border-linea p-6">
