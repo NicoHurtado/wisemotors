@@ -8,7 +8,6 @@
 // ============================================================================
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { adminFetch, mensajeDeErrorDeAuth } from '@/lib/admin-fetch';
 import { Button } from '@/components/ui/button';
 import { parseVehicleList, type ParsedVehicleQuery } from '@/lib/ingest/parse-query';
@@ -61,6 +60,8 @@ interface ItemCola {
   publicadoId?: string;
 }
 
+const CLAVE_COLA = 'wisemotors:cola-ingesta';
+
 const EJEMPLO = 'Onix RS 2026\nRenault Duster 2026\nBYD Dolphin Mini';
 
 function host(url: string): string {
@@ -82,7 +83,6 @@ function EstadoIcono({ estado }: { estado: EstadoItem }) {
 }
 
 export function IngestStudio() {
-  const router = useRouter();
   const [phase, setPhase] = useState<Phase>('form');
   const [error, setError] = useState<string | null>(null);
 
@@ -95,6 +95,49 @@ export function IngestStudio() {
   const corriendo = useRef(false);
 
   const vistaPrevia = useMemo(() => parseVehicleList(texto), [texto]);
+
+  // La cola sobrevive a salir de la página: cada borrador ya costó una ingesta.
+  // Se guarda en este navegador; lo que estaba corriendo al salir queda como
+  // interrumpido (su resultado se perdió) y se reintenta a mano, nunca solo.
+  const colaCargada = useRef(false);
+  useEffect(() => {
+    try {
+      const guardada = JSON.parse(localStorage.getItem(CLAVE_COLA) ?? '[]') as ItemCola[];
+      if (Array.isArray(guardada) && guardada.length) {
+        setCola(
+          guardada.map(i =>
+            i.estado === 'buscando'
+              ? { ...i, estado: 'error', error: 'Se interrumpió al salir de la página. Dale Reintentar.' }
+              : i
+          )
+        );
+        siguienteId.current = Math.max(...guardada.map(i => i.id)) + 1;
+      }
+    } catch {
+      /* sin almacenamiento: la cola vive solo en esta pestaña */
+    }
+    colaCargada.current = true;
+  }, []);
+  useEffect(() => {
+    if (!colaCargada.current) return;
+    try {
+      localStorage.setItem(CLAVE_COLA, JSON.stringify(cola));
+    } catch {
+      /* cuota llena o bloqueado: se sigue sin guardar */
+    }
+  }, [cola]);
+
+  // Avisa antes de cerrar o recargar mientras algo se está buscando.
+  const buscando = cola.some(i => i.estado === 'buscando');
+  useEffect(() => {
+    if (!buscando) return;
+    const avisar = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', avisar);
+    return () => window.removeEventListener('beforeunload', avisar);
+  }, [buscando]);
 
   // Borrador en revisión
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -331,7 +374,7 @@ export function IngestStudio() {
                     </Button>
                   )}
                   {item.estado === 'publicado' && item.publicadoId && (
-                    <Button size="sm" variant="outline" onClick={() => router.push(`/vehicles/${item.publicadoId}`)}>
+                    <Button size="sm" variant="outline" onClick={() => window.open(`/vehicles/${item.publicadoId}`, '_blank', 'noopener')}>
                       Ver ficha
                     </Button>
                   )}
@@ -361,7 +404,8 @@ export function IngestStudio() {
         <h2 className="text-xl font-bold text-tinta mb-2">{published.label} publicado</h2>
         <p className="text-sm text-tinta-2 mb-6">Con los datos que aceptaste, su fuente y su cobertura calculada.</p>
         <div className="flex gap-3 justify-center">
-          <Button onClick={() => router.push(`/vehicles/${published.id}`)} variant="wise">Ver ficha</Button>
+          {/* En otra pestaña: la cola sigue corriendo aquí */}
+          <Button onClick={() => window.open(`/vehicles/${published.id}`, '_blank', 'noopener')} variant="wise">Ver ficha</Button>
           <Button variant="outline" onClick={volverACola}>
             {cola.some(i => i.estado === 'listo' || i.estado === 'en cola' || i.estado === 'buscando') ? 'Siguiente de la cola' : 'Subir otro'}
           </Button>
