@@ -1,4 +1,6 @@
-// LLM Rerank final con contexto ultracompacto
+// Rerank final con Claude (Haiku): afina y explica el orden determinístico.
+import { z } from 'zod/v4';
+import { pedirJson } from './claude';
 import type { ScoredCandidate } from './scoring';
 import type { VehicleFeatures } from './features';
 import { createCompactPayload } from './scoring';
@@ -21,121 +23,61 @@ export interface FinalRecommendation {
   };
 }
 
-// Schema para el rerank del LLM
-const rerankFunction = {
-  name: 'rerank_vehicles',
-  description: 'Reordena vehículos y proporciona justificaciones basadas en la intención del usuario',
-  parameters: {
-    type: 'object',
-    properties: {
-      recommendations: {
-        type: 'array',
-        maxItems: 12,
-        items: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', description: 'ID del vehículo (DEBE ser uno de los proporcionados)' },
-            match: { type: 'number', minimum: 0, maximum: 100, description: 'Porcentaje de compatibilidad' },
-            reasons: {
-              type: 'array',
-              maxItems: 3,
-              items: { type: 'string' },
-              description: 'Razones específicas y concisas (máximo 3)'
-            }
-          },
-          required: ['id', 'match', 'reasons']
-        }
-      }
-    },
-    required: ['recommendations']
-  }
-};
+// Esquema del rerank: Claude devuelve un JSON validado, nunca texto suelto.
+const RerankSchema = z.object({
+  recommendations: z.array(
+    z.object({
+      id: z.string().describe('id del vehículo, EXACTAMENTE uno de la lista'),
+      match: z.number().describe('Compatibilidad de 0 a 100 con lo que pidió'),
+      reasons: z.array(z.string()).describe('2 o 3 razones cortas, con cifra o dato real cuando lo haya'),
+    })
+  ),
+});
+
+/** Cuántos candidatos (ya ordenados por el scoring determinístico) ve la IA. */
+const MAX_CANDIDATOS_IA = 30;
 
 export async function rerankWithLLM(
   candidates: ScoredCandidate[],
   subjectiveContext: string,
   originalPrompt: string
 ): Promise<FinalRecommendation[]> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    // Si no hay API key, usar fallback determinístico para no romper UX
+  if (!process.env.ANTHROPIC_API_KEY) {
+    // Sin clave: el orden determinístico ES el resultado, para no romper la búsqueda.
     return createFallbackRecommendations(candidates);
   }
 
-  // Crear payload ultracompacto
-  const compactCandidates = createCompactPayload(candidates);
+  // Payload compacto: solo los mejores del orden base, JSON sin espacios.
+  const compactCandidates = createCompactPayload(candidates.slice(0, MAX_CANDIDATOS_IA));
 
-  const systemPrompt = `Eres un experto consultor automotriz en Colombia. Tu trabajo es reordenar vehículos y explicar por qué son recomendables.
+  const systemPrompt = `Eres el asesor de WiseMotors, un marketplace de carros nuevos en Colombia (Medellín). Tu trabajo es ordenar los candidatos para lo que pidió el comprador y explicar por qué, en palabras de persona (tuteas, cero jerga).
 
-REGLAS CRÍTICAS:
-1. SOLO puedes recomendar vehículos de la lista proporcionada (usar sus IDs exactos)
-2. NO inventes modelos, marcas o características
-3. Clasifica los mejores 10 vehículos (Top 10)
-4. Razones específicas y concisas (no genéricas)
-5. Considera el contexto colombiano/antioqueño
-6. Cada candidato trae "det_score": un ranking base calculado con datos reales.
-   La lista YA VIENE ordenada por él. Respétalo como punto de partida y solo
-   mueve un vehículo si el contexto subjetivo lo justifica claramente.
+REGLAS:
+1. SOLO recomiendas carros de la lista, con su id exacto. No inventas modelos, marcas ni datos.
+2. Devuelve los 10 mejores (o todos si hay menos), del más al menos recomendable.
+3. Cada candidato trae "det_score": un orden base calculado con datos reales, y la lista ya viene ordenada por él. Respétalo como punto de partida; mueve un carro solo si lo que pidió el comprador lo justifica claramente.
+4. Razones concretas y distintas para cada carro, nunca genéricas. Los "features" van de 0 a 1 frente al catálogo (1 = el mejor).
+5. Contexto local: las lomas de Medellín y Las Palmas piden fuerza; los huecos y reductores piden altura; el trancón y el parqueo piden un carro manejable; la finca pide carga y terreno difícil.
+6. Los "tags" incluyen categorías propias de WiseMotors (p. ej. "Pa subir rápido"); si coinciden con la búsqueda, dale prioridad y menciónalas.`;
 
-Contexto regional:
-- "Palmas" = zona montañosa, requiere potencia
-- "Huecos" = calles en mal estado, requiere altura
-- Medellín = tráfico, parqueo difícil
-- "Finca" = carga, terreno difícil
+  const userPrompt = `Búsqueda del comprador: "${originalPrompt}"
+Lo que más le importa: "${subjectiveContext}"
 
-CATEGORÍAS WISEMOTORS:
-- Cada vehículo tiene categorías únicas y personalizadas que describen sus características especiales
-- Estas categorías pueden ser coloquiales, técnicas, o descriptivas (ej: "Bueno para correr", "Perfecto para las chicas", "Pa subir rápido")
-- Debes interpretar inteligentemente qué significa cada categoría y cuándo es relevante mencionarla
-- Las categorías aparecen en los tags de cada vehículo - úsalas para hacer recomendaciones más personalizadas
-- Si una categoría coincide con la búsqueda del usuario, dale prioridad y menciónala en la justificación
-
-Interpreta y usa las categorías WiseMotors para hacer recomendaciones más precisas y personalizadas.`;
-
-  const userPrompt = `BÚSQUEDA ORIGINAL: "${originalPrompt}"
-CONTEXTO SUBJETIVO: "${subjectiveContext}"
-
-CANDIDATOS DISPONIBLES (Muestra Top 10):
-${JSON.stringify(compactCandidates, null, 2)}
-
-Reordena estos vehículos priorizando los que mejor se ajusten a la intención. Proporciona razones específicas basadas en sus características reales.`;
+Candidatos:
+${JSON.stringify(compactCandidates)}`;
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        functions: [rerankFunction],
-        function_call: { name: 'rerank_vehicles' },
-        temperature: 0.2
-      })
+    const result = await pedirJson({
+      schema: RerankSchema,
+      modelo: 'haiku',
+      maxTokens: 2500,
+      system: systemPrompt,
+      prompt: userPrompt,
     });
-
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const functionCall = data.choices[0]?.message?.function_call;
-
-    if (!functionCall || functionCall.name !== 'rerank_vehicles') {
-      throw new Error('No se pudo obtener rerank del LLM');
-    }
-
-    const result = JSON.parse(functionCall.arguments);
     const recs = processLLMRerank(result.recommendations, candidates);
     return ensureMinimum(recs, candidates, 10);
-
   } catch (error) {
-    console.error('Error en LLM rerank:', error);
+    console.error('Error en el rerank con Claude:', error);
     // Fallback al scoring determinístico
     return ensureMinimum(createFallbackRecommendations(candidates), candidates, 10);
   }
@@ -160,6 +102,7 @@ function processLLMRerank(
       console.warn(`Vehículo no encontrado: ${llmRec.id}`);
       continue;
     }
+    if (recommendations.some(r => r.vehicle.id === candidate.id)) continue; // repetido
 
     // Ensure match is strictly a number
     const matchVal = typeof llmRec.match === 'number' ? llmRec.match : parseInt(llmRec.match) || 0;

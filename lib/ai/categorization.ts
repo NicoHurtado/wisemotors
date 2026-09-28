@@ -1,6 +1,8 @@
-// Advanced Query Categorization System
+// Clasificación de la búsqueda con Claude (Haiku): filtros duros vs. intención.
 import { z } from 'zod';
+import { z as zv4 } from 'zod/v4';
 import { prisma } from '@/lib/prisma';
+import { pedirJson } from '@/lib/ai/claude';
 
 // Query types for different recommendation approaches
 export enum QueryType {
@@ -79,148 +81,91 @@ export async function getDatabaseOptions() {
   }
 }
 
-function createCategorizeFunction(dbOptions: any) {
+// Lo que Claude devuelve: plano y sin opcionales (la salida estructurada lo
+// valida); abajo se traduce al CategorizedIntent que usa el resto del sistema.
+const ClasificacionSchema = zv4.object({
+  query_type: zv4.enum(['SUBJECTIVE_PREFERENCE', 'OBJECTIVE_FEATURE', 'HYBRID']),
+  confidence: zv4.number().describe('0 a 1'),
+  brands: zv4.array(zv4.string()).describe('Marcas mencionadas, escritas como en la lista de marcas'),
+  body_types: zv4.array(zv4.string()).describe('Carrocerías pedidas, escritas como en la lista'),
+  fuel_types: zv4.array(zv4.string()).describe('Combustibles pedidos, escritos como en la lista'),
+  features: zv4.array(zv4.string()).describe('Equipamiento medible pedido: "Turbo", "4x4", "AWD", "Sunroof", "Cuero", "CarPlay", "Camara 360", "Blindado"'),
+  year_min: zv4.number().nullable(),
+  year_max: zv4.number().nullable(),
+  price_min: zv4.number().nullable().describe('En pesos colombianos; solo si dio una cifra'),
+  price_max: zv4.number().nullable().describe('En pesos colombianos; solo si dio una cifra'),
+  subjective_context: zv4.string().describe('Lo cualitativo que pidió: "barato", "para la finca", "familiar", "que gaste poco"… Vacío si no hay.'),
+  reasoning: zv4.string().describe('Una frase'),
+});
+
+/** Escribe cada valor como está en la base (mayúsculas y tildes), si existe. */
+function canonico(valores: string[], opciones: string[]) {
+  const norm = (x: string) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  return valores
+    .map(v => opciones.find(o => norm(o) === norm(v)) ?? v)
+    .filter((v, i, a) => v && a.indexOf(v) === i);
+}
+
+// Misma pregunta, misma respuesta: no se paga dos veces en una hora.
+const cache = new Map<string, { hasta: number; valor: CategorizedIntent }>();
+const UNA_HORA = 60 * 60 * 1000;
+
+function sinIA(prompt: string, reasoning: string): CategorizedIntent {
   return {
-    name: 'categorize_query',
-    description: 'Separates objective database filters from subjective ranking intent.',
-    parameters: {
-      type: 'object',
-      properties: {
-        query_type: {
-          type: 'string',
-          enum: ['SUBJECTIVE_PREFERENCE', 'OBJECTIVE_FEATURE', 'HYBRID'],
-          description: 'HYBRID if mostly objective but has ANY subjective adjective (cheap, good, fast). OBJECTIVE if purely technical specs. SUBJECTIVE if purely abstract.'
-        },
-        objective_filters: {
-          type: 'object',
-          description: 'STRICT Hard filters that MUST be applied to the database.',
-          properties: {
-            brands: {
-              type: 'array', items: { type: 'string' },
-              description: `EXACT brands from: ${dbOptions.brands.join(', ')}`
-            },
-            body_types: {
-              type: 'array', items: { type: 'string' },
-              description: `EXACT body types from: ${dbOptions.bodyTypes.join(', ')}`
-            },
-            fuel_types: {
-              type: 'array', items: { type: 'string' },
-              description: `EXACT fuel types from: ${dbOptions.fuelTypes.join(', ')}`
-            },
-            year_range: {
-              type: 'object',
-              properties: { min: { type: 'number' }, max: { type: 'number' } },
-              description: 'Year range. If single year mentioned (e.g. 2025) use min=max=2025.'
-            },
-            price_range: {
-              type: 'object',
-              properties: { min: { type: 'number' }, max: { type: 'number' } },
-              description: 'Price range in COP. Only if specific numbers mentioned (e.g. "menos de 50M"). IGNORE "barato/caro".'
-            },
-            door_count: { type: 'number' },
-            seat_count: { type: 'number' },
-            features: {
-              type: 'array',
-              items: { type: 'string' },
-              description: 'Technical quantifiable features: "Turbo", "4x4", "AWD", "Sunroof", "Cuero", "Blindado", "Hibrido", "Electrico", "Automatico" (if not in transmission field)'
-            }
-          }
-        },
-        subjective_context: {
-          type: 'string',
-          description: 'The subjective part of the request to be handled by AI ranking (e.g. "barato", "para trocha", "deportivo", "bueno para familias").'
-        },
-        confidence: { type: 'number' },
-        reasoning: { type: 'string' }
-      },
-      required: ['query_type', 'confidence', 'reasoning']
-    }
+    query_type: QueryType.SUBJECTIVE_PREFERENCE,
+    confidence: 0,
+    original_query: prompt,
+    subjective_context: prompt,
+    reasoning,
   };
 }
 
 export async function categorizeQuery(prompt: string): Promise<CategorizedIntent> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  const dbOptions = await getDatabaseOptions();
+  if (!process.env.ANTHROPIC_API_KEY) return sinIA(prompt, 'Sin ANTHROPIC_API_KEY: orden determinístico');
 
-  if (!apiKey) {
-    // Basic fallback
-    return {
-      query_type: QueryType.SUBJECTIVE_PREFERENCE,
-      confidence: 0.5,
-      original_query: prompt,
-      subjective_context: prompt,
-      reasoning: "No API key, fallback"
-    };
-  }
+  const clave = prompt.trim().toLowerCase();
+  const guardado = cache.get(clave);
+  if (guardado && guardado.hasta > Date.now()) return guardado.valor;
 
-  const systemPrompt = `You are a vehicle query analyzer for the Colombian market (2026 Context).
-  
-  YOUR GOAL: Split the user query into OBECTIVE HARD FILTERS and SUBJECTIVE INTENT context.
-  
-  1. OBJECTIVE FILTERS (Database):
-     - Only extract checks for specific Brand, Year, Fuel Type, Body Type, Transmission, Doors, Seats.
-     - Brand Extraction: You MUST normalize the brand case to match the provided list EXACTLY (e.g., "byd" -> "BYD", "mazda" -> "Mazda", "bmw" -> "BMW").
-     - Price: ONLY extract if specific numbers are given (e.g., "menos de 50 millones").
-     - TECHNICAL FEATURES: Extract specific measurable features into 'features' array:
-       - Induction: "Turbo", "Twin Turbo", "Supercharger"
-       - Drivetrain: "4x4", "AWD", "4WD"
-       - Interior: "Cuero", "Sunroof", "Techo panoramico", "7 puestos"
-       - Tech: "CarPlay", "Android Auto", "Camara 360", "Blindado"
-     - IGNORE subjective equivalents here (e.g., "barato", "nuevo", "rápido" -> DO NOT filter these in database, send to SUBJECTIVE).
-  
-  2. SUBJECTIVE CONTEXT (AI Ranking):
-     - Extract any qualitative keywords: "barato", "económico", "rápido", "trocha", "familiar", "lujo", "status".
-     - This string will be passed to an LLM to rank the filtered results.
-  
-  3. QUERY TYPE:
-     - OBJECTIVE_FEATURE: Only hard filters, no subjective terms (e.g. "Toyota Hilux 2025 diesel").
-     - SUBJECTIVE_PREFERENCE: Only subjective terms (e.g. "carro bueno para finca").
-     - HYBRID: Both (e.g. "Toyota barato", "Camioneta diesel economica", "BYD comodo").
-  
-  CRITICAL: "Barato" is SUBJECTIVE. Do not invent a price range unless numbers are explicit.
-  CRITICAL: "Nuevo" is SUBJECTIVE (implies recent years but let the AI deciding ranking handle it unless "2026" is explicit).
-  `;
+  const db = await getDatabaseOptions();
+
+  const system = `Analizas búsquedas de carros de compradores en Colombia (año ${new Date().getFullYear()}). Separas lo OBJETIVO (filtros duros de base de datos) de lo SUBJETIVO (lo que la IA usa para ordenar).
+
+Opciones que existen en el catálogo:
+- Marcas: ${db.brands.join(', ') || '(ninguna todavía)'}
+- Carrocerías: ${db.bodyTypes.join(', ') || '(ninguna todavía)'}
+- Combustibles: ${db.fuelTypes.join(', ') || '(ninguno todavía)'}
+
+1. OBJETIVO: solo lo que el comprador dijo explícitamente: marca, año, combustible, carrocería, equipamiento medible. Escribe marcas, carrocerías y combustibles EXACTAMENTE como en las listas ("byd" → "BYD"; "camioneta" → la carrocería SUV o Pickup de la lista según el contexto).
+   - Precio: SOLO si hay cifra ("menos de 100 millones" → price_max 100000000). "Barato", "económico" NO son precio.
+   - Un año suelto ("2026") → year_min = year_max = 2026. "Nuevo" NO es año.
+2. SUBJETIVO: lo cualitativo ("barato", "rápido", "para trocha", "familiar", "lujo", "que gaste poco"). En subjective_context.
+3. query_type: OBJECTIVE_FEATURE si solo hay filtros ("Toyota Hilux diésel 2026"); SUBJECTIVE_PREFERENCE si solo hay cualidades ("un carro bueno pa la finca"); HYBRID si hay ambos ("Toyota barato", "SUV eléctrica cómoda").
+Ante la duda, NO filtres: un filtro de más deja al comprador sin resultados.`;
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+    const r = await pedirJson({ schema: ClasificacionSchema, modelo: 'haiku', maxTokens: 800, system, prompt });
+    const rango = (min: number | null, max: number | null) =>
+      min == null && max == null ? undefined : { ...(min != null ? { min } : {}), ...(max != null ? { max } : {}) };
+    const valor: CategorizedIntent = {
+      query_type: r.query_type as QueryType,
+      confidence: Math.max(0, Math.min(1, r.confidence)),
+      objective_filters: {
+        brands: canonico(r.brands, db.brands),
+        body_types: canonico(r.body_types, db.bodyTypes),
+        fuel_types: canonico(r.fuel_types, db.fuelTypes),
+        features: r.features,
+        year_range: rango(r.year_min, r.year_max),
+        price_range: rango(r.price_min, r.price_max),
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt }
-        ],
-        functions: [createCategorizeFunction(dbOptions)],
-        function_call: { name: 'categorize_query' },
-        temperature: 0.1
-      })
-    });
-
-    if (!response.ok) throw new Error('OpenAI API Error');
-    const data = await response.json();
-    const args = JSON.parse(data.choices[0].message.function_call.arguments);
-
-    // Normalization fixes as before (ensure correct root structure vs nested is handled if model hallucinates structure, 
-    // though schema enforcement helps)
-
-    return {
-      ...args,
-      original_query: prompt
-    };
-
-  } catch (error) {
-    console.error("Categorization error:", error);
-    return {
-      query_type: QueryType.SUBJECTIVE_PREFERENCE,
+      subjective_context: r.subjective_context || undefined,
       original_query: prompt,
-      confidence: 0,
-      subjective_context: prompt,
-      reasoning: "Error fallback"
+      reasoning: r.reasoning,
     };
+    cache.set(clave, { hasta: Date.now() + UNA_HORA, valor });
+    return valor;
+  } catch (error) {
+    console.error('Error clasificando la búsqueda con Claude:', error);
+    return sinIA(prompt, 'Error de la IA: orden determinístico');
   }
 }
-

@@ -39,7 +39,9 @@ export async function processResults(categorizedIntent: CategorizedIntent): Prom
       return await processSubjectiveQuery(categorizedIntent, startTime);
 
     case QueryType.OBJECTIVE_FEATURE:
-      return await processObjectiveQuery(categorizedIntent, startTime);
+      // Toda búsqueda pasa por la IA: también la puramente objetiva se ordena
+      // y se explica (antes era un filtro mudo con "100% coincide").
+      return { ...(await processHybridQuery(categorizedIntent, startTime)), query_type: QueryType.OBJECTIVE_FEATURE };
 
     case QueryType.HYBRID:
       return await processHybridQuery(categorizedIntent, startTime);
@@ -143,59 +145,6 @@ async function processSubjectiveQuery(intent: CategorizedIntent, startTime: numb
     all_matches: {
       vehicles: [...rankedothers, ...unranked], // Ranked others first, then the rest
       filters_applied: ['Análisis subjetivo IA']
-    },
-    processing_time_ms: Date.now() - startTime,
-    confidence: intent.confidence,
-    original_query: intent.original_query
-  };
-}
-
-// ============================================================================
-// OBJECTIVE QUERY: Strict Database Filtering
-// ============================================================================
-async function processObjectiveQuery(intent: CategorizedIntent, startTime: number): Promise<ProcessedResults> {
-  const where = sanitizeWhereClause(buildObjectiveWhereClause(intent));
-
-  const vehicles = await prisma.vehicle.findMany({
-    where,
-    include: {
-      images: {
-        take: 1,
-        select: {
-          id: true,
-          url: true,
-          type: true,
-          order: true,
-          isThumbnail: true
-        }
-      }
-    },
-    take: 100
-  });
-
-  const formattedVehicles = vehicles.map(v => {
-    const firstImage = (v as any).images?.[0];
-    const imageUrl = urlImagen(v.id, firstImage?.url);
-    return {
-      id: v.id,
-      brand: v.brand,
-      model: v.model,
-      year: v.year,
-      price: v.price,
-      fuelType: v.fuelType,
-      type: v.type,
-      imageUrl,
-      matchPercentage: 100,
-      reasons: ['Coincide con tus filtros']
-    };
-  });
-
-  return {
-    query_type: QueryType.OBJECTIVE_FEATURE,
-    total_matches: vehicles.length,
-    all_matches: {
-      vehicles: formattedVehicles,
-      filters_applied: Object.keys(where)
     },
     processing_time_ms: Date.now() - startTime,
     confidence: intent.confidence,

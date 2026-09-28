@@ -81,7 +81,6 @@ export function ResultadosIA({
     .map(completar)
     .filter((v: Resultado) => !top.some(t => t.id === v.id));
 
-  // Consultas objetivas ("más de 200 hp") no tienen podio: es un filtro.
   const podio = top.length ? top : [];
   const [primero, ...escoltas] = podio;
 
