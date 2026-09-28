@@ -15,11 +15,11 @@ export function WiseMetricsForm({
   };
 
   return (
-    <div className="border border-gray-200 rounded-lg p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">⭐ WiseMetrics - Métricas de Evaluación</h3>
+    <div className="border border-linea rounded-2xl p-6">
+      <h3 className="text-lg font-semibold text-tinta mb-4">⭐ WiseMetrics - Métricas de Evaluación</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Diversión al conducir (0-100)
           </label>
           <input
@@ -29,12 +29,12 @@ export function WiseMetricsForm({
             min="0"
             max="100"
             step="1"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Tecnología/Conectividad (0-100)
           </label>
           <input
@@ -44,12 +44,12 @@ export function WiseMetricsForm({
             min="0"
             max="100"
             step="1"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Impacto ambiental (0-100)
           </label>
           <input
@@ -59,12 +59,12 @@ export function WiseMetricsForm({
             min="0"
             max="100"
             step="1"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Fiabilidad (0-100)
           </label>
           <input
@@ -74,12 +74,12 @@ export function WiseMetricsForm({
             min="0"
             max="100"
             step="1"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Relación calidad-precio (0-100)
           </label>
           <input
@@ -89,12 +89,12 @@ export function WiseMetricsForm({
             min="0"
             max="100"
             step="1"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Comodidad (0-100)
           </label>
           <input
@@ -104,12 +104,12 @@ export function WiseMetricsForm({
             min="0"
             max="100"
             step="1"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Usabilidad (0-100)
           </label>
           <input
@@ -119,12 +119,12 @@ export function WiseMetricsForm({
             min="0"
             max="100"
             step="1"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Eficiencia (0-100)
           </label>
           <input
@@ -134,12 +134,12 @@ export function WiseMetricsForm({
             min="0"
             max="100"
             step="1"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Prestigio (0-100)
           </label>
           <input
@@ -149,13 +149,13 @@ export function WiseMetricsForm({
             min="0"
             max="100"
             step="1"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
           />
         </div>
         
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Calidad del interior (0-100)
           </label>
           <input
@@ -165,7 +165,7 @@ export function WiseMetricsForm({
             min="0"
             max="100"
             step="1"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
           />
         </div>
       </div>

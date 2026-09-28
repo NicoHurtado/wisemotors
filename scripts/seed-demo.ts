@@ -70,6 +70,7 @@ const DemoSchema = z.object({
 async function sembrar(c: (typeof CARROS)[number]) {
   const catalogo = CATALOGO.map(d => `${d.key} | ${d.labelEs}${d.unit ? ` (${d.unit})` : ''} | ${d.dataType}`).join('\n');
   const r = await pedirJson({
+    modelo: 'haiku', // datos DEMO: no es crítico
     schema: DemoSchema,
     maxTokens: 12000,
     prompt: `Datos DEMO (aproximados, para probar un diseño web) del ${c.brand} ${c.model} ${c.year}, ${c.fuelType}, mercado Colombia.

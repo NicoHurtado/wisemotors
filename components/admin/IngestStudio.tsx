@@ -425,7 +425,12 @@ export function IngestStudio() {
           {draft.price?.estimated
             ? <span className="px-2 py-1 rounded-full bg-rose-200 text-rose-900 text-xs font-bold">ESTIMADO — verificar</span>
             : draft.price
-              ? <span className="px-2 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-bold">De fuente ({host(draft.price.sourceUrl ?? '')})</span>
+              ? (
+                <a href={draft.price.sourceUrl} target="_blank" rel="noopener noreferrer"
+                  className="px-2 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-bold hover:underline">
+                  De fuente: {host(draft.price.sourceUrl ?? '')} ↗
+                </a>
+              )
               : <span className="px-2 py-1 rounded-full bg-red-100 text-red-800 text-xs font-bold">Sin dato — ingresar a mano</span>}
         </div>
         <input value={priceValue} onChange={e => setPriceValue(e.target.value.replace(/[^\d]/g, ''))}
@@ -436,7 +441,7 @@ export function IngestStudio() {
         )}
         {draft.price && (
           <p className="text-sm text-tinta/80 leading-relaxed">
-            <span className="font-medium">Razonamiento:</span> {draft.price.reasoningEs}
+            <span className="font-medium">{draft.price.estimated ? 'Razonamiento:' : 'De dónde sale:'}</span> {draft.price.reasoningEs}
             <span className="text-tinta-2/80"> · confianza {Math.round(draft.price.confidence * 100)}%</span>
           </p>
         )}

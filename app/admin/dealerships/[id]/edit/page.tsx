@@ -8,13 +8,14 @@ interface EditDealershipPageProps {
 
 export default function EditDealershipPage({ params }: EditDealershipPageProps) {
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-[1440px] px-5 pb-20 pt-10 md:px-8 md:pt-14">
+      <div>
+        <a href="/admin" className="text-[14px] text-tinta-2 hover:text-tinta">← Panel</a>
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Editar Concesionario
+          <h1 className="t-titulo mt-4 text-[40px] md:text-[64px]">
+            Editar concesionario
           </h1>
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-tinta-2">
             Modifica los campos del concesionario según sea necesario
           </p>
         </div>

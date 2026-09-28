@@ -96,13 +96,13 @@ export function DealershipDetail({ dealershipId }: DealershipDetailProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Activo':
-        return 'bg-green-100 text-green-800';
+        return 'bg-wise/10 text-wise';
       case 'Inactivo':
         return 'bg-red-100 text-red-800';
       case 'En construcción':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-[#fce7f3] text-[#db2777]';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-tarjeta text-tinta';
     }
   };
 
@@ -114,7 +114,7 @@ export function DealershipDetail({ dealershipId }: DealershipDetailProps) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wise"></div>
-        <span className="ml-2 text-gray-600">Cargando concesionario...</span>
+        <span className="ml-2 text-tinta-2">Cargando concesionario...</span>
       </div>
     );
   }
@@ -122,9 +122,9 @@ export function DealershipDetail({ dealershipId }: DealershipDetailProps) {
   if (!dealership) {
     return (
       <div className="text-center py-12">
-        <Building2 className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">Concesionario no encontrado</h3>
-        <p className="mt-1 text-sm text-gray-500">
+        <Building2 className="mx-auto h-12 w-12 text-tinta-2/70" />
+        <h3 className="mt-2 text-sm font-medium text-tinta">Concesionario no encontrado</h3>
+        <p className="mt-1 text-sm text-tinta-2">
           El concesionario que buscas no existe o ha sido eliminado.
         </p>
       </div>
@@ -132,35 +132,35 @@ export function DealershipDetail({ dealershipId }: DealershipDetailProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-lg">
+    <div className="bg-blanco rounded-2xl shadow-lg">
       {/* Header */}
-      <div className="px-8 py-6 border-b border-gray-200">
+      <div className="px-8 py-6 border-b border-linea">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <button
               onClick={() => router.back()}
-              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+              className="p-2 text-tinta-2/70 hover:text-tinta-2 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-tinta">
                 {dealership.name}
               </h1>
-              <p className="text-gray-600">ID: {dealership.id}</p>
+              <p className="text-tinta-2">ID: {dealership.id}</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
             <button
               onClick={() => router.push(`/admin/dealerships/${dealership.id}/edit`)}
-              className="inline-flex items-center px-4 py-2 bg-wise text-white rounded-lg hover:bg-wise-dark transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-wise text-white rounded-2xl hover:bg-wise-profundo transition-colors"
             >
               <Edit className="w-4 h-4 mr-2" />
               Editar
             </button>
             <button
               onClick={handleDelete}
-              className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-2xl hover:bg-red-700 transition-colors"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Eliminar
@@ -171,47 +171,47 @@ export function DealershipDetail({ dealershipId }: DealershipDetailProps) {
 
       {/* Información del Concesionario */}
       <div className="px-8 py-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Información del Concesionario</h2>
+        <h2 className="text-xl font-semibold text-tinta mb-4">Información del Concesionario</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex items-start space-x-3">
-            <Building2 className="w-5 h-5 text-gray-400 mt-1" />
+            <Building2 className="w-5 h-5 text-tinta-2/70 mt-1" />
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">Nombre</label>
-              <p className="text-lg font-medium text-gray-900">{dealership.name}</p>
+              <label className="block text-sm font-medium text-tinta-2 mb-1">Nombre</label>
+              <p className="text-lg font-medium text-tinta">{dealership.name}</p>
             </div>
           </div>
 
           <div className="flex items-start space-x-3">
-            <MapPin className="w-5 h-5 text-gray-400 mt-1" />
+            <MapPin className="w-5 h-5 text-tinta-2/70 mt-1" />
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">Ubicación</label>
-              <p className="text-lg font-medium text-gray-900">{dealership.location}</p>
+              <label className="block text-sm font-medium text-tinta-2 mb-1">Ubicación</label>
+              <p className="text-lg font-medium text-tinta">{dealership.location}</p>
             </div>
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-500 mb-2">Dirección Completa</label>
-            <p className="text-gray-900">{dealership.address}</p>
+            <label className="block text-sm font-medium text-tinta-2 mb-2">Dirección Completa</label>
+            <p className="text-tinta">{dealership.address}</p>
           </div>
 
           <div className="flex items-start space-x-3">
-            <Phone className="w-5 h-5 text-gray-400 mt-1" />
+            <Phone className="w-5 h-5 text-tinta-2/70 mt-1" />
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">Teléfono</label>
-              <p className="text-lg font-medium text-gray-900">{dealership.phone}</p>
+              <label className="block text-sm font-medium text-tinta-2 mb-1">Teléfono</label>
+              <p className="text-lg font-medium text-tinta">{dealership.phone}</p>
             </div>
           </div>
 
           <div className="flex items-start space-x-3">
-            <Mail className="w-5 h-5 text-gray-400 mt-1" />
+            <Mail className="w-5 h-5 text-tinta-2/70 mt-1" />
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">Email</label>
-              <p className="text-lg font-medium text-gray-900">{dealership.email}</p>
+              <label className="block text-sm font-medium text-tinta-2 mb-1">Email</label>
+              <p className="text-lg font-medium text-tinta">{dealership.email}</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1">Estado</label>
+            <label className="block text-sm font-medium text-tinta-2 mb-1">Estado</label>
             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(dealership.status)}`}>
               {getStatusText(dealership.status)}
             </span>
@@ -220,58 +220,58 @@ export function DealershipDetail({ dealershipId }: DealershipDetailProps) {
       </div>
 
       {/* Vehículos del Concesionario */}
-      <div className="px-8 py-6 border-t border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+      <div className="px-8 py-6 border-t border-linea">
+        <h2 className="text-xl font-semibold text-tinta mb-4">
           Vehículos ({vehicles.length})
         </h2>
         
         {vehicles.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-linea">
+              <thead className="bg-papel">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-tinta-2 uppercase tracking-wider">
                     Vehículo
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-tinta-2 uppercase tracking-wider">
                     Año
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-tinta-2 uppercase tracking-wider">
                     Precio
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-tinta-2 uppercase tracking-wider">
                     Tipo
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-tinta-2 uppercase tracking-wider">
                     Combustible
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-blanco divide-y divide-linea">
                 {vehicles.map((vehicle) => (
-                  <tr key={vehicle.id} className="hover:bg-gray-50">
+                  <tr key={vehicle.id} className="hover:bg-papel">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="w-10 h-10 bg-wise/10 rounded-full flex items-center justify-center mr-3">
                           <Car className="w-5 h-5 text-wise" />
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-tinta">
                             {vehicle.brand} {vehicle.model}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-tinta">
                       {vehicle.year}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-tinta">
                       ${vehicle.price.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-tinta">
                       {vehicle.type}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-tinta">
                       {vehicle.fuelType}
                     </td>
                   </tr>
@@ -281,9 +281,9 @@ export function DealershipDetail({ dealershipId }: DealershipDetailProps) {
           </div>
         ) : (
           <div className="text-center py-12">
-            <Car className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No hay vehículos</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <Car className="mx-auto h-12 w-12 text-tinta-2/70" />
+            <h3 className="mt-2 text-sm font-medium text-tinta">No hay vehículos</h3>
+            <p className="mt-1 text-sm text-tinta-2">
               Este concesionario no tiene vehículos asociados.
             </p>
           </div>

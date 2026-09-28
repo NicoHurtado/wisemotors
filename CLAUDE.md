@@ -97,6 +97,13 @@ cobertura, migración, seeds, motor de cohortes.
   conflictos detectados — mezcla de versiones híbrida/gasolina —, precio $133M de
   Autos de Primera) → publicado → la búsqueda "una SUV para la familia que no gaste
   mucho" lo devuelve #1 con razones. Scoring determinístico + rerank funcionando.
+- **Ingesta v2 (sep-2026):** las fuentes ya no se adivinan. `lib/ingest/buscar-fuentes.ts`:
+  Claude con `web_search` busca la página oficial CO + prensa CO; solo se aceptan URLs que
+  salieron en los resultados. Cada fuente se descarga directo y, si falla / es PDF / no trae
+  datos, se lee con `web_fetch` de Anthropic (Haiku). Las fichas técnicas PDF oficiales se
+  extraen como documento. Toda cita de página HTML se verifica contra el texto (si no
+  aparece, el dato muere). Probado: Onix RS 33 datos, CX-30 36, Dolphin 41, ~50 s.
+  La ruta de ingesta tiene `maxDuration: 300`.
 - Pendiente de ingesta v2: fotos (Cloudinary), asociar concesionario, cola de
   auditoría, `maxDuration: 60` puede quedar corto en Vercel para 6 fuentes (~45s local).
 
@@ -152,6 +159,11 @@ cobertura, migración, seeds, motor de cohortes.
 - Deploy Vercel `iad1`, funciones `maxDuration: 30s`. Env vars: `WISE_DATABASE_URL`(+`_UNPOOLED`),
   `JWT_SECRET`, `ANTHROPIC_API_KEY` (+ `ANTHROPIC_WORKSPACE_ID` si la clave no es
   de un workspace), `OPENAI_API_KEY`, `CLOUDINARY_*`, `NEXT_PUBLIC_APP_URL`.
+- **Modelos (decisión del equipo, costo): NUNCA Opus.** Sonnet (`claude-sonnet-5`) para lo crítico
+  (extracción, búsqueda de fuentes, identidad, precio, veredicto del comparador); Haiku
+  (`claude-haiku-4-5`) para lo no crítico (leer páginas con web_fetch, datos DEMO). Todo pasa por
+  `MODELOS` en `lib/ai/claude.ts`. Ingesta: máx 4 fuentes, 25k caracteres por página, 3 búsquedas.
+  No correr pruebas que gasten la clave de producción sin permiso del equipo.
 - LLM: la ingesta (`lib/ingest/`) usa Claude vía `lib/ai/claude.ts` (`pedirJson` +
   esquema Zod, salida estructurada). La búsqueda (`lib/ai/categorization.ts`,
   `rerank.ts`, `comparison.ts`) sigue en OpenAI hasta migrarla.

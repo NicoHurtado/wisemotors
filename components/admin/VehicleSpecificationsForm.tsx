@@ -21,11 +21,11 @@ export function VehicleSpecificationsForm({
   return (
     <div className="space-y-8">
       {/* RENDIMIENTO Y VELOCIDAD */}
-      <div className="border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">⚡ Rendimiento y Velocidad</h3>
+      <div className="border border-linea rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-tinta mb-4">⚡ Rendimiento y Velocidad</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Aceleración 0-100 km/h (s)
             </label>
             <input
@@ -34,12 +34,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('performance', 'acceleration0to100', parseFloat(e.target.value) || 0)}
               min="0"
               step="0.1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Aceleración 0-200 km/h (s)
             </label>
             <input
@@ -48,12 +48,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('performance', 'acceleration0to200', parseFloat(e.target.value) || 0)}
               min="0"
               step="0.1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Cuarto de milla (s)
             </label>
             <input
@@ -62,12 +62,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('performance', 'quarterMile', parseFloat(e.target.value) || 0)}
               min="0"
               step="0.1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Adelantamiento 80-120 km/h (s)
             </label>
             <input
@@ -76,12 +76,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('performance', 'overtaking80to120', parseFloat(e.target.value) || 0)}
               min="0"
               step="0.1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Velocidad máxima (km/h)
             </label>
             <input
@@ -89,12 +89,12 @@ export function VehicleSpecificationsForm({
               value={specifications.performance?.maxSpeed || ''}
               onChange={(e) => handleChange('performance', 'maxSpeed', parseFloat(e.target.value) || 0)}
               min="0"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Potencia-peso (HP/ton)
             </label>
             <input
@@ -103,7 +103,7 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('performance', 'powerToWeight', parseFloat(e.target.value) || 0)}
               min="0"
               step="0.1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
 
@@ -113,20 +113,20 @@ export function VehicleSpecificationsForm({
                 type="checkbox"
                 checked={specifications.performance?.launchControl || false}
                 onChange={(e) => handleChange('performance', 'launchControl', e.target.checked)}
-                className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+                className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
               />
-              <span className="text-sm font-medium text-gray-700">Control de lanzamiento</span>
+              <span className="text-sm font-medium text-tinta/80">Control de lanzamiento</span>
             </label>
           </div>
         </div>
       </div>
 
       {/* CHASIS Y SUSPENSIÓN */}
-      <div className="border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">🔧 Chasis y Suspensión</h3>
+      <div className="border border-linea rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-tinta mb-4">🔧 Chasis y Suspensión</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Altura libre al suelo (cm)
             </label>
             <input
@@ -135,12 +135,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('chassis', 'groundClearance', parseFloat(e.target.value) || 0)}
               min="0"
               step="0.1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Distancia de frenado 100-0 km/h (m)
             </label>
             <input
@@ -149,12 +149,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('chassis', 'brakingDistance100to0', parseFloat(e.target.value) || 0)}
               min="0"
               step="0.1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Aceleración lateral máxima (g)
             </label>
             <input
@@ -163,12 +163,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('chassis', 'maxLateralAcceleration', parseFloat(e.target.value) || 0)}
               min="0"
               step="0.1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Aceleración longitudinal máxima (g)
             </label>
             <input
@@ -177,18 +177,18 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('chassis', 'maxLongitudinalAcceleration', parseFloat(e.target.value) || 0)}
               min="0"
               step="0.1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Tipo de setup de suspensión
             </label>
             <select
               value={specifications.chassis?.suspensionSetup || ''}
               onChange={(e) => handleChange('chassis', 'suspensionSetup', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             >
               <option value="">Seleccionar tipo</option>
               <option value="McPherson">McPherson</option>
@@ -205,11 +205,11 @@ export function VehicleSpecificationsForm({
 
       {/* CAPACIDADES OFF-ROAD - Solo se muestra si el tipo de vehículo es Todoterreno */}
       {vehicleType === 'Todoterreno' && (
-        <div className="border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">🏔️ Capacidades Off-Road</h3>
+        <div className="border border-linea rounded-2xl p-6">
+          <h3 className="text-lg font-semibold text-tinta mb-4">🏔️ Capacidades Off-Road</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-tinta/80 mb-2">
                 Ángulo de aproximación (°)
               </label>
               <input
@@ -219,12 +219,12 @@ export function VehicleSpecificationsForm({
                 min="0"
                 max="90"
                 step="0.1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+                className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-tinta/80 mb-2">
                 Ángulo de salida (°)
               </label>
               <input
@@ -234,12 +234,12 @@ export function VehicleSpecificationsForm({
                 min="0"
                 max="90"
                 step="0.1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+                className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-tinta/80 mb-2">
                 Ángulo de paso (°)
               </label>
               <input
@@ -249,12 +249,12 @@ export function VehicleSpecificationsForm({
                 min="0"
                 max="90"
                 step="0.1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+                className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-tinta/80 mb-2">
                 Profundidad de vadeo (cm)
               </label>
               <input
@@ -263,12 +263,12 @@ export function VehicleSpecificationsForm({
                 onChange={(e) => handleChange('offRoad', 'wadingDepth', parseFloat(e.target.value) || 0)}
                 min="0"
                 step="0.1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+                className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-tinta/80 mb-2">
                 Altura de vadeo (cm)
               </label>
               <input
@@ -277,7 +277,7 @@ export function VehicleSpecificationsForm({
                 onChange={(e) => handleChange('offRoad', 'wadingHeight', parseFloat(e.target.value) || 0)}
                 min="0"
                 step="0.1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+                className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
               />
             </div>
           </div>
@@ -285,11 +285,11 @@ export function VehicleSpecificationsForm({
       )}
 
       {/* PESO Y CARGA */}
-      <div className="border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">⚖️ Peso y Carga</h3>
+      <div className="border border-linea rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-tinta mb-4">⚖️ Peso y Carga</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Peso bruto combinado (kg)
             </label>
             <input
@@ -298,12 +298,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('weight', 'grossCombinedWeight', parseFloat(e.target.value) || 0)}
               min="0"
               step="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Carga útil (kg)
             </label>
             <input
@@ -312,12 +312,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('weight', 'payload', parseFloat(e.target.value) || 0)}
               min="0"
               step="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Capacidad de remolque (kg)
             </label>
             <input
@@ -326,12 +326,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('weight', 'towingCapacity', parseFloat(e.target.value) || 0)}
               min="0"
               step="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Volumen de caja de carga (L)
             </label>
             <input
@@ -340,18 +340,18 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('weight', 'cargoBoxVolume', parseFloat(e.target.value) || 0)}
               min="0"
               step="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
         </div>
       </div>
 
       {/* DIMENSIONES */}
-      <div className="border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">📏 Dimensiones</h3>
+      <div className="border border-linea rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-tinta mb-4">📏 Dimensiones</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Longitud (m)
             </label>
             <input
@@ -360,12 +360,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('dimensions', 'length', parseFloat(e.target.value) || 0)}
               min="0"
               step="0.01"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Ancho (m)
             </label>
             <input
@@ -374,12 +374,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('dimensions', 'width', parseFloat(e.target.value) || 0)}
               min="0"
               step="0.01"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Altura (m)
             </label>
             <input
@@ -388,12 +388,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('dimensions', 'height', parseFloat(e.target.value) || 0)}
               min="0"
               step="0.01"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Distancia entre ejes (m)
             </label>
             <input
@@ -402,12 +402,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('dimensions', 'wheelbase', parseFloat(e.target.value) || 0)}
               min="0"
               step="0.01"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Peso en vacío (kg)
             </label>
             <input
@@ -416,12 +416,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('dimensions', 'curbWeight', parseFloat(e.target.value) || 0)}
               min="0"
               step="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Capacidad de carga (L)
             </label>
             <input
@@ -430,7 +430,7 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('dimensions', 'cargoCapacity', parseFloat(e.target.value) || 0)}
               min="0"
               step="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
@@ -438,11 +438,11 @@ export function VehicleSpecificationsForm({
       </div>
 
       {/* INTERIOR */}
-      <div className="border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">🛋️ Interior</h3>
+      <div className="border border-linea rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-tinta mb-4">🛋️ Interior</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Maletero con asientos abatidos (L)
             </label>
             <input
@@ -451,12 +451,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('interior', 'trunkCapacitySeatsDown', parseFloat(e.target.value) || 0)}
               min="0"
               step="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Número de filas de asientos
             </label>
             <input
@@ -466,12 +466,12 @@ export function VehicleSpecificationsForm({
               min="1"
               max="4"
               step="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Capacidad de carga interior (L)
             </label>
             <input
@@ -480,12 +480,12 @@ export function VehicleSpecificationsForm({
               onChange={(e) => handleChange('interior', 'interiorCargoCapacity', parseFloat(e.target.value) || 0)}
               min="0"
               step="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Capacidad de pasajeros
             </label>
             <input
@@ -495,18 +495,18 @@ export function VehicleSpecificationsForm({
               min="1"
               max="12"
               step="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
         </div>
       </div>
 
       {/* SEGURIDAD */}
-      <div className="border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">🛡️ Seguridad</h3>
+      <div className="border border-linea rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-tinta mb-4">🛡️ Seguridad</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Número de airbags
             </label>
             <input
@@ -516,12 +516,12 @@ export function VehicleSpecificationsForm({
               min="0"
               max="20"
               step="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Calificación NCAP (0-5 estrellas)
             </label>
             <input
@@ -531,12 +531,12 @@ export function VehicleSpecificationsForm({
               min="0"
               max="5"
               step="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Puntuación seguridad adultos (0-100)
             </label>
             <input
@@ -546,12 +546,12 @@ export function VehicleSpecificationsForm({
               min="0"
               max="100"
               step="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Puntuación seguridad niños (0-100)
             </label>
             <input
@@ -561,12 +561,12 @@ export function VehicleSpecificationsForm({
               min="0"
               max="100"
               step="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Puntuación sistemas asistencia (0-100)
             </label>
             <input
@@ -576,7 +576,7 @@ export function VehicleSpecificationsForm({
               min="0"
               max="100"
               step="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             />
           </div>
           
@@ -589,9 +589,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.safety?.stabilityControl || false}
               onChange={(e) => handleChange('safety', 'stabilityControl', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Control de estabilidad</span>
+            <span className="text-sm font-medium text-tinta/80">Control de estabilidad</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -599,9 +599,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.safety?.tractionControl || false}
               onChange={(e) => handleChange('safety', 'tractionControl', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Control de tracción</span>
+            <span className="text-sm font-medium text-tinta/80">Control de tracción</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -609,9 +609,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.safety?.autonomousEmergencyBraking || false}
               onChange={(e) => handleChange('safety', 'autonomousEmergencyBraking', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Frenado de emergencia autónomo</span>
+            <span className="text-sm font-medium text-tinta/80">Frenado de emergencia autónomo</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -619,9 +619,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.safety?.forwardCollisionWarning || false}
               onChange={(e) => handleChange('safety', 'forwardCollisionWarning', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Advertencia de colisión frontal</span>
+            <span className="text-sm font-medium text-tinta/80">Advertencia de colisión frontal</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -629,9 +629,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.safety?.laneAssist || false}
               onChange={(e) => handleChange('safety', 'laneAssist', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Asistente de carril</span>
+            <span className="text-sm font-medium text-tinta/80">Asistente de carril</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -639,9 +639,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.safety?.adaptiveCruiseControl || false}
               onChange={(e) => handleChange('safety', 'adaptiveCruiseControl', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Control de crucero adaptativo</span>
+            <span className="text-sm font-medium text-tinta/80">Control de crucero adaptativo</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -649,9 +649,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.safety?.blindSpotDetection || false}
               onChange={(e) => handleChange('safety', 'blindSpotDetection', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Detección de punto ciego</span>
+            <span className="text-sm font-medium text-tinta/80">Detección de punto ciego</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -659,9 +659,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.safety?.crossTrafficAlert || false}
               onChange={(e) => handleChange('safety', 'crossTrafficAlert', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Alerta de tráfico cruzado</span>
+            <span className="text-sm font-medium text-tinta/80">Alerta de tráfico cruzado</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -669,9 +669,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.safety?.fatigueMonitor || false}
               onChange={(e) => handleChange('safety', 'fatigueMonitor', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Monitor de fatiga</span>
+            <span className="text-sm font-medium text-tinta/80">Monitor de fatiga</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -679,25 +679,25 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.safety?.tirePressureMonitoring || false}
               onChange={(e) => handleChange('safety', 'tirePressureMonitoring', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Monitoreo de presión de neumáticos</span>
+            <span className="text-sm font-medium text-tinta/80">Monitoreo de presión de neumáticos</span>
           </label>
         </div>
       </div>
 
       {/* ILUMINACIÓN */}
-      <div className="border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">💡 Iluminación</h3>
+      <div className="border border-linea rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-tinta mb-4">💡 Iluminación</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-tinta/80 mb-2">
               Tipo de faros
             </label>
             <select
               value={specifications.lighting?.headlightType || ''}
               onChange={(e) => handleChange('lighting', 'headlightType', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+              className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             >
               <option value="">Seleccionar tipo</option>
               <option value="Halógeno">Halógeno</option>
@@ -712,17 +712,17 @@ export function VehicleSpecificationsForm({
       </div>
 
       {/* SISTEMAS DE ASISTENCIA */}
-      <div className="border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">🚗 Sistemas de Asistencia</h3>
+      <div className="border border-linea rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-tinta mb-4">🚗 Sistemas de Asistencia</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <label className="flex items-center space-x-3 cursor-pointer">
             <input
               type="checkbox"
               checked={specifications.assistance?.brakeAssist || false}
               onChange={(e) => handleChange('assistance', 'brakeAssist', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Asistencia de frenado</span>
+            <span className="text-sm font-medium text-tinta/80">Asistencia de frenado</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -730,9 +730,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.assistance?.hillStartAssist || false}
               onChange={(e) => handleChange('assistance', 'hillStartAssist', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Asistente de arranque en pendiente</span>
+            <span className="text-sm font-medium text-tinta/80">Asistente de arranque en pendiente</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -740,9 +740,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.assistance?.reverseCamera || false}
               onChange={(e) => handleChange('assistance', 'reverseCamera', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Cámara de reversa</span>
+            <span className="text-sm font-medium text-tinta/80">Cámara de reversa</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -750,9 +750,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.assistance?.parkingSensors || false}
               onChange={(e) => handleChange('assistance', 'parkingSensors', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Sensores de estacionamiento</span>
+            <span className="text-sm font-medium text-tinta/80">Sensores de estacionamiento</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -760,25 +760,25 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.assistance?.cameras360 || false}
               onChange={(e) => handleChange('assistance', 'cameras360', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Cámaras 360°</span>
+            <span className="text-sm font-medium text-tinta/80">Cámaras 360°</span>
           </label>
         </div>
       </div>
 
       {/* CONFORT */}
-      <div className="border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">♨️ Confort</h3>
+      <div className="border border-linea rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-tinta mb-4">♨️ Confort</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <label className="flex items-center space-x-3 cursor-pointer">
             <input
               type="checkbox"
               checked={specifications.comfort?.airConditioning || false}
               onChange={(e) => handleChange('comfort', 'airConditioning', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Aire acondicionado</span>
+            <span className="text-sm font-medium text-tinta/80">Aire acondicionado</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -786,9 +786,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.comfort?.automaticClimateControl || false}
               onChange={(e) => handleChange('comfort', 'automaticClimateControl', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Control automático de clima</span>
+            <span className="text-sm font-medium text-tinta/80">Control automático de clima</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -796,9 +796,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.comfort?.heatedSeats || false}
               onChange={(e) => handleChange('comfort', 'heatedSeats', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Asientos calefaccionados</span>
+            <span className="text-sm font-medium text-tinta/80">Asientos calefaccionados</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -806,9 +806,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.comfort?.ventilatedSeats || false}
               onChange={(e) => handleChange('comfort', 'ventilatedSeats', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Asientos ventilados</span>
+            <span className="text-sm font-medium text-tinta/80">Asientos ventilados</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -816,9 +816,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.comfort?.massageSeats || false}
               onChange={(e) => handleChange('comfort', 'massageSeats', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Asientos con masaje</span>
+            <span className="text-sm font-medium text-tinta/80">Asientos con masaje</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -826,25 +826,25 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.comfort?.automaticHighBeam || false}
               onChange={(e) => handleChange('comfort', 'automaticHighBeam', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Luz alta automática</span>
+            <span className="text-sm font-medium text-tinta/80">Luz alta automática</span>
           </label>
         </div>
       </div>
 
       {/* TECNOLOGÍA */}
-      <div className="border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">💻 Tecnología</h3>
+      <div className="border border-linea rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-tinta mb-4">💻 Tecnología</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <label className="flex items-center space-x-3 cursor-pointer">
             <input
               type="checkbox"
               checked={specifications.technology?.bluetooth || false}
               onChange={(e) => handleChange('technology', 'bluetooth', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Bluetooth</span>
+            <span className="text-sm font-medium text-tinta/80">Bluetooth</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -852,9 +852,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.technology?.touchscreen || false}
               onChange={(e) => handleChange('technology', 'touchscreen', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Pantalla táctil</span>
+            <span className="text-sm font-medium text-tinta/80">Pantalla táctil</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -862,9 +862,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.technology?.navigation || false}
               onChange={(e) => handleChange('technology', 'navigation', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Sistema de navegación</span>
+            <span className="text-sm font-medium text-tinta/80">Sistema de navegación</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -872,9 +872,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.technology?.wirelessCharger || false}
               onChange={(e) => handleChange('technology', 'wirelessCharger', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Cargador inalámbrico</span>
+            <span className="text-sm font-medium text-tinta/80">Cargador inalámbrico</span>
           </label>
           
           <label className="flex items-center space-x-3 cursor-pointer">
@@ -882,9 +882,9 @@ export function VehicleSpecificationsForm({
               type="checkbox"
               checked={specifications.technology?.startStop || false}
               onChange={(e) => handleChange('technology', 'startStop', e.target.checked)}
-              className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+              className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
             />
-            <span className="text-sm font-medium text-gray-700">Sistema start-stop</span>
+            <span className="text-sm font-medium text-tinta/80">Sistema start-stop</span>
           </label>
         </div>
       </div>

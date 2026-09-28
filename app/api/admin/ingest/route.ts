@@ -5,7 +5,8 @@ import { parseVehicleQuery } from '@/lib/ingest/parse-query';
 
 // La ingesta hace varias llamadas LLM + fetch de fuentes: necesita más que
 // los 30s por defecto del proyecto.
-export const maxDuration = 60;
+// Búsqueda web + lectura de 6 fuentes + extracción: ~50 s. Margen para sitios lentos.
+export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
 
 // POST /api/admin/ingest — corre el pipeline y devuelve un BORRADOR.

@@ -20,6 +20,17 @@ import { millones, palabraGigante, tresDatos } from '@/lib/vehiculo-datos';
 
 const INTERVALO = 7000;
 
+// Sin carros publicados (base recién creada), el showroom no se queda vacío:
+// rotan carros de exhibición dibujados, uno por carrocería, sin datos
+// inventados. En cuanto hay carros reales, desaparecen.
+const VITRINA: { id: string; tipo: string; car: any }[] = [
+  { id: 'vitrina-suv', tipo: 'SUV', car: { id: 'vitrina-suv', brand: 'Exhibicion', model: 'suv familiar', type: 'SUV', fuelType: 'Híbrido' } },
+  { id: 'vitrina-sedan', tipo: 'Sedán', car: { id: 'vitrina-sedan', brand: 'Exhibicion', model: 'sedan ejecutivo', type: 'Sedán', fuelType: 'Gasolina' } },
+  { id: 'vitrina-hatch', tipo: 'Hatchback', car: { id: 'vitrina-hatch', brand: 'Exhibicion', model: 'hatch urbano', type: 'Hatchback', fuelType: 'Eléctrico' } },
+  { id: 'vitrina-pickup', tipo: 'Pickup', car: { id: 'vitrina-pickup', brand: 'Exhibicion', model: 'pickup finca', type: 'Pickup', fuelType: 'Diesel' } },
+  { id: 'vitrina-coupe', tipo: 'SUV coupé', car: { id: 'vitrina-coupe', brand: 'Exhibicion', model: 'model coupe', type: 'SUV', fuelType: 'Eléctrico', specifications: { dimensions: { height: 1560 } } } },
+];
+
 function Palabra({ texto, color }: { texto: string; color: string }) {
   return (
     <p className="t-display whitespace-nowrap text-[34vw] lg:text-[clamp(120px,23vw,420px)]" style={{ color }}>
@@ -40,7 +51,8 @@ export function HeroShowroom({ vehiculos, consulta }: { vehiculos: VehiculoTarje
   );
   const [i, setI] = useState(0);
   const [pausa, setPausa] = useState(false);
-  const total = destacados.length;
+  const enVitrina = destacados.length === 0;
+  const total = enVitrina ? VITRINA.length : destacados.length;
 
   useEffect(() => {
     if (pausa || total < 2) return;
@@ -48,7 +60,8 @@ export function HeroShowroom({ vehiculos, consulta }: { vehiculos: VehiculoTarje
     return () => clearTimeout(t);
   }, [i, pausa, total]);
 
-  const v = destacados[i];
+  const v = enVitrina ? undefined : destacados[i % destacados.length];
+  const exhibicion = enVitrina ? VITRINA[i % VITRINA.length] : undefined;
   const palabra = v ? palabraGigante(v.model, v.brand) : 'WISE';
   const datos = v ? tresDatos(v) : [];
 
@@ -111,8 +124,8 @@ export function HeroShowroom({ vehiculos, consulta }: { vehiculos: VehiculoTarje
           <div aria-hidden className="pointer-events-none absolute left-0 top-[6%] lg:hidden" key={`m-${palabra}`}>
             <Palabra texto={palabra} color="#5b1a82" />
           </div>
-          {v && (
-            <div key={v.id} className="carro-entra absolute bottom-0 right-0 h-[62%] w-full lg:bottom-[-13%] lg:right-[2vw] lg:h-[84%] lg:w-[62vw] lg:max-w-[940px]">
+          {(v || exhibicion) && (
+            <div key={v?.id ?? exhibicion!.id} className="carro-entra absolute bottom-0 right-0 h-[62%] w-full lg:bottom-[-13%] lg:right-[2vw] lg:h-[84%] lg:w-[62vw] lg:max-w-[940px]">
               {/* Halo morado y sombra de piso: el carro se posa, no flota */}
               <div
                 aria-hidden
@@ -124,10 +137,42 @@ export function HeroShowroom({ vehiculos, consulta }: { vehiculos: VehiculoTarje
                 className="absolute inset-x-[15%] bottom-[4%] h-[12%] rounded-[50%]"
                 style={{ background: 'radial-gradient(closest-side, rgba(0,0,0,0.7), transparent)', filter: 'blur(10px)' }}
               />
-              <CarRender car={v} prioridad abajo className="relative h-full w-full" />
+              <CarRender car={v ?? exhibicion!.car} prioridad abajo className="relative h-full w-full" />
             </div>
           )}
         </div>
+
+        {exhibicion && (
+          <div className="flex flex-col justify-end gap-6 pb-10 pt-6 lg:col-start-2 lg:row-start-2 lg:pb-12 lg:pt-8">
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <div className="min-w-0">
+                <p className="t-meta text-white/55">En el showroom</p>
+                <p key={exhibicion.id} className="sube mt-2 text-[26px] font-semibold tracking-[-0.03em] md:text-[30px]">
+                  {exhibicion.tipo}
+                </p>
+              </div>
+              <p className="max-w-[34ch] text-[14px] text-white/60">
+                Pregúntale a la búsqueda por el carro que necesitas: te mostramos los que se venden en Colombia y por qué te sirven.
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-5">
+              <div className="flex items-center gap-3">
+                {VITRINA.map((x, k) => (
+                  <button
+                    key={x.id}
+                    onClick={() => setI(k)}
+                    aria-label={`Ver ${x.tipo}`}
+                    aria-pressed={k === i % VITRINA.length}
+                    className={`h-2 rounded-full transition-all duration-500 ${k === i % VITRINA.length ? 'w-8 bg-wise-lila' : 'w-2 bg-white/25 hover:bg-white/50'}`}
+                  />
+                ))}
+              </div>
+              <Link href="/vehicles" className="cta-corte">
+                Explorar catálogo <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        )}
 
         {v && (
           <div className="flex flex-col justify-end gap-6 pb-10 pt-6 lg:col-start-2 lg:row-start-2 lg:pb-12 lg:pt-8">

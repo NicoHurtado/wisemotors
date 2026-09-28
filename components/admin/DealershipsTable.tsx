@@ -74,7 +74,7 @@ export function DealershipsTable() {
     <div className="p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="text-xl font-semibold text-tinta">
           Concesionarios ({filteredDealerships.length})
         </h2>
         <div className="flex items-center space-x-4">
@@ -83,7 +83,7 @@ export function DealershipsTable() {
             placeholder="Buscar concesionarios..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="px-4 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
           />
         </div>
       </div>
@@ -92,46 +92,46 @@ export function DealershipsTable() {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
-            <span className="ml-2 text-gray-600">Cargando concesionarios...</span>
+            <span className="ml-2 text-tinta-2">Cargando concesionarios...</span>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-linea">
+          <thead className="bg-papel">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-tinta-2 uppercase tracking-wider">
                 Concesionario
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-tinta-2 uppercase tracking-wider">
                 Ubicación
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-tinta-2 uppercase tracking-wider">
                 Contacto
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-tinta-2 uppercase tracking-wider">
                 Vehículos
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-tinta-2 uppercase tracking-wider">
                 Estado
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-tinta-2 uppercase tracking-wider">
                 Acciones
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-blanco divide-y divide-linea">
             {filteredDealerships.map((dealership) => (
-              <tr key={dealership.id} className="hover:bg-gray-50">
+              <tr key={dealership.id} className="hover:bg-papel">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="w-10 h-10 bg-wise/10 rounded-full flex items-center justify-center mr-3">
                       <Building2 className="w-5 h-5 text-wise" />
                     </div>
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-tinta">
                         {dealership.name}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-tinta-2">
                         {dealership.email}
                       </div>
                     </div>
@@ -139,32 +139,32 @@ export function DealershipsTable() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <MapPin className="w-4 h-4 text-gray-400 mr-2" />
+                    <MapPin className="w-4 h-4 text-tinta-2/70 mr-2" />
                     <div>
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-tinta">
                         {dealership.location}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-tinta-2">
                         {dealership.address}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
+                  <div className="text-sm text-tinta">
                     {dealership.phone}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-tinta">
                   {dealership._count.vehicles} vehículos
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                     dealership.status === 'Activo' 
-                      ? 'bg-green-100 text-green-800' 
+                      ? 'bg-wise/10 text-wise' 
                       : dealership.status === 'Inactivo'
                       ? 'bg-red-100 text-red-800'
-                      : 'bg-yellow-100 text-yellow-800'
+                      : 'bg-[#fce7f3] text-[#db2777]'
                   }`}>
                     {dealership.status}
                   </span>
@@ -173,13 +173,13 @@ export function DealershipsTable() {
                   <div className="flex items-center space-x-2">
                     <button 
                       onClick={() => router.push(`/admin/dealerships/${dealership.id}`)}
-                      className="text-blue-600 hover:text-blue-900"
+                      className="text-wise hover:text-wise"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => router.push(`/admin/dealerships/${dealership.id}/edit`)}
-                      className="text-green-600 hover:text-green-900"
+                      className="text-wise hover:text-wise"
                     >
                       <Edit className="w-4 h-4" />
                     </button>
@@ -200,9 +200,9 @@ export function DealershipsTable() {
 
       {filteredDealerships.length === 0 && (
         <div className="text-center py-12">
-          <Building2 className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No hay concesionarios</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <Building2 className="mx-auto h-12 w-12 text-tinta-2/70" />
+          <h3 className="mt-2 text-sm font-medium text-tinta">No hay concesionarios</h3>
+          <p className="mt-1 text-sm text-tinta-2">
             {searchTerm ? 'No se encontraron concesionarios con esa búsqueda.' : 'Comienza agregando tu primer concesionario.'}
           </p>
         </div>

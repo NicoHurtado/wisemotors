@@ -24,6 +24,8 @@ export interface RawFact {
   quote: string;
   sourceUrl: string;
   tier: SourceTier;
+  /** Fecha que la fuente asocia al dato ("octubre de 2025"), sobre todo en precios. */
+  vigencia?: string;
 }
 
 /** Un hecho ya reconciliado entre fuentes, listo para revisión humana. */
@@ -37,6 +39,7 @@ export interface DraftFact {
   sourceUrl: string;
   tier: SourceTier;
   quote: string;
+  vigencia?: string;
   /** true si otras fuentes dieron un valor distinto (>10% en numéricos). */
   conflict: boolean;
   /** Valores alternativos descartados, para que el humano pueda elegir. */

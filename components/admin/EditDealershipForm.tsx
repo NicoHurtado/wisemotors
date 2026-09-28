@@ -106,7 +106,7 @@ export function EditDealershipForm({ dealershipId }: EditDealershipFormProps) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="animate-spin h-8 w-8 text-wise mr-3" />
-        <span className="text-gray-600">Cargando concesionario...</span>
+        <span className="text-tinta-2">Cargando concesionario...</span>
       </div>
     );
   }
@@ -114,9 +114,9 @@ export function EditDealershipForm({ dealershipId }: EditDealershipFormProps) {
   if (!dealership) {
     return (
       <div className="text-center py-12">
-        <Building2 className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">Concesionario no encontrado</h3>
-        <p className="mt-1 text-sm text-gray-500">
+        <Building2 className="mx-auto h-12 w-12 text-tinta-2/70" />
+        <h3 className="mt-2 text-sm font-medium text-tinta">Concesionario no encontrado</h3>
+        <p className="mt-1 text-sm text-tinta-2">
           El concesionario que buscas no existe o ha sido eliminado.
         </p>
       </div>
@@ -124,10 +124,10 @@ export function EditDealershipForm({ dealershipId }: EditDealershipFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-8">
+    <form onSubmit={handleSubmit} className="bg-blanco rounded-2xl shadow-[0_20px_40px_-30px_rgba(14,12,17,0.35)] p-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Nombre del Concesionario *
           </label>
           <input
@@ -135,14 +135,14 @@ export function EditDealershipForm({ dealershipId }: EditDealershipFormProps) {
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             placeholder="Nombre del concesionario"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Ubicación *
           </label>
           <input
@@ -150,14 +150,14 @@ export function EditDealershipForm({ dealershipId }: EditDealershipFormProps) {
             name="location"
             value={formData.location}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             placeholder="Ciudad, País"
             required
           />
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Dirección Completa *
           </label>
           <textarea
@@ -165,14 +165,14 @@ export function EditDealershipForm({ dealershipId }: EditDealershipFormProps) {
             value={formData.address}
             onChange={handleChange}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             placeholder="Dirección completa del concesionario"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Teléfono *
           </label>
           <input
@@ -180,14 +180,14 @@ export function EditDealershipForm({ dealershipId }: EditDealershipFormProps) {
             name="phone"
             value={formData.phone}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             placeholder="+1 234 567 8900"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Email *
           </label>
           <input
@@ -195,21 +195,21 @@ export function EditDealershipForm({ dealershipId }: EditDealershipFormProps) {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             placeholder="email@concesionario.com"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-tinta/80 mb-2">
             Estado *
           </label>
           <select
             name="status"
             value={formData.status}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             required
           >
             <option value="Activo">Activo</option>
@@ -220,11 +220,11 @@ export function EditDealershipForm({ dealershipId }: EditDealershipFormProps) {
       </div>
 
       {/* Botones de Acción */}
-      <div className="flex items-center justify-end space-x-4 pt-8 border-t border-gray-200">
+      <div className="flex items-center justify-end space-x-4 pt-8 border-t border-linea">
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center"
+          className="px-6 py-2 border border-linea rounded-2xl text-tinta/80 hover:bg-papel transition-colors flex items-center"
         >
           <X className="w-4 h-4 mr-2" />
           Cancelar
@@ -233,7 +233,7 @@ export function EditDealershipForm({ dealershipId }: EditDealershipFormProps) {
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 bg-wise text-white rounded-lg hover:bg-wise-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+          className="px-6 py-2 bg-wise text-white rounded-2xl hover:bg-wise-profundo transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
         >
           {loading ? (
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>

@@ -34,6 +34,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ veredicto });
   } catch (e) {
     console.error('[compare/ia]', e);
-    return NextResponse.json({ error: 'La IA no pudo comparar estos carros ahora. Intenta de nuevo en un momento.' }, { status: 502 });
+    const msg = e instanceof Error ? e.message : '';
+    const deCuenta = /sin saldo|no es válida|saturado|Demasiadas/.test(msg);
+    return NextResponse.json(
+      { error: deCuenta ? msg : 'La IA no pudo comparar estos carros ahora. Intenta de nuevo en un momento.' },
+      { status: 502 }
+    );
   }
 }
