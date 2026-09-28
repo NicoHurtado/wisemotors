@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { HeroShowroom } from '@/components/home/HeroShowroom';
 import { BandaComparar, ComoFunciona, Destacados, Marquesina } from '@/components/home/Secciones';
 import type { VehiculoTarjeta } from '@/components/car/TarjetaCarro';
-import { fotoDe } from '@/components/car/CarRender';
 import { AIResultsLoader } from '@/components/vehicles/AIResultsLoader';
 import { ResultadosIA } from '@/components/home/ResultadosIA';
 import { FilterButtons } from '@/components/landing/FilterButtons';
@@ -50,7 +49,6 @@ function Inicio() {
 
   const hayResultados =
     resultados && (Array.isArray(resultados) ? resultados.length > 0 : (resultados as any).total_matches > 0);
-  const vitrina = vehiculos.find(v => fotoDe(v) && v.fuelType === 'Eléctrico') ?? vehiculos.find(v => fotoDe(v)) ?? vehiculos[0];
   const irA = (q: string) => router.push(`/?q=${encodeURIComponent(q)}#resultados`);
 
   return (
@@ -82,7 +80,7 @@ function Inicio() {
       )}
 
       <Marquesina />
-      <ComoFunciona vitrina={vitrina} />
+      <ComoFunciona />
       <Destacados vehiculos={vehiculos} total={total} />
       <BandaComparar vehiculos={vehiculos} />
     </>

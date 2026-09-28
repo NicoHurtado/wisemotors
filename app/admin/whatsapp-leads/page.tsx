@@ -2,22 +2,15 @@ import { WhatsAppLeadsTable } from '@/components/admin/WhatsAppLeadsTable';
 
 export default function WhatsAppLeadsPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-wise/5 to-wise/10 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Leads de WhatsApp
-          </h1>
-          <p className="text-xl text-gray-600">
-            Gestiona todos los leads generados desde los enlaces de WhatsApp
-          </p>
-          <div className="mt-4 p-4 bg-blue-100 border border-blue-300 rounded-lg">
-            <p className="text-blue-800 font-medium">
-              📊 Aquí puedes ver todos los leads, cambiar su estado y exportar la información a Excel
-            </p>
-          </div>
-        </div>
-        
+    <div className="mx-auto max-w-[1440px] px-5 pb-20 pt-10 md:px-8 md:pt-14">
+      <a href="/admin" className="text-[14px] text-tinta-2 hover:text-tinta">← Panel</a>
+      <div className="mt-4 flex flex-wrap items-end justify-between gap-4 border-b border-linea pb-8">
+        <h1 className="t-titulo text-[40px] md:text-[64px]">Leads de WhatsApp</h1>
+        <p className="max-w-[44ch] text-[15px] text-tinta-2">
+          Cada persona que pidió una prueba de manejo desde una ficha. Cambia su estado a medida que el concesionario la atiende y exporta la lista a Excel.
+        </p>
+      </div>
+      <div className="mt-8">
         <WhatsAppLeadsTable />
       </div>
     </div>

@@ -1,117 +1,127 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Plus, Car, Building2, Star, Settings, MessageSquare } from 'lucide-react';
+// ============================================================================
+// Panel de administración, en el sistema "Estudio".
+//
+// Arriba: título, las tres acciones del día a día (subir con IA, concesionario
+// nuevo, leads) y un resumen del catálogo. Debajo: pestañas en pastillas.
+// La subida manual (formulario de 200 campos) ya no existe: los carros entran
+// por "Subir con IA", con revisión humana campo por campo.
+// ============================================================================
+
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { ArrowUpRight, Building2, Car, MessageCircle, Sparkles, Star } from 'lucide-react';
 import { VehiclesTable } from './VehiclesTable';
 import { DealershipsTable } from './DealershipsTable';
 import { TrendingManagement } from './TrendingManagement';
+import { specsDe } from '@/lib/vehiculo-datos';
 
-type TabType = 'vehicles' | 'dealerships' | 'trending';
+type Pestana = 'vehicles' | 'dealerships' | 'trending';
+
+const PESTANAS: { clave: Pestana; texto: string; icono: typeof Car }[] = [
+  { clave: 'vehicles', texto: 'Vehículos', icono: Car },
+  { clave: 'dealerships', texto: 'Concesionarios', icono: Building2 },
+  { clave: 'trending', texto: 'Destacados', icono: Star },
+];
 
 export function AdminDashboard() {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabType>('vehicles');
+  const [pestana, setPestana] = useState<Pestana>('vehicles');
+  const [resumen, setResumen] = useState<{ carros: number; estimados: number; concesionarios: number } | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/vehicles?limit=1000').then(r => (r.ok ? r.json() : { vehicles: [] })),
+      fetch('/api/dealers').then(r => (r.ok ? r.json() : [])),
+    ])
+      .then(([v, d]) => {
+        const lista: any[] = v.vehicles ?? [];
+        const dealers: any[] = Array.isArray(d) ? d : (d.dealers ?? []);
+        setResumen({
+          carros: lista.length,
+          estimados: lista.filter(x => specsDe(x.specifications)?.commercial?.priceEstimated).length,
+          concesionarios: dealers.length,
+        });
+      })
+      .catch(() => setResumen(null));
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Panel de Administrador
-            </h1>
-            <div className="flex space-x-4">
-              <button
-                onClick={() => router.push('/admin/ingest')}
-                className="inline-flex items-center px-4 py-2 bg-wise text-white rounded-lg hover:bg-wise-dark transition-colors"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Subir con IA
-              </button>
-              <button
-                onClick={() => router.push('/admin/vehicles/new')}
-                className="inline-flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Manual
-              </button>
-              <button
-                onClick={() => router.push('/admin/dealerships/new')}
-                className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo Concesionario
-              </button>
-              <button
-                onClick={() => router.push('/admin/whatsapp-leads')}
-                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Leads WhatsApp
-              </button>
-            </div>
+    <div className="mx-auto max-w-[1440px] px-5 pb-20 pt-10 md:px-8 md:pt-14">
+      {/* Encabezado */}
+      <div className="flex flex-wrap items-end justify-between gap-6 border-b border-linea pb-8">
+        <div>
+          <h1 className="t-titulo text-[48px] md:text-[80px]">Panel</h1>
+          <p className="mt-2 text-[15px] text-tinta-2">Lo que se publica en WiseMotors, en un solo lugar.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/ingest" className="pastilla pastilla--wise h-12 px-5">
+            <Sparkles className="h-4 w-4" /> Subir con IA
+          </Link>
+          <Link href="/admin/dealerships/new" className="pastilla h-12 px-5">
+            <Building2 className="h-4 w-4" /> Nuevo concesionario
+          </Link>
+          <Link href="/admin/whatsapp-leads" className="pastilla h-12 px-5">
+            <MessageCircle className="h-4 w-4" /> Leads de WhatsApp
+          </Link>
+        </div>
+      </div>
+
+      {/* Resumen */}
+      <div className="mt-8 grid gap-4 md:grid-cols-12">
+        <div className="relative overflow-hidden rounded-[28px] bg-showroom p-6 text-white md:col-span-5">
+          <p className="text-[13px] text-white/55">Vehículos publicados</p>
+          <p className="mt-2 text-[56px] font-light leading-none tracking-[-0.05em]">{resumen ? resumen.carros : '—'}</p>
+          <Link href="/vehicles" className="mt-5 inline-flex items-center gap-1.5 text-[14px] text-white/80 hover:text-white">
+            Ver el catálogo público <ArrowUpRight className="h-4 w-4" />
+          </Link>
+          <p aria-hidden className="t-display pointer-events-none absolute -bottom-6 -right-2 text-[140px] leading-none text-white/[0.05]">
+            WISE
+          </p>
+        </div>
+        <div className="rounded-[28px] bg-[#efe4f7] p-6 md:col-span-4">
+          <p className="text-[13px] text-tinta-2">Con precio estimado</p>
+          <p className="mt-2 text-[56px] font-light leading-none tracking-[-0.05em]">{resumen ? resumen.estimados : '—'}</p>
+          <p className="mt-3 text-[13px] leading-snug text-tinta-2">
+            Confírmalos con el concesionario y edita el precio: dejan de mostrarse como "estimado".
+          </p>
+        </div>
+        <div className="rounded-[28px] bg-blanco p-6 md:col-span-3">
+          <p className="text-[13px] text-tinta-2">Concesionarios</p>
+          <p className="mt-2 text-[56px] font-light leading-none tracking-[-0.05em]">{resumen ? resumen.concesionarios : '—'}</p>
+          <Link href="/admin/dealerships/new" className="mt-3 inline-flex items-center gap-1.5 text-[13px] text-wise hover:underline">
+            Agregar uno <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      </div>
+
+      {/* Pestañas */}
+      <div className="mt-12 flex flex-wrap gap-2" role="tablist">
+        {PESTANAS.map(p => (
+          <button
+            key={p.clave}
+            role="tab"
+            aria-selected={pestana === p.clave}
+            onClick={() => setPestana(p.clave)}
+            className="pastilla h-11 px-5"
+            data-activa={pestana === p.clave}
+          >
+            <p.icono className="h-4 w-4" /> {p.texto}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-6 overflow-hidden rounded-[28px] bg-blanco">
+        {pestana === 'vehicles' ? (
+          <VehiclesTable />
+        ) : pestana === 'dealerships' ? (
+          <DealershipsTable />
+        ) : (
+          <div className="p-6">
+            <TrendingManagement onClose={() => setPestana('vehicles')} />
           </div>
-        </div>
+        )}
       </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tabs */}
-        <div className="border-b border-gray-200 mb-8">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab('vehicles')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'vehicles'
-                  ? 'border-wise text-wise'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <Car className="w-4 h-4 inline mr-2" />
-              Vehículos
-            </button>
-            <button
-              onClick={() => setActiveTab('dealerships')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'dealerships'
-                  ? 'border-wise text-wise'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <Building2 className="w-4 h-4 inline mr-2" />
-              Concesionarios
-            </button>
-            <button
-              onClick={() => setActiveTab('trending')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'trending'
-                  ? 'border-wise text-wise'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <Star className="w-4 h-4 inline mr-2" />
-              Trending
-            </button>
-          </nav>
-        </div>
-
-        {/* Content */}
-        <div className="bg-white rounded-lg shadow">
-          {activeTab === 'vehicles' ? (
-            <VehiclesTable />
-          ) : activeTab === 'dealerships' ? (
-            <DealershipsTable />
-          ) : (
-            <div className="p-6">
-              <TrendingManagement onClose={() => setActiveTab('vehicles')} />
-            </div>
-          )}
-        </div>
-      </div>
-
-
     </div>
   );
 }

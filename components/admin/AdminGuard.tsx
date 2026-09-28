@@ -33,10 +33,10 @@ export function AdminGuard({ children }: AdminGuardProps) {
   // Mostrar loading mientras se verifica
   if (isChecking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-wise/5 to-wise/10">
+      <div className="min-h-screen flex items-center justify-center bg-papel">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-wise mx-auto mb-4"></div>
-          <p className="text-gray-600">Verificando autorización de administrador...</p>
+          <p className="text-tinta-2">Verificando autorización de administrador...</p>
         </div>
       </div>
     );

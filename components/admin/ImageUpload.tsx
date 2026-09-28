@@ -78,7 +78,7 @@ export function ImageUpload({
   return (
     <div className="space-y-4">
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-tinta/80">
           {label}
         </label>
       )}
@@ -89,20 +89,20 @@ export function ImageUpload({
           type="button"
           onClick={openFileDialog}
           disabled={uploading || images.length >= maxImages}
-          className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-linea rounded-2xl cursor-pointer hover:bg-papel disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {uploading ? (
-            <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+            <Loader2 className="w-8 h-8 text-tinta-2/70 animate-spin" />
           ) : (
-            <Upload className="w-8 h-8 text-gray-400" />
+            <Upload className="w-8 h-8 text-tinta-2/70" />
           )}
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm text-tinta-2">
             {uploading 
               ? 'Subiendo a Cloudinary...' 
               : `Haz clic para subir ${type === 'cover' ? 'foto de portada' : 'fotos de galería'}`
             }
           </p>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-tinta-2/70">
             {images.length}/{maxImages} imágenes
           </p>
         </button>
@@ -127,7 +127,7 @@ export function ImageUpload({
         }`}>
           {images.map((image, index) => (
             <div key={index} className="relative group">
-              <div className={`relative overflow-hidden rounded-lg ${
+              <div className={`relative overflow-hidden rounded-2xl ${
                 type === 'cover' ? 'aspect-video' : 'aspect-square'
               }`}>
                 <img
@@ -147,7 +147,7 @@ export function ImageUpload({
 
                 {/* Indicador de foto de portada */}
                 {type === 'cover' && index === 0 && (
-                  <div className="absolute top-2 left-2 px-2 py-1 bg-blue-500 text-white text-xs rounded">
+                  <div className="absolute top-2 left-2 px-2 py-1 bg-wise text-white text-xs rounded">
                     Portada
                   </div>
                 )}
@@ -159,8 +159,8 @@ export function ImageUpload({
                     onClick={() => onThumbnailChange(index)}
                     className={`absolute top-2 left-2 px-2 py-1 text-xs rounded transition-colors ${
                       thumbnailIndex === index
-                        ? 'bg-yellow-500 text-white'
-                        : 'bg-gray-600 text-white hover:bg-yellow-500'
+                        ? 'bg-[#db2777] text-white'
+                        : 'bg-tinta text-white hover:bg-[#db2777]'
                     }`}
                   >
                     {thumbnailIndex === index ? 'Miniatura' : 'Hacer miniatura'}
@@ -173,7 +173,7 @@ export function ImageUpload({
       )}
 
       {/* Información adicional */}
-      <div className="text-xs text-gray-500">
+      <div className="text-xs text-tinta-2">
         <p>Formatos soportados: JPG, PNG, WebP</p>
         <p>Tamaño máximo: 10MB por imagen</p>
         {type === 'gallery' && (

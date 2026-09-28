@@ -146,8 +146,8 @@ export function TrendingManagement({ onClose }: TrendingManagementProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Vehículos Trending</h2>
-          <p className="text-gray-600">Selecciona hasta 6 vehículos para mostrar en la página principal</p>
+          <h2 className="text-2xl font-bold text-tinta">Vehículos Trending</h2>
+          <p className="text-tinta-2">Selecciona hasta 6 vehículos para mostrar en la página principal</p>
         </div>
         <Button variant="outline" onClick={onClose}>
           <X className="w-4 h-4 mr-2" />
@@ -158,21 +158,21 @@ export function TrendingManagement({ onClose }: TrendingManagementProps) {
       {/* Vehículos Trending Actuales */}
       <div>
         <h3 className="text-lg font-semibold mb-4 flex items-center">
-          <Star className="w-5 h-5 mr-2 text-yellow-500" />
+          <Star className="w-5 h-5 mr-2 text-[#db2777]" />
           Trending Actual ({trendingVehicles.length}/6)
         </h3>
         
         {trendingVehicles.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-tinta-2">
             <StarOff className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <p>No hay vehículos trending seleccionados</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {trendingVehicles.map((vehicle, index) => (
-              <Card key={vehicle.id} className="p-4 border-2 border-yellow-200 bg-yellow-50">
+              <Card key={vehicle.id} className="p-4 border-2 border-[#fce7f3] bg-[#fce7f3]">
                 <div className="flex items-start justify-between mb-3">
-                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                  <Badge variant="secondary" className="bg-[#fce7f3] text-[#db2777]">
                     #{index + 1}
                   </Badge>
                   <Button
@@ -186,10 +186,10 @@ export function TrendingManagement({ onClose }: TrendingManagementProps) {
                 </div>
                 
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-gray-900">
+                  <h4 className="font-semibold text-tinta">
                     {vehicle.brand} {vehicle.model}
                   </h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-tinta-2">
                     {vehicle.year} • {vehicle.fuelType} • {vehicle.type}
                   </p>
                   <p className="font-bold text-wise">
@@ -206,7 +206,7 @@ export function TrendingManagement({ onClose }: TrendingManagementProps) {
       <div>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Todos los Vehículos</h3>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-tinta-2">
             {filteredVehicles.length} de {vehicles.length} vehículos
           </div>
         </div>
@@ -215,7 +215,7 @@ export function TrendingManagement({ onClose }: TrendingManagementProps) {
         <div className="mb-6 space-y-4">
           {/* Búsqueda */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-tinta-2/70 w-4 h-4" />
             <Input
               type="text"
               placeholder="Buscar por marca, modelo..."
@@ -228,11 +228,11 @@ export function TrendingManagement({ onClose }: TrendingManagementProps) {
           {/* Filtros */}
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center space-x-2">
-              <Filter className="w-4 h-4 text-gray-500" />
+              <Filter className="w-4 h-4 text-tinta-2" />
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="px-3 py-1 border border-linea rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="all">Todos los tipos</option>
                 {uniqueTypes.map(type => (
@@ -245,7 +245,7 @@ export function TrendingManagement({ onClose }: TrendingManagementProps) {
               <select
                 value={filterFuel}
                 onChange={(e) => setFilterFuel(e.target.value)}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="px-3 py-1 border border-linea rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="all">Todos los combustibles</option>
                 {uniqueFuels.map(fuel => (
@@ -273,7 +273,7 @@ export function TrendingManagement({ onClose }: TrendingManagementProps) {
         </div>
 
         {filteredVehicles.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-tinta-2">
             <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <p>No se encontraron vehículos con los filtros aplicados</p>
             <Button
@@ -296,8 +296,8 @@ export function TrendingManagement({ onClose }: TrendingManagementProps) {
               key={vehicle.id} 
               className={`p-4 cursor-pointer transition-all ${
                 vehicle.isTrending 
-                  ? 'border-yellow-300 bg-yellow-50' 
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-[#fce7f3] bg-[#fce7f3]' 
+                  : 'border-linea hover:border-linea'
               }`}
               onClick={() => toggleTrending(vehicle)}
             >
@@ -306,17 +306,17 @@ export function TrendingManagement({ onClose }: TrendingManagementProps) {
                   {vehicle.type}
                 </Badge>
                 {vehicle.isTrending ? (
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-5 h-5 text-wise" />
                 ) : (
-                  <StarOff className="w-5 h-5 text-gray-400" />
+                  <StarOff className="w-5 h-5 text-tinta-2/70" />
                 )}
               </div>
               
               <div className="space-y-2">
-                <h4 className="font-semibold text-gray-900 text-sm">
+                <h4 className="font-semibold text-tinta text-sm">
                   {vehicle.brand} {vehicle.model}
                 </h4>
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-tinta-2">
                   {vehicle.year} • {vehicle.fuelType}
                 </p>
                 <p className="font-bold text-wise text-sm">

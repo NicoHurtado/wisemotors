@@ -980,7 +980,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
     return (
       <div key={name}>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-tinta/80 mb-2">
           {label} {unit && `(${unit})`}
         </label>
         {type === 'checkbox' ? (
@@ -989,14 +989,14 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
             name={name}
             checked={(formData as any)[name] as boolean}
             onChange={handleChange}
-            className="w-5 h-5 text-wise border-gray-300 rounded focus:ring-wise"
+            className="w-5 h-5 text-wise border-linea rounded focus:ring-wise"
           />
         ) : type === 'select' ? (
           <select
             name={name}
             value={(formData as any)[name] as string}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
           >
             <option value="">Seleccionar...</option>
             {options?.map(opt => (
@@ -1009,7 +1009,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
             value={(formData as any)[name] as string}
             onChange={handleChange}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
           />
         ) : (
           <input
@@ -1017,7 +1017,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
             name={name}
             value={(formData as any)[name] as string}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wise focus:border-transparent"
+            className="w-full px-3 py-2 border border-linea rounded-2xl focus:ring-2 focus:ring-wise focus:border-transparent"
             step={type === 'number' ? 'any' : undefined}
           />
         )}
@@ -1028,20 +1028,20 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
   // Mostrar loader mientras se cargan los datos
   if (initialLoading) {
     return (
-      <div className="bg-white rounded-lg shadow-lg p-8">
+      <div className="bg-blanco rounded-2xl shadow-lg p-8">
         <div className="flex flex-col items-center justify-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-wise mb-4"></div>
-          <p className="text-gray-600">Cargando datos del vehículo...</p>
+          <p className="text-tinta-2">Cargando datos del vehículo...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8">
+    <form onSubmit={handleSubmit} className="bg-blanco rounded-2xl shadow-lg p-8">
       {/* Foto de Portada */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Foto de Portada
         </h2>
@@ -1056,7 +1056,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Galería de Fotos */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Galería de Fotos
         </h2>
@@ -1073,7 +1073,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Identificación */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Identificación
         </h2>
@@ -1088,7 +1088,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Motorización */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Motorización
         </h2>
@@ -1111,7 +1111,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Transmisión */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Transmisión
         </h2>
@@ -1129,7 +1129,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Dimensiones y capacidades */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Dimensiones y Capacidades
         </h2>
@@ -1152,7 +1152,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Eficiencia y consumo */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Eficiencia y Consumo
         </h2>
@@ -1170,7 +1170,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
       {/* Batería y carga */}
       {!['Gasolina', 'Diésel', 'Diesel', 'GNV', 'Etanol'].includes(formData.combustible) && (
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+          <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
             <Car className="w-5 h-5 mr-2 text-wise" />
             Batería y Carga
           </h2>
@@ -1207,7 +1207,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Chasis, frenos y dirección */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Chasis, Frenos y Dirección
         </h2>
@@ -1222,7 +1222,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Prestaciones */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Prestaciones
         </h2>
@@ -1242,7 +1242,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Seguridad pasiva y estructural */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Seguridad Pasiva y Estructural
         </h2>
@@ -1256,7 +1256,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* ADAS */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           ADAS (Asistencias Activas)
         </h2>
@@ -1275,7 +1275,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Iluminación y visibilidad */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Iluminación y Visibilidad
         </h2>
@@ -1289,7 +1289,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Infoentretenimiento y conectividad */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Infoentretenimiento y Conectividad
         </h2>
@@ -1313,7 +1313,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Interior y confort */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Interior y Confort
         </h2>
@@ -1347,7 +1347,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Off-road y 4x4 */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Off-road y 4x4
         </h2>
@@ -1360,7 +1360,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Comercial */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Comercial
         </h2>
@@ -1380,7 +1380,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Metadatos */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           Metadatos
         </h2>
@@ -1392,7 +1392,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* WiseMetrics */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+        <h2 className="text-xl font-semibold text-tinta mb-6 flex items-center">
           <Car className="w-5 h-5 mr-2 text-wise" />
           WiseMetrics
         </h2>
@@ -1417,7 +1417,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
 
       {/* Concesionarios */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">
+        <h2 className="text-xl font-semibold text-tinta mb-6">
           Concesionarios Disponibles *
         </h2>
 
@@ -1428,11 +1428,11 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
                 type="checkbox"
                 checked={selectedDealers.includes(dealer.id)}
                 onChange={() => toggleDealer(dealer.id)}
-                className="w-4 h-4 text-wise border-gray-300 rounded focus:ring-wise"
+                className="w-4 h-4 text-wise border-linea rounded focus:ring-wise"
               />
               <div>
-                <span className="text-sm font-medium text-gray-900">{dealer.name}</span>
-                <p className="text-xs text-gray-500">{dealer.location}</p>
+                <span className="text-sm font-medium text-tinta">{dealer.name}</span>
+                <p className="text-xs text-tinta-2">{dealer.location}</p>
               </div>
             </label>
           ))}
@@ -1446,11 +1446,11 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
       </div>
 
       {/* Botones de Acción */}
-      <div className="flex items-center justify-end space-x-4 pt-8 border-t border-gray-200">
+      <div className="flex items-center justify-end space-x-4 pt-8 border-t border-linea">
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center"
+          className="px-6 py-2 border border-linea rounded-2xl text-tinta/80 hover:bg-papel transition-colors flex items-center"
         >
           <X className="w-4 h-4 mr-2" />
           Cancelar
@@ -1459,7 +1459,7 @@ export function EditVehicleForm({ vehicleId }: EditVehicleFormProps) {
         <button
           type="submit"
           disabled={loading || selectedDealers.length === 0}
-          className="px-6 py-2 bg-wise text-white rounded-lg hover:bg-wise-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+          className="px-6 py-2 bg-wise text-white rounded-2xl hover:bg-wise-profundo transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
         >
           {loading ? (
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
