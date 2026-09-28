@@ -170,5 +170,9 @@ cobertura, migración, seeds, motor de cohortes.
   clasifica (filtros vs. intención, cacheado 1 h) y `rerank.ts` ordena y explica los 30
   mejores del orden determinístico. TODA búsqueda pasa por la IA, incluidas las objetivas.
   Sin clave o si Claude falla, el orden determinístico es el resultado.
+  `features.ts` lee DATOS REALES en sus unidades (km/gal, mm, hp); faltante = NaN = mediana
+  (nunca rellenar con valores inventados). La IA recibe cifras reales (`createCompactPayload`),
+  no índices internos; `rerank.ts` descarta razones con jerga interna. Marca que no tenemos →
+  `aviso` arriba de los resultados.
 - Stakeholder que da feedback: Olarte. Público objetivo: compradores NO expertos —
   el copy nunca asume conocimiento técnico.

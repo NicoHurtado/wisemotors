@@ -28,10 +28,24 @@ export interface ProcessedResults {
   processing_time_ms: number;
   confidence: number;
   original_query: string;
+  /** Aviso honesto para el comprador (p. ej. una marca que no tenemos). */
+  aviso?: string;
 }
 
 // Main result processing function
 export async function processResults(categorizedIntent: CategorizedIntent): Promise<ProcessedResults> {
+  const faltan = categorizedIntent.missing_brands ?? [];
+  if (faltan.length === 0) return procesar(categorizedIntent);
+  // Marca que no tenemos: se dice una vez, arriba, y se muestran los más cercanos.
+  const nombres = faltan.join(' ni ');
+  const r = await procesar({
+    ...categorizedIntent,
+    subjective_context: `${categorizedIntent.subjective_context ?? ''} (pidió ${nombres}, que no tenemos: recomienda lo más parecido en espíritu, sin repetir que no es ${nombres})`.trim(),
+  });
+  return { ...r, aviso: `Todavía no tenemos ${nombres} en el catálogo. Estos son los más cercanos a lo que buscas.` };
+}
+
+async function procesar(categorizedIntent: CategorizedIntent): Promise<ProcessedResults> {
   const startTime = Date.now();
 
   switch (categorizedIntent.query_type) {
@@ -77,7 +91,7 @@ async function processSubjectiveQuery(intent: CategorizedIntent, startTime: numb
 
   const candidates: ScoredCandidate[] = vehicles.map(v => {
     const features = computeVehicleFeatures(v, marketStats);
-    const tags = generateVehicleTags(v, features);
+    const tags = generateVehicleTags(v);
     const firstImage = (v as any).images?.[0];
     const imageUrl = urlImagen(v.id, firstImage?.url);
     return {
@@ -92,7 +106,8 @@ async function processSubjectiveQuery(intent: CategorizedIntent, startTime: numb
       imageUrl,
       score: 0,
       features,
-      tags
+      tags,
+      specifications: v.specifications,
     };
   });
 
@@ -181,7 +196,7 @@ async function processHybridQuery(intent: CategorizedIntent, startTime: number):
   // 2. Prepare candidates
   const candidates: ScoredCandidate[] = vehicles.map(v => {
     const features = computeVehicleFeatures(v, marketStats);
-    const tags = generateVehicleTags(v, features);
+    const tags = generateVehicleTags(v);
     const firstImage = (v as any).images?.[0];
     const imageUrl = urlImagen(v.id, firstImage?.url);
     return {
@@ -196,7 +211,8 @@ async function processHybridQuery(intent: CategorizedIntent, startTime: number):
       imageUrl,
       score: 0,
       features,
-      tags
+      tags,
+      specifications: v.specifications,
     };
   });
 

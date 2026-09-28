@@ -1,6 +1,7 @@
 // Rerank final con Claude (Haiku): afina y explica el orden determinístico.
 import { z } from 'zod/v4';
 import { pedirJson } from './claude';
+import { datosClave, millones } from '@/lib/vehiculo-datos';
 import type { ScoredCandidate } from './scoring';
 import type { VehicleFeatures } from './features';
 import { createCompactPayload } from './scoring';
@@ -50,15 +51,18 @@ export async function rerankWithLLM(
   // Payload compacto: solo los mejores del orden base, JSON sin espacios.
   const compactCandidates = createCompactPayload(candidates.slice(0, MAX_CANDIDATOS_IA));
 
-  const systemPrompt = `Eres el asesor de WiseMotors, un marketplace de carros nuevos en Colombia (Medellín). Tu trabajo es ordenar los candidatos para lo que pidió el comprador y explicar por qué, en palabras de persona (tuteas, cero jerga).
+  const systemPrompt = `Eres el asesor de WiseMotors, un marketplace de carros nuevos en Colombia (Medellín). Ordenas los candidatos para lo que pidió el comprador y explicas por qué, en palabras de persona: tuteas, frases cortas, cero jerga. El comprador NO sabe de carros.
 
-REGLAS:
-1. SOLO recomiendas carros de la lista, con su id exacto. No inventas modelos, marcas ni datos.
-2. Devuelve los 10 mejores (o todos si hay menos), del más al menos recomendable.
-3. Cada candidato trae "det_score": un orden base calculado con datos reales, y la lista ya viene ordenada por él. Respétalo como punto de partida; mueve un carro solo si lo que pidió el comprador lo justifica claramente.
-4. Razones concretas y distintas para cada carro, nunca genéricas. Los "features" van de 0 a 1 frente al catálogo (1 = el mejor).
-5. Contexto local: las lomas de Medellín y Las Palmas piden fuerza; los huecos y reductores piden altura; el trancón y el parqueo piden un carro manejable; la finca pide carga y terreno difícil.
-6. Los "tags" incluyen categorías propias de WiseMotors (p. ej. "Pa subir rápido"); si coinciden con la búsqueda, dale prioridad y menciónalas.`;
+REGLAS DURAS:
+1. SOLO carros de la lista, con su id exacto. Devuelve los 10 más recomendables (o todos si hay menos), del mejor al peor.
+2. Cada razón se apoya en un dato que ESTÁ en "datos", "precio", "tipo", "combustible" o "etiquetas" del carro, y cita la cifra ("rinde 45 km/gal", "baúl de 478 L", "$95 M"). Si un dato no está, NO lo afirmes: nada de "gasta poco", "es seguro" o "es cómodo" sin la cifra que lo muestre.
+3. Nunca menciones "orden_base", puntajes, índices ni decimales internos. No afirmes nada del mundo que no esté en los datos (estaciones de carga, repuestos, reventa, fama de la marca).
+   No hagas cuentas de veces ("el doble", "triple"): di las dos cifras ("$215 M frente a $95 M").
+4. Respeta el "tipo" tal cual (un Hatchback no es un sedán ni una SUV). Si el comprador pidió un tipo y el carro no lo es, dilo con honestidad en la razón.
+5. "orden_base" (0-100) es un orden calculado con los datos reales; la lista ya viene ordenada por él. Úsalo como punto de partida y mueve un carro solo si lo que pidió el comprador lo justifica claramente.
+6. "match" (0-100) = qué tan bien encaja con LO QUE PIDIÓ. Si no cumple algo que pidió explícitamente, que baje de 60.
+7. Razones distintas para cada carro, 2 o 3, de máximo 14 palabras cada una. Contexto local cuando aplique, cada cosa con su dato: lomas y Las Palmas → potencia, torque o 0 a 100; huecos y reductores → altura al piso; trancón y parqueo → largo; finca → altura y platón.
+8. Eléctrico: no gasta gasolina; su dato es la autonomía en km, no km/gal. No compares km/gal con autonomía.`;
 
   const userPrompt = `Búsqueda del comprador: "${originalPrompt}"
 Lo que más le importa: "${subjectiveContext}"
@@ -81,6 +85,12 @@ ${JSON.stringify(compactCandidates)}`;
     // Fallback al scoring determinístico
     return ensureMinimum(createFallbackRecommendations(candidates), candidates, 10);
   }
+}
+
+// Red de seguridad: una razón que filtra jerga interna no se le muestra al comprador.
+const JERGA_INTERNA = /(\b0\.\d+|\b1\.0\b|orden[_ ]base|det_score|score|_norm|potholes|hill_climb|percentil|\burban\b)/i;
+function razonPresentable(r: unknown): r is string {
+  return typeof r === 'string' && r.trim().length > 0 && !JERGA_INTERNA.test(r);
 }
 
 // Procesar respuesta del LLM y crear recomendaciones finales
@@ -110,7 +120,7 @@ function processLLMRerank(
     recommendations.push({
       rank: i + 1,
       match: Math.max(0, Math.min(100, Math.round(matchVal))),
-      reasons: Array.isArray(llmRec.reasons) ? llmRec.reasons.slice(0, 3) : [],
+      reasons: Array.isArray(llmRec.reasons) ? llmRec.reasons.filter(razonPresentable).slice(0, 3) : [],
       vehicle: {
         id: candidate.id,
         brand: candidate.brand,
@@ -189,43 +199,8 @@ function createFallbackRecommendations(candidates: ScoredCandidate[]): FinalReco
   }));
 }
 
-// Generar razones básicas cuando el LLM falla
+// Razones sin IA: las cifras reales más relevantes del carro, sin adjetivos inventados.
 function generateFallbackReasons(candidate: ScoredCandidate): string[] {
-  const reasons: string[] = [];
-  const features = candidate.features;
-
-  if (features.hill_climb_score > 0.7) {
-    reasons.push('Excelente capacidad para subir pendientes');
-  }
-
-  if (features.efficiency_norm > 0.7) {
-    reasons.push('Muy eficiente en consumo de combustible');
-  }
-
-  if (features.comfort_norm > 0.7) {
-    reasons.push('Alto nivel de comodidad');
-  }
-
-  if (features.potholes_score > 0.7) {
-    reasons.push('Resistente para calles en mal estado');
-  }
-
-  if (features.prestige_norm > 0.7) {
-    reasons.push('Marca reconocida y prestigiosa');
-  }
-
-  if (features.quality_price_ratio_norm > 0.7) {
-    reasons.push('Excelente relación calidad-precio');
-  }
-
-  // Si no hay razones específicas, usar genéricas
-  if (reasons.length === 0) {
-    reasons.push(
-      `${candidate.type} confiable de ${candidate.year}`,
-      `Buenas especificaciones para su rango de precio`,
-      `Marca ${candidate.brand} reconocida en el mercado`
-    );
-  }
-
-  return reasons.slice(0, 3);
+  const datos = datosClave(candidate).map(d => `${d.etiqueta}: ${d.valor}${d.unidad ? ` ${d.unidad}` : ''}`);
+  return [`${candidate.type} ${candidate.fuelType.toLowerCase()} de ${millones(candidate.price)}`, ...datos].slice(0, 3);
 }

@@ -89,6 +89,7 @@ export function ResultadosIA({
       <div className="max-w-[640px]">
         <BuscadorIA inicial={consulta} />
       </div>
+      {resultados.aviso && <p className="rounded-[20px] bg-[#efe4f7] px-5 py-4 text-[15px]">{resultados.aviso}</p>}
       {primero && (
         <div className="grid overflow-hidden rounded-[36px] bg-blanco lg:grid-cols-[1.25fr_1fr]">
           <div className="estudio relative flex min-h-[320px] items-center justify-center overflow-hidden p-8">

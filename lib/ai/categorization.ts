@@ -41,6 +41,8 @@ export const CategorizedIntentSchema = z.object({
   // Original query for fallback
   original_query: z.string(),
   reasoning: z.string().optional(),
+  /** Marcas que pidió y no están en el catálogo ("Ferrari"): se avisan, no se filtran. */
+  missing_brands: z.array(z.string()).optional(),
 });
 
 export type CategorizedIntent = z.infer<typeof CategorizedIntentSchema>;
@@ -86,7 +88,8 @@ export async function getDatabaseOptions() {
 const ClasificacionSchema = zv4.object({
   query_type: zv4.enum(['SUBJECTIVE_PREFERENCE', 'OBJECTIVE_FEATURE', 'HYBRID']),
   confidence: zv4.number().describe('0 a 1'),
-  brands: zv4.array(zv4.string()).describe('Marcas mencionadas, escritas como en la lista de marcas'),
+  brands: zv4.array(zv4.string()).describe('Marcas mencionadas QUE ESTÁN en la lista de marcas, escritas como en la lista'),
+  missing_brands: zv4.array(zv4.string()).describe('Marcas que el comprador nombró y NO están en la lista (p. ej. "Ferrari")'),
   body_types: zv4.array(zv4.string()).describe('Carrocerías pedidas, escritas como en la lista'),
   fuel_types: zv4.array(zv4.string()).describe('Combustibles pedidos, escritos como en la lista'),
   features: zv4.array(zv4.string()).describe('Equipamiento medible pedido: "Turbo", "4x4", "AWD", "Sunroof", "Cuero", "CarPlay", "Camara 360", "Blindado"'),
@@ -136,12 +139,15 @@ Opciones que existen en el catálogo:
 - Carrocerías: ${db.bodyTypes.join(', ') || '(ninguna todavía)'}
 - Combustibles: ${db.fuelTypes.join(', ') || '(ninguno todavía)'}
 
-1. OBJETIVO: solo lo que el comprador dijo explícitamente: marca, año, combustible, carrocería, equipamiento medible. Escribe marcas, carrocerías y combustibles EXACTAMENTE como en las listas ("byd" → "BYD"; "camioneta" → la carrocería SUV o Pickup de la lista según el contexto).
-   - Precio: SOLO si hay cifra ("menos de 100 millones" → price_max 100000000). "Barato", "económico" NO son precio.
-   - Un año suelto ("2026") → year_min = year_max = 2026. "Nuevo" NO es año.
-2. SUBJETIVO: lo cualitativo ("barato", "rápido", "para trocha", "familiar", "lujo", "que gaste poco"). En subjective_context.
-3. query_type: OBJECTIVE_FEATURE si solo hay filtros ("Toyota Hilux diésel 2026"); SUBJECTIVE_PREFERENCE si solo hay cualidades ("un carro bueno pa la finca"); HYBRID si hay ambos ("Toyota barato", "SUV eléctrica cómoda").
-Ante la duda, NO filtres: un filtro de más deja al comprador sin resultados.`;
+1. OBJETIVO (filtros): lo que el comprador dijo explícitamente.
+   - Carrocería: si la nombra, ES filtro. "SUV", "camioneta" (en Colombia = SUV; y también Pickup si habla de platón, carga o trabajo), "sedán", "hatchback", "pickup". Escríbela EXACTAMENTE como en la lista.
+   - Marca, combustible ("eléctrico", "híbrido", "diésel"): EXACTAMENTE como en las listas ("byd" → "BYD").
+   - Precio: SOLO si hay cifra ("menos de 100 millones" → price_max 100000000; "entre 80 y 120 millones" → 80000000 y 120000000). "Barato" o "económico" NO son precio.
+   - Año suelto ("2026") → year_min = year_max = 2026. "Nuevo" NO es año.
+   - Equipamiento medible ("4x4", "turbo", "techo panorámico", "cámara 360") → features.
+2. SUBJETIVO: las cualidades ("que no gaste mucho", "para la familia", "rápido", "pa la finca", "de lujo", "para subir a Las Palmas") → subjective_context, en las palabras del comprador.
+3. query_type: OBJECTIVE_FEATURE si solo hay filtros ("Toyota Hilux diésel 2026"); SUBJECTIVE_PREFERENCE si solo hay cualidades ("un carro bueno pa la finca"); HYBRID si hay ambos ("una SUV que no gaste mucho", "Toyota barato").
+Nunca conviertas una cualidad en filtro: "familiar" no es carrocería, "económico" no es combustible.`;
 
   try {
     const r = await pedirJson({ schema: ClasificacionSchema, modelo: 'haiku', maxTokens: 800, system, prompt });
@@ -159,6 +165,7 @@ Ante la duda, NO filtres: un filtro de más deja al comprador sin resultados.`;
         price_range: rango(r.price_min, r.price_max),
       },
       subjective_context: r.subjective_context || undefined,
+      missing_brands: r.missing_brands.filter(m => !db.brands.some(b => b.toLowerCase() === m.toLowerCase())),
       original_query: prompt,
       reasoning: r.reasoning,
     };
