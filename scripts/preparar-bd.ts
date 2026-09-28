@@ -6,7 +6,10 @@
 //      deploy falla a propósito (hay que resolverlo a mano, nunca solo).
 //   2. Datos base: definiciones de atributos (siempre, es idempotente) y, si
 //      la base está vacía, bandas de precio y percepción de marca.
-//   3. Cuenta admin inicial: si están ADMIN_EMAIL y ADMIN_PASSWORD y ese
+//   3. Los 10 vehículos de prueba (data/semillas/vehiculos-demo.json), UNA sola
+//      vez y marcados DEMO. Si el equipo los borra no vuelven. CARGAR_DEMO=no
+//      en Vercel los apaga.
+//   4. Cuenta admin inicial: si están ADMIN_EMAIL y ADMIN_PASSWORD y ese
 //      correo NO existe, la crea con rol admin. Nunca asciende a un usuario
 //      que ya exista (el registro no verifica correos: cualquiera pudo haber
 //      usado ese email) ni cambia contraseñas. Corre en el build, antes de que
@@ -21,6 +24,7 @@ import { PrismaClient } from '@prisma/client';
 import { VAR_BD, VAR_BD_DIRECTA, fuenteBaseDatos, fuenteBaseDatosDirecta } from '../lib/db/url';
 import { sembrarBandas, sembrarDefiniciones, sembrarPercepcion } from '../lib/db/semillas';
 import { crearAdminInicial } from '../lib/db/admin-inicial';
+import { cargarVehiculosDemo } from '../lib/db/vehiculos-demo';
 
 async function main() {
   const produccion = process.env.VERCEL_ENV === 'production';
@@ -62,6 +66,20 @@ async function main() {
     }
     if ((await prisma.brandPerception.count()) === 0) {
       console.log(`[preparar-bd] ✓ ${await sembrarPercepcion(prisma)} marcas sembradas (base nueva)`);
+    }
+
+    // Un problema con los carros de prueba nunca debe tumbar el deploy.
+    const demo = await cargarVehiculosDemo(prisma).catch(e => ({
+      estado: 'omitido' as const,
+      motivo: `⚠ falló (${e instanceof Error ? e.message : e}); se reintenta en el próximo deploy`,
+    }));
+    if (demo.estado === 'omitido') {
+      console.log(`[preparar-bd] ℹ vehículos de prueba: ${demo.motivo}`);
+    } else {
+      console.log(
+        `[preparar-bd] ✓ vehículos de prueba: ${demo.creados.length} creados, ${demo.yaExistian.length} ya existían` +
+          (demo.errores.length ? ` · ⚠ ${demo.errores.length} con error (se reintenta en el próximo deploy): ${demo.errores.join('; ')}` : '')
+      );
     }
 
     const admin = await crearAdminInicial(prisma);

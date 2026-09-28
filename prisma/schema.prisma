@@ -116,6 +116,10 @@ model VehicleAttribute {
   extractedAt  DateTime @default(now())
   verifiedBy   String? // userId del auditor humano
   verifiedAt   DateTime?
+  // Cola de auditoría: segunda mirada después de publicar a lo dudoso
+  // (confianza baja, fuente de comunidad, sin revisor). null = pendiente.
+  auditedBy    String?
+  auditedAt    DateTime?
   vehicle      Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   definition   AttributeDefinition @relation(fields: [attributeKey], references: [key])
 
@@ -210,4 +214,32 @@ model WhatsAppLead {
   dealership   Dealer?   @relation(fields: [dealershipId], references: [id], onDelete: SetNull)
 
   @@map("whatsapp_leads")
+}
+
+// Banderas de una sola vez del sistema (ej. 'demo_cargado': los carros de
+// prueba ya se sembraron; si el equipo los borra, no vuelven a aparecer).
+model EstadoSistema {
+  clave       String   @id
+  valor       String
+  actualizado DateTime @updatedAt
+
+  @@map("estado_sistema")
+}
+
+// Parámetros de los Índices WiseMotors (lib/indices): impuestos, SOAT, precio
+// del galón y del kWh, coeficientes de altura… Con vigencia, como las bandas de
+// precio: nunca se editan en caliente; se cierra la fila vigente (validTo) y se
+// crea la nueva con su fuente.
+model ParametroIndice {
+  id            String    @id @default(cuid())
+  clave         String
+  valor         Float
+  unidad        String?
+  descripcionEs String
+  fuente        String?
+  validFrom     DateTime  @default(now())
+  validTo       DateTime?
+
+  @@index([clave, validTo])
+  @@map("parametros_indices")
 }
