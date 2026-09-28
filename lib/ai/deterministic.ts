@@ -51,7 +51,9 @@ const PROFILES: Record<string, { labelEs: string; weights: ProfileWeights }> = {
   },
   familia: {
     labelEs: 'para la familia',
-    weights: { space_norm: 1.0, safety_norm: 1.0, comfort_norm: 0.5, reliability_norm: 0.4 },
+    // El espacio pesa doble: con "que no gaste", un Picanto de 255 L de baúl no
+    // puede ser la mejor opción para una familia solo por ser el más barato.
+    weights: { space_norm: 2.0, safety_norm: 1.0, comfort_norm: 0.5, reliability_norm: 0.4 },
   },
   ciudad: {
     labelEs: 'para la ciudad y el trancón',
@@ -98,7 +100,7 @@ const KEYWORDS: Record<string, RegExp> = {
   finca: /\b(finca|trocha|4x4|todo\s?terreno|campo|vereda|barro)/,
   // "que no gaste mucho", "gastar poco", "cuidar el bolsillo": así lo dice la gente.
   economia: /\b(econ[oó]mic|barat|ahorr|consum|rendidor|gast[aeo]|eficien|presupuest|bolsillo|plata)/,
-  familia: /\b(famili|ni[ñn]o|beb[eé]|espaci|ba[uú]l|puestos|asientos)/,
+  familia: /\b(famili|ni[ñn]o|hij[oa]|beb[eé]|espaci|ba[uú]l|puestos|asientos|mascota|perr[oa]|gat[oa])/,
   ciudad: /\b(ciudad|tranc[oó]n|parquear|parqueadero|compact|urban|medell[ií]n|bogot[aá]|peque[ñn]o)/,
   desempeno: /\b(r[aá]pid|deportiv|potenci|potente|veloz|correr|acelera)/,
   prestigio: /\b(lujo|prestigi|elegante|premium|ejecutiv|estatus|fino)/,

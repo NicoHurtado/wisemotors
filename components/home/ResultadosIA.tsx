@@ -10,7 +10,9 @@
 // ============================================================================
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { ArrowUpRight, Check } from 'lucide-react';
+import { Afinador, aplicar, type Carro, type Respuestas } from '@/components/home/Afinador';
 import { CarRender } from '@/components/car/CarRender';
 import { TarjetaCarro, type VehiculoTarjeta } from '@/components/car/TarjetaCarro';
 import { BuscadorIA } from '@/components/home/BuscadorIA';
@@ -62,26 +64,27 @@ interface Resultado {
   reasons?: string[];
 }
 
-const REFINAR = ['más barato', 'con más espacio', 'más seguro', 'que gaste menos', 'eléctrico'];
-
 export function ResultadosIA({
   resultados,
   consulta,
   catalogo,
-  onRefinar,
 }: {
   resultados: any;
   consulta: string;
   catalogo: VehiculoTarjeta[];
-  onRefinar: (q: string) => void;
+  onRefinar?: (q: string) => void;
 }) {
-  const completar = (r: Resultado) => ({ ...catalogo.find(v => v.id === r.id), ...r }) as VehiculoTarjeta & Resultado;
-  const top: (VehiculoTarjeta & Resultado)[] = (resultados.top_recommendations?.vehicles ?? []).map(completar);
-  const resto: (VehiculoTarjeta & Resultado)[] = (resultados.all_matches?.vehicles ?? [])
+  const completar = (r: Resultado) => ({ ...catalogo.find(v => v.id === r.id), ...r }) as Carro;
+  const todos: Carro[] = [...(resultados.top_recommendations?.vehicles ?? []), ...(resultados.all_matches?.vehicles ?? [])]
     .map(completar)
-    .filter((v: Resultado) => !top.some(t => t.id === v.id));
+    .filter((v, i, a) => a.findIndex(x => x.id === v.id) === i);
+  // Objetiva ("con turbo"): no hay opinión, se muestran todos. Subjetiva: podio de la IA.
+  const conPodio = resultados.query_type !== 'OBJECTIVE_FEATURE' && (resultados.top_recommendations?.vehicles?.length ?? 0) > 0;
 
-  const podio = top.length ? top : [];
+  const [respuestas, setRespuestas] = useState<Respuestas>({});
+  const visibles = aplicar(todos, respuestas);
+  const podio = conPodio ? visibles.slice(0, 3) : [];
+  const resto = conPodio ? visibles.slice(3) : visibles;
   const [primero, ...escoltas] = podio;
 
   return (
@@ -90,6 +93,16 @@ export function ResultadosIA({
         <BuscadorIA inicial={consulta} />
       </div>
       {resultados.aviso && <p className="rounded-[20px] bg-[#efe4f7] px-5 py-4 text-[15px]">{resultados.aviso}</p>}
+      <Afinador
+        todos={todos}
+        visibles={visibles}
+        orden={resultados.preguntas ?? []}
+        respuestas={respuestas}
+        onCambio={setRespuestas}
+      />
+      {visibles.length === 0 && (
+        <p className="rounded-[20px] bg-tarjeta px-5 py-4 text-[15px]">Con esas respuestas no queda ninguno. Quita una de arriba.</p>
+      )}
       {primero && (
         <div className="grid overflow-hidden rounded-[36px] bg-blanco lg:grid-cols-[1.25fr_1fr]">
           <div className="estudio relative flex min-h-[320px] items-center justify-center overflow-hidden p-8">
@@ -113,7 +126,7 @@ export function ResultadosIA({
             <div className="mt-8 flex items-end gap-8">
               <div>
                 <p className="t-ligero text-[44px] leading-none md:text-[52px]">
-                  1.º <span className="text-[22px] text-tinta-2">de {resultados.total_matches ?? podio.length + resto.length}</span>
+                  1.º <span className="text-[22px] text-tinta-2">de {visibles.length}</span>
                 </p>
                 <p className="mt-1 text-[13px] text-tinta-2">
                   la mejor opción para lo que pediste
@@ -202,15 +215,6 @@ export function ResultadosIA({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="mr-2 text-[14px] text-tinta-2">Afinar:</span>
-        {REFINAR.map(r => (
-          <button key={r} onClick={() => onRefinar(`${consulta}, ${r}`)} className="pastilla h-10 px-4">
-            {r}
-          </button>
-        ))}
-      </div>
-
       {resto.length > 0 && (
         <div>
           <h3 className="t-titulo text-[32px] md:text-[44px]">
@@ -225,7 +229,7 @@ export function ResultadosIA({
       )}
 
       <p className="cifra text-[12px] text-tinta-2">
-        {resultados.total_matches ?? resto.length + podio.length} carros analizados · {resultados.processing_time_ms ?? '—'} ms
+        {resultados.total_matches ?? todos.length} carros analizados · {resultados.processing_time_ms ?? '—'} ms
       </p>
     </div>
   );

@@ -153,12 +153,23 @@ Nunca conviertas una cualidad en filtro: "familiar" no es carrocería, "económi
     const r = await pedirJson({ schema: ClasificacionSchema, modelo: 'haiku', maxTokens: 800, system, prompt });
     const rango = (min: number | null, max: number | null) =>
       min == null && max == null ? undefined : { ...(min != null ? { min } : {}), ...(max != null ? { max } : {}) };
+    // "Camioneta" en Colombia es SUV; solo es pickup si habla de platón, carga o trabajo.
+    // Regla en código: la IA a veces lo manda solo a Pickup y deja al comprador sin SUVs.
+    let carrocerias = canonico(r.body_types, db.bodyTypes);
+    const texto = prompt.toLowerCase();
+    if (/camionet/.test(texto)) {
+      const pickup = /plat[oó]n|carga|trabaj|pick ?-?up|volc/.test(texto);
+      const suv = db.bodyTypes.find(t => t.toLowerCase() === 'suv') ?? 'SUV';
+      const pu = db.bodyTypes.find(t => t.toLowerCase() === 'pickup') ?? 'Pickup';
+      carrocerias = Array.from(new Set([...carrocerias.filter(t => t !== pu || pickup), suv, ...(pickup ? [pu] : [])]));
+      if (r.query_type === 'SUBJECTIVE_PREFERENCE') r.query_type = 'HYBRID';
+    }
     const valor: CategorizedIntent = {
       query_type: r.query_type as QueryType,
       confidence: Math.max(0, Math.min(1, r.confidence)),
       objective_filters: {
         brands: canonico(r.brands, db.brands),
-        body_types: canonico(r.body_types, db.bodyTypes),
+        body_types: carrocerias,
         fuel_types: canonico(r.fuel_types, db.fuelTypes),
         features: r.features,
         year_range: rango(r.year_min, r.year_max),

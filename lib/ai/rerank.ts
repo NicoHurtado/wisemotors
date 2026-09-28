@@ -2,6 +2,7 @@
 import { z } from 'zod/v4';
 import { pedirJson } from './claude';
 import { datosClave, millones } from '@/lib/vehiculo-datos';
+import { DIMENSIONES, type Dimension } from './filtros';
 import type { ScoredCandidate } from './scoring';
 import type { VehicleFeatures } from './features';
 import { createCompactPayload } from './scoring';
@@ -33,7 +34,16 @@ const RerankSchema = z.object({
       reasons: z.array(z.string()).describe('2 o 3 razones cortas, con cifra o dato real cuando lo haya'),
     })
   ),
+  preguntas: z
+    .array(z.enum(DIMENSIONES as [Dimension, ...Dimension[]]))
+    .describe('Orden en que conviene preguntarle al comprador para afinar, de la más útil a la menos. Omite lo que ya dijo.'),
 });
+
+export interface ResultadoRerank {
+  recs: FinalRecommendation[];
+  /** Orden de las preguntas para afinar; null si la IA no respondió. */
+  preguntas: Dimension[] | null;
+}
 
 /** Cuántos candidatos (ya ordenados por el scoring determinístico) ve la IA. */
 const MAX_CANDIDATOS_IA = 30;
@@ -42,16 +52,16 @@ export async function rerankWithLLM(
   candidates: ScoredCandidate[],
   subjectiveContext: string,
   originalPrompt: string
-): Promise<FinalRecommendation[]> {
+): Promise<ResultadoRerank> {
   if (!process.env.ANTHROPIC_API_KEY) {
     // Sin clave: el orden determinístico ES el resultado, para no romper la búsqueda.
-    return createFallbackRecommendations(candidates);
+    return { recs: createFallbackRecommendations(candidates), preguntas: null };
   }
 
   // Payload compacto: solo los mejores del orden base, JSON sin espacios.
   const compactCandidates = createCompactPayload(candidates.slice(0, MAX_CANDIDATOS_IA));
 
-  const systemPrompt = `Eres el asesor de WiseMotors, un marketplace de carros nuevos en Colombia (Medellín). Ordenas los candidatos para lo que pidió el comprador y explicas por qué, en palabras de persona: tuteas, frases cortas, cero jerga. El comprador NO sabe de carros.
+  const systemPrompt = `Eres el asesor de WiseMotors, un marketplace de carros nuevos en Colombia (Medellín). Ordenas los candidatos para lo que pidió el comprador y explicas por qué, en palabras de persona: tuteas (tú, nunca vos ni usted), frases cortas, cero jerga. El comprador NO sabe de carros.
 
 REGLAS DURAS:
 1. SOLO carros de la lista, con su id exacto. Devuelve los 10 más recomendables (o todos si hay menos), del mejor al peor.
@@ -62,7 +72,9 @@ REGLAS DURAS:
 5. "orden_base" (0-100) es un orden calculado con los datos reales; la lista ya viene ordenada por él. Úsalo como punto de partida y mueve un carro solo si lo que pidió el comprador lo justifica claramente.
 6. "match" (0-100) = qué tan bien encaja con LO QUE PIDIÓ. Si no cumple algo que pidió explícitamente, que baje de 60.
 7. Razones distintas para cada carro, 2 o 3, de máximo 14 palabras cada una. Contexto local cuando aplique, cada cosa con su dato: lomas y Las Palmas → potencia, torque o 0 a 100; huecos y reductores → altura al piso; trancón y parqueo → largo; finca → altura y platón.
-8. Eléctrico: no gasta gasolina; su dato es la autonomía en km, no km/gal. No compares km/gal con autonomía.`;
+8. Eléctrico: no gasta gasolina; su dato es la autonomía en km, no km/gal. No compares km/gal con autonomía.
+
+PREGUNTAS PARA AFINAR: el comprador verá preguntas de un toque para reducir la lista. Ordena de la más útil a la menos las que tengan sentido para ESTA búsqueda: "presupuesto" (rango de precio), "combustible" (gasolina, híbrido, eléctrico), "carroceria" (SUV, sedán, hatchback…), "caja" (automática o manual), "prioridad" (qué le importa más: comodidad, economía, seguridad, espacio o desempeño). Omite lo que ya dijo (si pidió "eléctrico", no preguntes combustible; si dio una cifra de precio, no preguntes presupuesto; \"barato\" o \"económico\" sin cifra NO es presupuesto: pregúntalo).`;
 
   const userPrompt = `Búsqueda del comprador: "${originalPrompt}"
 Lo que más le importa: "${subjectiveContext}"
@@ -79,11 +91,11 @@ ${JSON.stringify(compactCandidates)}`;
       prompt: userPrompt,
     });
     const recs = processLLMRerank(result.recommendations, candidates);
-    return ensureMinimum(recs, candidates, 10);
+    return { recs: ensureMinimum(recs, candidates, 10), preguntas: Array.from(new Set(result.preguntas)) };
   } catch (error) {
     console.error('Error en el rerank con Claude:', error);
     // Fallback al scoring determinístico
-    return ensureMinimum(createFallbackRecommendations(candidates), candidates, 10);
+    return { recs: ensureMinimum(createFallbackRecommendations(candidates), candidates, 10), preguntas: null };
   }
 }
 

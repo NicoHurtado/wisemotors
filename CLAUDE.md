@@ -167,8 +167,14 @@ cobertura, migración, seeds, motor de cohortes.
   No correr pruebas que gasten la clave de producción sin permiso del equipo.
 - LLM: la ingesta (`lib/ingest/`) usa Claude vía `lib/ai/claude.ts` (`pedirJson` +
   esquema Zod, salida estructurada). La búsqueda también, en Haiku: `categorization.ts`
-  clasifica (filtros vs. intención, cacheado 1 h) y `rerank.ts` ordena y explica los 30
-  mejores del orden determinístico. TODA búsqueda pasa por la IA, incluidas las objetivas.
+  clasifica (filtros vs. intención, cacheado 1 h). OBJETIVA ("con turbo") → TODOS los que
+  cumplen, del más barato al más caro, sin podio ni rerank. SUBJETIVA/HÍBRIDA → `rerank.ts`
+  ordena y explica los 30 mejores del orden determinístico y escoge el orden de las preguntas
+  para afinar. Equipamiento se filtra contra el dato real (`lib/ai/filtros.ts`), nunca con
+  `contains` sobre el JSON. "Camioneta" = SUV salvo que hable de platón/carga (regla en código).
+  Afinar (`components/home/Afinador.tsx`): presupuesto / motor / tipo / caja / prioridad, una a
+  la vez, solo si divide la lista, hasta que queden ≤3; filtra en el cliente, sin volver a la IA.
+  Falta un atributo de tracción (4x4/AWD) en el registro: hoy se busca en el texto de la ficha.
   Sin clave o si Claude falla, el orden determinístico es el resultado.
   `features.ts` lee DATOS REALES en sus unidades (km/gal, mm, hp); faltante = NaN = mediana
   (nunca rellenar con valores inventados). La IA recibe cifras reales (`createCompactPayload`),

@@ -14,20 +14,18 @@ import { useEffect, useRef, useState } from 'react';
 // ============================================================================
 
 const ETAPAS = [
-  { clave: 'INTENT', texto: 'Interpretando la consulta', detalle: 'extracción de intención' },
-  { clave: 'QUERY', texto: 'Filtrando el catálogo', detalle: 'marca · precio · carrocería' },
-  { clave: 'SCORE', texto: 'Puntuando contra la cohorte', detalle: 'percentiles winsorizados' },
-  { clave: 'RANK', texto: 'Redactando las razones', detalle: 'top 12' },
+  { clave: '1', texto: 'Entendiendo lo que buscas', detalle: 'lo que pides y lo que te importa' },
+  { clave: '2', texto: 'Buscando en el catálogo', detalle: 'tipo · precio · motor' },
+  { clave: '3', texto: 'Comparando con los de su tipo', detalle: 'con los datos reales de cada carro' },
+  { clave: '4', texto: 'Escribiendo por qué te sirve', detalle: 'en palabras sencillas' },
 ] as const;
 
 const SEGMENTOS = 28;
-const GLIFOS = '0123456789ABCDEF#$%&/*+-<>';
 
 export function AIResultsLoader() {
   const [etapa, setEtapa] = useState(0);
   const [progreso, setProgreso] = useState(0);
   const [contador, setContador] = useState(0);
-  const [ruido, setRuido] = useState('');
   const reducido = useRef(false);
 
   useEffect(() => {
@@ -38,9 +36,6 @@ export function AIResultsLoader() {
     const id = setInterval(() => {
       setProgreso(p => p + (94 - p) * 0.06);
       setContador(c => c + Math.round(Math.random() * 7) + 2);
-      setRuido(
-        Array.from({ length: 6 }, () => GLIFOS[Math.floor(Math.random() * GLIFOS.length)]).join('')
-      );
     }, 140);
 
     const idEtapa = setInterval(() => {
@@ -66,11 +61,10 @@ export function AIResultsLoader() {
       <div className="relative">
         <div className="flex items-baseline justify-between gap-4">
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-wise">
-            Motor de búsqueda
-            <span className="ml-2 text-foreground/25">{ruido}</span>
+            Buscando tu carro
           </p>
           <p className="font-mono text-[11px] tabular-nums text-muted-foreground">
-            {contador.toLocaleString('es-CO')} specs leídas
+            {contador.toLocaleString('es-CO')} datos revisados
           </p>
         </div>
 
