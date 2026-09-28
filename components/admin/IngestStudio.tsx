@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { adminFetch, mensajeDeErrorDeAuth } from '@/lib/admin-fetch';
 import { Button } from '@/components/ui/button';
+import { RevisionFotos, fotosIniciales, type FotoRevision } from '@/components/admin/RevisionFotos';
 import { parseVehicleList, type ParsedVehicleQuery } from '@/lib/ingest/parse-query';
 import { Loader2, ExternalLink, AlertTriangle, CheckCircle2, XCircle, Sparkles, Clock, ChevronRight } from 'lucide-react';
 
@@ -43,6 +44,7 @@ interface Draft {
   price: { value: number; estimated: boolean; reasoningEs: string; sourceUrl?: string; confidence: number } | null;
   facts: DraftFact[];
   sourcesReport: { url: string; nameEs: string; tier: number; ok: boolean; note?: string }[];
+  fotos?: Omit<FotoRevision, 'usar' | 'portada'>[];
   warningsEs: string[];
 }
 
@@ -144,6 +146,7 @@ export function IngestStudio() {
   const [accepted, setAccepted] = useState<Record<string, boolean>>({});
   const [edited, setEdited] = useState<Record<string, string>>({});
   const [priceValue, setPriceValue] = useState<string>('');
+  const [fotos, setFotos] = useState<FotoRevision[]>([]);
   const [published, setPublished] = useState<{ id: string; label: string } | null>(null);
 
   const groups = useMemo(() => {
@@ -220,6 +223,7 @@ export function IngestStudio() {
     setAccepted(initial);
     setEdited({});
     setPriceValue(d.price ? String(d.price.value) : '');
+    setFotos(fotosIniciales(d.fotos));
     setError(null);
     setPhase('review');
   }
@@ -269,6 +273,14 @@ export function IngestStudio() {
           priceEstimated: draft.price?.estimated ?? true,
           priceReasoningEs: draft.price?.reasoningEs ?? 'Precio ingresado a mano en la revisión.',
           facts,
+          // Portada primero; solo fotos ya procesadas (o la original si no hay Cloudinary).
+          fotos: [...fotos.filter(f => f.usar && f.portada), ...fotos.filter(f => f.usar && !f.portada)]
+            .filter(f => f.procesada)
+            .map(f => ({ url: f.procesada, angulo: f.angulo, portada: f.portada })),
+          fotosDescartadas: [
+            ...fotos.filter(f => !f.usar && f.publicId).map(f => f.publicId),
+            ...fotos.flatMap(f => f.anteriores ?? []),
+          ],
         }),
       });
       const data = await res.json();
@@ -358,7 +370,7 @@ export function IngestStudio() {
                     </p>
                     <p className="text-xs text-tinta-2 truncate">
                       {item.estado === 'listo' && item.draft
-                        ? `${item.draft.facts.length} datos · ${item.draft.sourcesReport.filter(x => x.ok).length} fuentes${item.draft.warningsEs.length ? ` · ${item.draft.warningsEs.length} avisos` : ''}`
+                        ? `${item.draft.facts.length} datos · ${item.draft.sourcesReport.filter(x => x.ok).length} fuentes · ${item.draft.fotos?.filter(x => x.recomendada).length ?? 0} fotos${item.draft.warningsEs.length ? ` · ${item.draft.warningsEs.length} avisos` : ''}`
                         : item.estado === 'error'
                           ? item.error
                           : item.estado === 'buscando'
@@ -491,6 +503,9 @@ export function IngestStudio() {
         )}
       </div>
 
+      {/* Fotos */}
+      <RevisionFotos fotos={fotos} onChange={setFotos} />
+
       {/* Fuentes consultadas */}
       <div className="bg-blanco rounded-[28px] border border-linea p-6">
         <h3 className="font-bold text-tinta mb-3">Fuentes consultadas</h3>
@@ -560,11 +575,12 @@ export function IngestStudio() {
       <div className="sticky bottom-4 bg-white/95 backdrop-blur rounded-2xl shadow-lg border border-linea p-4 flex items-center justify-between gap-4">
         <p className="text-sm text-tinta-2">
           Se publicará con <span className="font-bold">{acceptedCount} datos verificados</span>
+          {fotos.some(f => f.usar) && <>, {fotos.filter(f => f.usar).length} fotos</>}
           {draft.price?.estimated && Number(priceValue) > 0 && <span className="text-rose-700"> y precio estimado</span>}.
         </p>
         <div className="flex gap-2">
           <Button variant="outline" onClick={volverACola}>Volver a la cola</Button>
-          <Button onClick={publish} disabled={phase === 'publishing' || !priceValue || Number(priceValue) <= 0}
+          <Button onClick={publish} disabled={phase === 'publishing' || !priceValue || Number(priceValue) <= 0 || fotos.some(f => f.procesando)}
             variant="wise">
             {phase === 'publishing'
               ? <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Publicando…</span>

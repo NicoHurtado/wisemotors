@@ -104,7 +104,19 @@ cobertura, migración, seeds, motor de cohortes.
   extraen como documento. Toda cita de página HTML se verifica contra el texto (si no
   aparece, el dato muere). Probado: Onix RS 33 datos, CX-30 36, Dolphin 41, ~50 s.
   La ruta de ingesta tiene `maxDuration: 300`.
-- Pendiente de ingesta v2: fotos (Cloudinary), asociar concesionario, cola de
+- **Fotos en la ingesta (sep-2026):** `lib/ingest/fotos.ts` saca imágenes del HTML de las fuentes
+  ya leídas (oficial primero); si hay < 4, Haiku busca una página de fotos (1 búsqueda). Haiku
+  clasifica con visión (primero `queSeVe`, luego ángulo/estudio/calidad; si es el modelo lo decide
+  el código con `queSeVe`). Probado: Haiku NO distingue izquierda/derecha → nunca voltea solo; el
+  revisor usa "Voltear". Se recomiendan lado (portada), 3/4 delantero, 3/4 trasero e interior y se
+  procesan en Cloudinary (`procesarFotoCarro`: quitar fondo + recortar, PNG transparente — se ve
+  blanco en el catálogo y no deja rectángulo en el hero oscuro). Sin `CLOUDINARY_*` quedan con
+  fondo original y se avisa. Revisión en `RevisionFotos.tsx`; publicar crea `VehicleImage`
+  (portada = type 'cover' + isThumbnail) y borra de Cloudinary las descartadas.
+- **Plan concesionarios:** su carpeta de fotos y fichas técnicas entra como fuente tier 1 por
+  delante de la web (fotos → mismas candidatas de `buscarFotos`; fichas PDF → `extractFromPage`),
+  y Haiku/Sonnet completan solo lo que falte.
+- Pendiente de ingesta v2: asociar concesionario, cola de
   auditoría, `maxDuration: 60` puede quedar corto en Vercel para 6 fuentes (~45s local).
 
 ## Backlog en orden (del plan, secciones 8-9)

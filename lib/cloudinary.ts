@@ -48,6 +48,50 @@ export async function deleteFromCloudinary(publicId: string): Promise<void> {
   }
 }
 
+export function cloudinaryConfigurado(): boolean {
+  return !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+}
+
+/**
+ * Foto de carro con el mismo acabado para todo el catálogo:
+ *  - exterior: se quita el fondo (queda transparente: sobre las tarjetas claras
+ *    se ve en blanco y en el inicio oscuro no deja un rectángulo), se recorta al
+ *    carro y, si la foto de lado mira a la izquierda, se voltea (todos miran a la
+ *    derecha, como el resto del diseño);
+ *  - interior: solo se optimiza, sin quitar fondo.
+ * Devuelve la URL ya transformada. Lanza si Cloudinary no puede procesarla.
+ */
+export async function procesarFotoCarro(
+  origen: string,
+  opciones: { recortar: boolean; voltear: boolean; carpeta?: string }
+): Promise<{ url: string; publicId: string; recortada: boolean }> {
+  const pasos: Record<string, unknown>[] = [];
+  if (opciones.recortar) pasos.push({ effect: 'background_removal' }, { effect: 'trim' });
+  if (opciones.voltear) pasos.push({ angle: 'hflip' });
+  pasos.push({ crop: 'limit', width: 1800, height: 1200 });
+  pasos.push({ quality: 'auto', fetch_format: opciones.recortar ? 'png' : 'auto' });
+
+  const subir = (eager: Record<string, unknown>[]) =>
+    cloudinary.uploader.upload(origen, {
+      folder: opciones.carpeta ?? 'wise-vehicles/ingesta',
+      resource_type: 'image',
+      // Una transformación encadenada, generada al subir: la URL sirve de inmediato.
+      eager: [eager as any],
+      eager_async: false,
+    });
+
+  try {
+    const r = await subir(pasos);
+    return { url: r.eager?.[0]?.secure_url ?? r.secure_url, publicId: r.public_id, recortada: opciones.recortar };
+  } catch (err) {
+    if (!opciones.recortar) throw err;
+    // Sin el recorte con IA habilitado en la cuenta: la foto sigue, con su fondo.
+    console.warn('Cloudinary no pudo quitar el fondo; se sube sin recorte:', err);
+    const r = await subir(pasos.filter(p => p.effect !== 'background_removal' && p.effect !== 'trim'));
+    return { url: r.eager?.[0]?.secure_url ?? r.secure_url, publicId: r.public_id, recortada: false };
+  }
+}
+
 /**
  * Check if a URL is a Cloudinary URL
  */
