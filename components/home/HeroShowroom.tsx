@@ -3,9 +3,9 @@
 // ============================================================================
 // Hero: showroom partido (referencia LaFerrari).
 //
-// Panel morado profundo a la izquierda, negro a la derecha. El nombre del
-// modelo gigante en Anton, en dos tonos según el fondo que pisa, y el carro
-// encima. Los destacados rotan como en una tornamesa: el carro sale, el nuevo
+// Panel morado profundo a la izquierda, negro a la derecha. WISE gigante en
+// Anton, en dos tonos según el fondo que pisa, siempre (es la marca), y los
+// carros rotando encima. Los destacados rotan como en una tornamesa: el carro sale, el nuevo
 // entra desenfocado y se posa, la palabra sube letra por letra. Abajo: la
 // búsqueda con IA sobre el panel y los datos del carro sobre el negro.
 // ============================================================================
@@ -16,7 +16,7 @@ import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react';
 import { CarRender, fotoDe } from '@/components/car/CarRender';
 import type { VehiculoTarjeta } from '@/components/car/TarjetaCarro';
 import { BuscadorIA } from '@/components/home/BuscadorIA';
-import { millones, palabraGigante, tresDatos } from '@/lib/vehiculo-datos';
+import { millones, tresDatos } from '@/lib/vehiculo-datos';
 
 const INTERVALO = 7000;
 
@@ -49,10 +49,16 @@ export function HeroShowroom({ vehiculos, consulta }: { vehiculos: VehiculoTarje
     () => [...vehiculos].sort((a, b) => Number(!!fotoDe(b)) - Number(!!fotoDe(a))).slice(0, 5),
     [vehiculos]
   );
+  // Lo que rota junto a WISE: los carros publicados y, mientras sean pocos,
+  // carros de exhibición para que el showroom siempre tenga movimiento.
+  const items = useMemo(() => {
+    const reales = destacados.map(v => ({ clave: v.id, v, x: undefined as (typeof VITRINA)[number] | undefined }));
+    const relleno = reales.length >= 3 ? [] : VITRINA.slice(0, 5 - reales.length).map(x => ({ clave: x.id, v: undefined, x }));
+    return [...reales, ...relleno];
+  }, [destacados]);
   const [i, setI] = useState(0);
   const [pausa, setPausa] = useState(false);
-  const enVitrina = destacados.length === 0;
-  const total = enVitrina ? VITRINA.length : destacados.length;
+  const total = items.length;
 
   useEffect(() => {
     if (pausa || total < 2) return;
@@ -60,9 +66,11 @@ export function HeroShowroom({ vehiculos, consulta }: { vehiculos: VehiculoTarje
     return () => clearTimeout(t);
   }, [i, pausa, total]);
 
-  const v = enVitrina ? undefined : destacados[i % destacados.length];
-  const exhibicion = enVitrina ? VITRINA[i % VITRINA.length] : undefined;
-  const palabra = v ? palabraGigante(v.model, v.brand) : 'WISE';
+  const actual = items[i % total];
+  const v = actual?.v;
+  const exhibicion = actual?.x;
+  // La palabra es siempre la marca: los carros cambian, WISE se queda.
+  const palabra = 'WISE';
   const datos = v ? tresDatos(v) : [];
 
   return (
@@ -157,13 +165,13 @@ export function HeroShowroom({ vehiculos, consulta }: { vehiculos: VehiculoTarje
             </div>
             <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-5">
               <div className="flex items-center gap-3">
-                {VITRINA.map((x, k) => (
+                {items.map((it, k) => (
                   <button
-                    key={x.id}
+                    key={it.clave}
                     onClick={() => setI(k)}
-                    aria-label={`Ver ${x.tipo}`}
-                    aria-pressed={k === i % VITRINA.length}
-                    className={`h-2 rounded-full transition-all duration-500 ${k === i % VITRINA.length ? 'w-8 bg-wise-lila' : 'w-2 bg-white/25 hover:bg-white/50'}`}
+                    aria-label={`Ver ${it.v ? `${it.v.brand} ${it.v.model}` : it.x!.tipo}`}
+                    aria-pressed={k === i % total}
+                    className={`h-2 rounded-full transition-all duration-500 ${k === i % total ? 'w-8 bg-wise-lila' : 'w-2 bg-white/25 hover:bg-white/50'}`}
                   />
                 ))}
               </div>
