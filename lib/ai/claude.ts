@@ -16,9 +16,9 @@ import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import type { z } from 'zod/v4';
 
-// Costo: NUNCA Opus. Sonnet donde un error publica datos falsos o se le muestra
-// al usuario (extracción, fuentes, identidad, precio, veredicto); Haiku donde
-// solo se copia o no es crítico (leer páginas, datos DEMO).
+// Costo: NUNCA Opus. Sonnet SOLO en la ingesta, donde un error publica datos
+// falsos (extracción, fuentes, identidad, precio). Todo lo demás del producto
+// va en Haiku (veredicto del comparador, leer páginas, datos DEMO).
 export const MODELOS = {
   sonnet: 'claude-sonnet-5',
   haiku: 'claude-haiku-4-5',

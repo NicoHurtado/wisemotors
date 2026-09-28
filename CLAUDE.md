@@ -159,9 +159,10 @@ cobertura, migración, seeds, motor de cohortes.
 - Deploy Vercel `iad1`, funciones `maxDuration: 30s`. Env vars: `WISE_DATABASE_URL`(+`_UNPOOLED`),
   `JWT_SECRET`, `ANTHROPIC_API_KEY` (+ `ANTHROPIC_WORKSPACE_ID` si la clave no es
   de un workspace), `OPENAI_API_KEY`, `CLOUDINARY_*`, `NEXT_PUBLIC_APP_URL`.
-- **Modelos (decisión del equipo, costo): NUNCA Opus.** Sonnet (`claude-sonnet-5`) para lo crítico
-  (extracción, búsqueda de fuentes, identidad, precio, veredicto del comparador); Haiku
-  (`claude-haiku-4-5`) para lo no crítico (leer páginas con web_fetch, datos DEMO). Todo pasa por
+- **Modelos (decisión del equipo, costo): NUNCA Opus.** Sonnet (`claude-sonnet-5`) SOLO en la ingesta
+  (extracción, búsqueda de fuentes, identidad, precio). Todo el resto del producto en Haiku
+  (`claude-haiku-4-5`): veredicto del comparador, leer páginas con web_fetch, datos DEMO.
+  La búsqueda sigue en OpenAI `gpt-4o-mini` (más barato que Haiku); ningún `gpt-4o` completo. Todo pasa por
   `MODELOS` en `lib/ai/claude.ts`. Ingesta: máx 4 fuentes, 25k caracteres por página, 3 búsquedas.
   No correr pruebas que gasten la clave de producción sin permiso del equipo.
 - LLM: la ingesta (`lib/ingest/`) usa Claude vía `lib/ai/claude.ts` (`pedirJson` +
