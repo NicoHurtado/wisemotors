@@ -338,7 +338,7 @@ const PERFIL_INFO: Record<string, { texto: string; icono: LucideIcon }> = {
 const PASOS = ['Leyendo la ficha de cada carro…', 'Comparando consumo, espacio y seguridad…', 'Pensando para quién es cada uno…', 'Escribiéndolo en palabras sencillas…'];
 
 function VeredictoIA({ vehiculos, nombre, color }: { vehiculos: Vehiculo[]; nombre: (id: string) => string; color: (id: string) => string }) {
-  const [estado, setEstado] = useState<'cargando' | 'listo' | 'error'>('cargando');
+  const [estado, setEstado] = useState<'cargando' | 'listo' | 'error' | 'sinSesion'>('cargando');
   const [v, setV] = useState<Veredicto | null>(null);
   const [error, setError] = useState('');
   const [paso, setPaso] = useState(0);
@@ -353,6 +353,11 @@ function VeredictoIA({ vehiculos, nombre, color }: { vehiculos: Vehiculo[]; nomb
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: ids.split(',') }),
       });
+      // El veredicto gasta IA: es para quien tiene cuenta. Sin sesión se invita, no se muestra un error.
+      if (r.status === 401) {
+        setEstado('sinSesion');
+        return;
+      }
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || 'No se pudo comparar');
       setV(j.veredicto);
@@ -400,6 +405,25 @@ function VeredictoIA({ vehiculos, nombre, color }: { vehiculos: Vehiculo[]; nomb
               <div className="mt-2 h-3 w-2/3 rounded-full bg-tarjeta" />
             </div>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (estado === 'sinSesion') {
+    const volver = typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/compare';
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-[30px] bg-blanco p-8">
+        <p className="flex max-w-[52ch] items-center gap-3 text-[15px]">
+          <Sparkles className="h-5 w-5 shrink-0 text-wise" /> Crea una cuenta gratis y la IA te dice, en palabras sencillas, para quién es cada uno.
+        </p>
+        <div className="flex gap-2">
+          <Link href={`/register?next=${encodeURIComponent(volver)}`} className="pastilla pastilla--wise h-11 px-5">
+            Crear cuenta
+          </Link>
+          <Link href={`/login?next=${encodeURIComponent(volver)}`} className="pastilla h-11 px-5">
+            Ingresar
+          </Link>
         </div>
       </div>
     );

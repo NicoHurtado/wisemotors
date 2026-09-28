@@ -1,4 +1,5 @@
 import { leer } from '@/lib/vehiculo-datos';
+import { masParecidos } from '@/lib/similares';
 import { urlImagen } from '@/lib/data/imagen';
 import { prisma } from '@/lib/prisma';
 import { cache } from 'react';
@@ -49,47 +50,33 @@ export const getVehicle = cache(async (id: string) => {
     }
   }
 
-  // 2. Fetch similar vehicles efficiently
-  const minPrice = vehicle.price * 0.7;
-  const maxPrice = vehicle.price * 1.3;
-
-  const simStart = performance.now();
-
-  // Queries optimized with indexes [status, price] and [type]
-  const similarVehicles = await prisma.vehicle.findMany({
-    where: {
-      type: vehicle.type,
-      id: { not: vehicle.id },
-      price: { gte: minPrice, lte: maxPrice },
-      status: 'NUEVO'
-    },
+  // 2. Los 3 más parecidos en tipo, precio, tren motriz y características
+  // (lib/similares). El catálogo es chico: se compara contra todo lo
+  // disponible y se ordena en memoria.
+  const candidatos = await prisma.vehicle.findMany({
+    where: { id: { not: vehicle.id }, status: 'Disponible' },
     select: {
       id: true,
       brand: true,
       model: true,
       year: true,
       price: true,
-      fuelType: true, // Use raw field
+      fuelType: true,
       type: true,
       status: true,
       specifications: true,
       images: {
         take: 1,
         orderBy: { order: 'asc' },
-        select: {
-          id: true,
-          url: true,
-          type: true,
-          order: true,
-          isThumbnail: true
-        }
-      }
+        select: { id: true, url: true, type: true, order: true, isThumbnail: true },
+      },
     },
-    orderBy: {
-      price: 'asc' // Use index
-    },
-    take: 1
   });
+  const similarVehicles = masParecidos(
+    { id: vehicle.id, price: vehicle.price, type: vehicle.type, fuelType: vehicle.fuelType, specifications: parsedSpecs },
+    candidatos,
+    3
+  );
 
   const transformedSimilar = similarVehicles.map(v => {
     let vSpecs = v.specifications as any;

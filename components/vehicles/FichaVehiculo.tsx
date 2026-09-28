@@ -7,7 +7,7 @@
 // elegir una, los puntos de interés se reacomodan SOBRE el carro con datos
 // reales de esa categoría, y la tarjeta negra de la derecha explica en
 // palabras de persona qué significan. Debajo: datos destacados, ficha técnica
-// completa agrupada, procedencia y similares.
+// completa agrupada y los 3 más parecidos, con botón para compararlos.
 // Una categoría sin datos no aparece; un dato faltante no se inventa.
 // ============================================================================
 
@@ -33,7 +33,6 @@ import {
 } from 'lucide-react';
 import { CarRender } from '@/components/car/CarRender';
 import { TarjetaCarro, type VehiculoTarjeta } from '@/components/car/TarjetaCarro';
-import { DataProvenance } from '@/components/vehicles/DataProvenance';
 import { SeccionesFicha } from '@/components/vehicles/ficha/SeccionesFicha';
 import type { IndicesVehiculo } from '@/lib/indices/calculo';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
@@ -41,7 +40,7 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWhatsAppLeads } from '@/hooks/useWhatsAppLeads';
 import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
-import { leer, millones, precioCompleto, rendimiento, specsDe } from '@/lib/vehiculo-datos';
+import { leer, precioCompleto, rendimiento, specsDe } from '@/lib/vehiculo-datos';
 import { fotoDe, pinturaDe } from '@/components/car/CarRender';
 
 const WHATSAPP = '573103818615';
@@ -205,7 +204,6 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
   const [nombre, setNombre] = useState(user?.username ?? '');
   const fav = isFavorite(vehicle.id);
   const actual = cats[cat];
-  const commercial = s.commercial ?? {};
   const similares: VehiculoTarjeta[] = (vehicle.similarVehicles ?? []).map((v: any) => ({
     ...v,
     fuelType: v.fuelType ?? (v.fuel ? v.fuel.charAt(0) + v.fuel.slice(1).toLowerCase() : ''),
@@ -256,19 +254,9 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
           </div>
           <div className="sube flex flex-col items-start gap-4 md:items-end" style={{ '--d': '120ms' } as React.CSSProperties}>
             <div className="md:text-right">
-              <p className="flex items-center gap-2 text-[13px] text-tinta-2 md:justify-end">
-                Precio de lista
-                {commercial.priceEstimated && (
-                  <span className="rounded-full border border-linea bg-blanco px-2.5 py-0.5 text-[12px] text-tinta">Estimado</span>
-                )}
-              </p>
+              <p className="text-[13px] text-tinta-2">Precio de lista</p>
               <p className="cifra text-[32px] font-semibold md:text-[40px]">
-                {/* Un precio estimado no merece falsa precisión: se redondea */}
-                {commercial.priceEstimated ? (
-                  <>≈ {millones(vehicle.price)}</>
-                ) : (
-                  <AnimatedNumber value={vehicle.price} format={n => precioCompleto(Math.round(n))} durationMs={1100} />
-                )}
+                <AnimatedNumber value={vehicle.price} format={n => precioCompleto(Math.round(n))} durationMs={1100} />
               </p>
             </div>
             <div className="flex gap-2">
@@ -426,25 +414,28 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
         </section>
       )}
 
-      {/* ── Procedencia ──────────────────────────────────────────────────── */}
-      <section className="mx-auto mt-12 max-w-[1440px] px-5 md:px-8">
-        <DataProvenance
-          vehicleId={vehicle.id}
-          precioEstimado={Boolean(commercial.priceEstimated)}
-          razonamientoPrecio={commercial.priceReasoningEs}
-          coberturaGlobal={vehicle.coverageGlobal ?? null}
-        />
-      </section>
-
-      {/* ── Similares ───────────────────────────────────────────────────── */}
+      {/* ── Similares: los 3 más parecidos en tipo, precio y características ── */}
       {similares.length > 0 && (
         <section className="mx-auto mt-24 max-w-[1440px] px-5 md:px-8">
-          <h2 className="t-titulo text-[32px] md:text-[44px]">
-            También podría servirte <span className="t-ligero text-tinta-2/50">({similares.length})</span>
-          </h2>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <h2 className="t-titulo text-[32px] md:text-[44px]">
+              Si te gusta este, <span className="text-tinta-2/50">mira también.</span>
+            </h2>
+            <p className="max-w-[40ch] text-[15px] text-tinta-2">Los más parecidos en precio, tamaño y tipo de carro. Ponlos frente a frente.</p>
+          </div>
           <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {similares.slice(0, 3).map((v, i) => (
-              <TarjetaCarro key={v.id} vehiculo={v} indice={i} />
+              <div key={v.id} className="flex flex-col gap-3">
+                <TarjetaCarro vehiculo={v} indice={i} />
+                <div className="grid grid-cols-2 gap-2">
+                  <Link href={`/vehicles/${v.id}`} className="pastilla h-11 justify-center">
+                    Ver ficha <ArrowUpRight className="h-4 w-4" />
+                  </Link>
+                  <Link href={`/compare?ids=${vehicle.id},${v.id}`} className="pastilla pastilla--wise h-11 justify-center">
+                    Comparar con este
+                  </Link>
+                </div>
+              </div>
             ))}
           </div>
         </section>

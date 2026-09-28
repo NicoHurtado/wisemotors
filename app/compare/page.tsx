@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowUpRight, Check } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -12,6 +13,8 @@ import { millones } from '@/lib/vehiculo-datos';
 // ============================================================================
 // Comparador. La selección es una tira de favoritos que se prenden y apagan;
 // la comparación arranca de una con los primeros marcados.
+// Con ?ids=a,b (desde "Comparar con este" en la ficha) compara esos carros
+// directamente: no hace falta cuenta ni favoritos.
 // ============================================================================
 
 const MAX = 4;
@@ -31,7 +34,73 @@ function Vacio({ titulo, texto, children }: { titulo: string; texto: string; chi
   );
 }
 
+/** Comparación directa de los carros de la URL. */
+function CompararIds({ lista }: { lista: string }) {
+  const [datos, setDatos] = useState<any[] | null>(null);
+
+  // La dependencia es el texto de la URL: un arreglo nuevo en cada render volvería a pedir todo.
+  useEffect(() => {
+    const ids = lista.split(',');
+    Promise.all(ids.map(id => fetch(`/api/vehicles/${id}`).then(r => (r.ok ? r.json() : null))))
+      .then(vs => setDatos(vs.filter(Boolean)))
+      .catch(() => setDatos([]));
+  }, [lista]);
+
+  if (datos === null) {
+    return (
+      <div className="mx-auto max-w-[1440px] px-5 py-28 md:px-8">
+        <div className="h-[420px] animate-pulse rounded-[36px] bg-tarjeta" />
+      </div>
+    );
+  }
+  if (datos.length < 2) {
+    return (
+      <Vacio titulo="No encontramos esos carros." texto="Puede que alguno ya no esté en el catálogo. Elige otros para ponerlos frente a frente.">
+        <Link href="/vehicles" className="pastilla pastilla--tinta h-12 px-6">
+          Ir al catálogo <ArrowUpRight className="h-4 w-4" />
+        </Link>
+      </Vacio>
+    );
+  }
+  return (
+    <div className="mx-auto max-w-[1440px] px-5 pb-10 pt-10 md:px-8 md:pt-14">
+      <div className="flex flex-wrap items-end justify-between gap-6 border-b border-linea pb-8">
+        <h1 className="t-titulo text-[48px] md:text-[80px]">Frente a frente</h1>
+        <div className="flex flex-wrap gap-2">
+          {datos.map(v => (
+            <Link key={v.id} href={`/vehicles/${v.id}`} className="pastilla h-11 px-4">
+              {v.brand} {v.model} <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          ))}
+        </div>
+      </div>
+      <div className="mt-10">
+        <Comparador vehiculos={datos} />
+      </div>
+    </div>
+  );
+}
+
 export default function ComparePage() {
+  return (
+    <Suspense>
+      <Comparar />
+    </Suspense>
+  );
+}
+
+function Comparar() {
+  const ids = useSearchParams()
+    .get('ids')
+    ?.split(',')
+    .map(x => x.trim())
+    .filter(Boolean)
+    .slice(0, MAX);
+  if (ids && ids.length >= 2) return <CompararIds lista={ids.join(',')} />;
+  return <CompararFavoritos />;
+}
+
+function CompararFavoritos() {
   const { user } = useAuth();
   const { favorites, loading } = useFavorites();
   const [seleccion, setSeleccion] = useState<string[]>([]);
