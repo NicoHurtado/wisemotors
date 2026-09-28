@@ -14,7 +14,11 @@ export interface CoverageResult {
 export const MIN_DIMENSION_COVERAGE = 0.6;
 
 export function computeCoverage(fuelType: string, presentKeys: Set<string>): CoverageResult {
-  const applicable = ATTRIBUTE_REGISTRY.filter(d => attributeAppliesTo(d, fuelType) && d.dimension !== 'editorial');
+  // Solo cuenta lo que en Colombia se publica normalmente: un dato 'rare'
+  // (vadeo, masaje, amplificador) suma si está, pero no faltar no es un hueco.
+  const applicable = ATTRIBUTE_REGISTRY.filter(
+    d => attributeAppliesTo(d, fuelType) && d.dimension !== 'editorial' && (d.coAvailability ?? 'common') === 'common'
+  );
 
   const byDimension: Record<string, number | null> = {};
   for (const dim of COVERAGE_DIMENSIONS) {

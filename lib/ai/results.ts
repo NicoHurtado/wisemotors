@@ -21,7 +21,7 @@ import { rerankWithLLM } from './rerank';
 import { ScoredCandidate, scoreCandidates } from './scoring';
 import { computeVehicleFeatures, getMarketStats, generateVehicleTags, type VehicleFeatures } from './features';
 import { scoreDeterministically } from './deterministic';
-import { caja, cumpleEquipamiento, DIMENSIONES, type DatosAfinar, type Dimension, type Prioridad } from './filtros';
+import { caja, cumpleEquipamiento, DIMENSIONES, ruedasMotrices, type DatosAfinar, type Dimension, type Prioridad } from './filtros';
 
 export interface ProcessedResults {
   query_type: QueryType;
@@ -123,6 +123,7 @@ function datosAfinar(cands: ScoredCandidate[]): Map<string, DatosAfinar> {
         combustible: c.fuelType,
         carroceria: c.type,
         caja: caja(c),
+        traccion: ruedasMotrices(c),
         prioridades: Object.fromEntries(
           (Object.keys(puntajes) as Prioridad[]).map(p => [p, puntajes[p].get(c.id)?.score ?? 50])
         ) as Record<Prioridad, number>,
@@ -140,6 +141,7 @@ function preguntasUtiles(orden: Dimension[] | null, intent: CategorizedIntent): 
     combustible: !!f.fuel_types?.length,
     carroceria: !!f.body_types?.length,
     caja: /autom|manual|mec[aá]nic/.test(pedidos),
+    traccion: /4x4|4wd|awd|tracci/.test(pedidos),
   };
   // Primero las que escogió la IA, en su orden; después las demás (una pregunta
   // que la IA no priorizó igual puede servir si la lista sigue larga).

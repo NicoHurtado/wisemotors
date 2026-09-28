@@ -15,7 +15,7 @@ import { X } from 'lucide-react';
 import type { VehiculoTarjeta } from '@/components/car/TarjetaCarro';
 
 type Prioridad = 'comodidad' | 'economia' | 'seguridad' | 'espacio' | 'desempeno';
-type Dimension = 'presupuesto' | 'combustible' | 'carroceria' | 'caja' | 'prioridad';
+type Dimension = 'presupuesto' | 'combustible' | 'carroceria' | 'caja' | 'traccion' | 'prioridad';
 
 export type Carro = VehiculoTarjeta & {
   id: string;
@@ -29,6 +29,7 @@ export type Carro = VehiculoTarjeta & {
     combustible: string;
     carroceria: string;
     caja: 'Automática' | 'Manual' | null;
+    traccion?: '4 ruedas' | '2 ruedas' | null;
     prioridades: Record<Prioridad, number>;
   };
 };
@@ -69,6 +70,7 @@ const PREGUNTA: Record<Dimension, string> = {
   combustible: '¿Qué motor prefieres?',
   carroceria: '¿Qué tipo de carro?',
   caja: '¿Caja automática o manual?',
+  traccion: '¿Necesitas tracción en las 4 ruedas (finca, trocha, lodo)?',
   prioridad: '¿Qué te importa más?',
 };
 
@@ -83,6 +85,8 @@ function valor(c: Carro, d: Dimension): string | null {
       return a?.carroceria ?? c.type;
     case 'caja':
       return a?.caja ?? null;
+    case 'traccion':
+      return a?.traccion ?? null;
     default:
       return null;
   }
@@ -91,7 +95,7 @@ function valor(c: Carro, d: Dimension): string | null {
 /** Aplica las respuestas: filtra por lo concreto y, si eligió prioridad, ordena y deja los mejores. */
 export function aplicar(todos: Carro[], r: Respuestas): Carro[] {
   let lista = todos.filter(c =>
-    (['presupuesto', 'combustible', 'carroceria', 'caja'] as Dimension[]).every(d => !r[d] || valor(c, d) === r[d])
+    (['presupuesto', 'combustible', 'carroceria', 'caja', 'traccion'] as Dimension[]).every(d => !r[d] || valor(c, d) === r[d])
   );
   const p = r.prioridad as Prioridad | null | undefined;
   if (p) {

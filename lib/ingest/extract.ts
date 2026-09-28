@@ -14,7 +14,8 @@ import type { Contenido } from './buscar-fuentes';
 import { denserWindow, MAX_TEXT_CHARS } from './fetcher';
 
 // Solo atributos que se publican en Colombia y con keys válidas
-const EXTRACTABLE = ATTRIBUTE_REGISTRY.filter(d => d.coAvailability !== 'never_published');
+// (los WiseMetrics son criterio editorial de la casa: ninguna página los trae)
+const EXTRACTABLE = ATTRIBUTE_REGISTRY.filter(d => d.coAvailability !== 'never_published' && d.dimension !== 'editorial');
 const VALID_KEYS = new Set(EXTRACTABLE.map(d => d.key));
 
 const ExtraccionSchema = z.object({
@@ -46,7 +47,7 @@ const ExtraccionSchema = z.object({
 function buildCatalog(): string {
   // Catálogo compacto: key | etiqueta | unidad esperada | tipo
   return EXTRACTABLE
-    .map(d => `${d.key} | ${d.labelEs}${d.unit ? ` (${d.unit})` : ''} | ${d.dataType}`)
+    .map(d => `${d.key} | ${d.labelEs}${d.unit ? ` (${d.unit})` : ''} | ${d.opciones ? `uno de: ${d.opciones.join(' / ')}` : d.dataType}`)
     .join('\n');
 }
 
@@ -88,6 +89,27 @@ function menciona(texto: string, nombre: string) {
   const n = nombre.trim().toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   if (!n) return false;
   return new RegExp(`(^|[^a-z0-9áéíóúñ])${n}([^a-z0-9áéíóúñ]|$)`, 'i').test(texto);
+}
+
+/**
+ * Lleva un valor de enum a una de sus opciones. Las páginas escriben la
+ * tracción de mil formas ("4WD", "AWD", "tracción total", "4x2"): se entienden
+ * aquí, en código, y lo que no encaje se descarta en vez de guardarse a medias.
+ */
+export function normalizarOpcion(key: string, valor: string, opciones: string[]): string | null {
+  const v = plano(valor);
+  const directa = opciones.find(o => plano(o) === v);
+  if (directa) return directa;
+  if (key === 'drivetrain.traction') {
+    if (/4x4|4wd|reductora/.test(v)) return '4x4';
+    if (/awd|integral|total|4motion|allwheel|xdrive|quattro|efour|todaslasruedas/.test(v)) return 'Integral (AWD)';
+    if (/rwd|trasera|propulsion|posterior/.test(v)) return 'Trasera';
+    if (/fwd|delantera|4x2|traccionanterior|frontal/.test(v)) return 'Delantera';
+    return null;
+  }
+  // Coincidencia parcial: "Frenos de tambor" → "Tambor"; "Latin NCAP 2024" → "Latin NCAP".
+  const parcial = opciones.filter(o => v.includes(plano(o)) || plano(o).includes(v));
+  return parcial.length === 1 ? parcial[0] : null;
 }
 
 export interface ResultadoExtraccion {
@@ -196,6 +218,10 @@ ${buildCatalog()}
       // publicar `false` la convierte en una negación que nadie verificó.
       if (value !== true && value !== 'true' && value !== 'Sí' && value !== 'si') continue;
       value = true;
+    } else if (def.opciones) {
+      const opcion = normalizarOpcion(def.key, String(value), def.opciones);
+      if (!opcion) continue;
+      value = opcion;
     } else {
       value = String(value).slice(0, 200);
     }

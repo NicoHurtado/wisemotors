@@ -143,7 +143,11 @@ export function computeVehicleFeatures(vehicle: any, contexto: ContextoMercado):
     s.comfort?.heatedSeats,
     s.comfort?.ventilatedSeats,
     s.comfort?.massageSeats,
-    s.comfort?.automaticHighBeam
+    s.comfort?.automaticHighBeam,
+    s.comfort?.rearAcVents,
+    s.comfort?.keyless,
+    s.comfort?.sunroof ? true : undefined, // enum: "Corredizo", "Panorámico"…
+    s.comfort?.powerDriverSeat
   );
   const tecnologia = cuenta(
     s.technology?.bluetooth,
@@ -153,7 +157,10 @@ export function computeVehicleFeatures(vehicle: any, contexto: ContextoMercado):
     s.technology?.wirelessCharger,
     s.assistance?.reverseCamera,
     s.assistance?.parkingSensors,
-    s.assistance?.cameras360
+    s.assistance?.cameras360,
+    s.technology?.wirelessSmartphone,
+    s.technology?.connectedApp,
+    s.assistance?.frontParkingSensors
   );
 
   const marca = contexto.marcas.get((vehicle.brand ?? '').toLowerCase());
@@ -166,6 +173,10 @@ export function computeVehicleFeatures(vehicle: any, contexto: ContextoMercado):
   const alto = altura ?? NO_SE;
   const pickupOTodoterreno = /pickup|todoterreno/i.test(`${vehicle.type} ${vehicle.vehicleType ?? ''}`);
   const angulos = (leer(s, 'offRoad.approachAngle') ?? 0) + (leer(s, 'offRoad.departureAngle') ?? 0);
+  // Tracción: solo suma cuando se sabe (no saberla no castiga).
+  const traccion = String(s.drivetrain?.traction ?? '');
+  const bonoTraccion =
+    (traccion === '4x4' ? 120 : traccion === 'Integral (AWD)' ? 60 : 0) + (s.drivetrain?.lowRange === true ? 40 : 0);
 
   const f = {
     power_to_weight_norm: potenciaPeso,
@@ -181,7 +192,7 @@ export function computeVehicleFeatures(vehicle: any, contexto: ContextoMercado):
     space_norm: baul !== null || pasajeros !== null ? (baul ?? 0) + (pasajeros ?? 0) * 60 : NO_SE,
     urban_score: largo !== null ? -largo : NO_SE,
     highway_score: autonomia ?? NO_SE,
-    offroad_score: altura !== null ? altura + angulos + (pickupOTodoterreno ? 60 : 0) : NO_SE,
+    offroad_score: altura !== null ? altura + angulos + (pickupOTodoterreno ? 60 : 0) + bonoTraccion : NO_SE,
     hill_climb_score: fuerzaPeso,
     potholes_score: alto,
     quality_price_ratio_norm: vehicle.price > 0 ? -vehicle.price : NO_SE,
