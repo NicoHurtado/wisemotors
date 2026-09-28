@@ -29,6 +29,8 @@ export interface PublishInput {
   priceEstimated?: boolean;
   priceReasoningEs?: string;
   facts: AcceptedFact[];
+  /** Fotos aprobadas en la revisión, en orden; la de `portada` es la principal. */
+  fotos?: { url: string; angulo: string; portada?: boolean }[];
   /** userId del revisor humano; null en cargas automáticas de prueba. */
   verifiedBy: string | null;
 }
@@ -50,6 +52,29 @@ function nestByPath(facts: AcceptedFact[]): Record<string, any> {
     node[parts[parts.length - 1]] = f.value;
   }
   return specs;
+}
+
+const ALT_ANGULO: Record<string, string> = {
+  lado: 'de lado',
+  tres_cuartos_frente: 'vista 3/4 delantera',
+  tres_cuartos_atras: 'vista 3/4 trasera',
+  frente: 'de frente',
+  atras: 'de atrás',
+  interior: 'interior',
+  detalle: 'detalle',
+};
+
+/** Solo URLs http(s), máx. 12; una sola portada (la marcada o la primera). */
+function fotosLimpias(fotos: PublishInput['fotos'], nombre: string) {
+  const ok = (fotos ?? []).filter(f => typeof f?.url === 'string' && /^https?:\/\//.test(f.url)).slice(0, 12);
+  const portada = Math.max(0, ok.findIndex(f => f.portada));
+  return ok.map((f, i) => ({
+    url: f.url.slice(0, 1000),
+    alt: `${nombre}, ${ALT_ANGULO[f.angulo] ?? 'foto'}`,
+    type: i === portada ? 'cover' : String(f.angulo ?? 'gallery').slice(0, 40),
+    order: i === portada ? 0 : i + 1,
+    isThumbnail: i === portada,
+  }));
 }
 
 export async function publishDraft(input: PublishInput): Promise<PublishResult> {
@@ -106,6 +131,9 @@ export async function publishDraft(input: PublishInput): Promise<PublishResult> 
       status: 'Disponible',
       coverageGlobal: coverage.global,
       coverageByDimension: JSON.stringify(coverage.byDimension),
+      images: {
+        create: fotosLimpias(input.fotos, `${brand} ${model} ${year}`),
+      },
       attributes: {
         create: clean.map(f => {
           const def = ATTRIBUTE_REGISTRY.find(d => d.key === f.key)!;

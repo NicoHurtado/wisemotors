@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/api-auth';
 import { publishDraft } from '@/lib/ingest/publish';
+import { cloudinaryConfigurado, deleteFromCloudinary } from '@/lib/cloudinary';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,12 +26,19 @@ export async function POST(request: NextRequest) {
       priceEstimated: !!body?.priceEstimated,
       priceReasoningEs: body?.priceReasoningEs,
       facts: Array.isArray(body?.facts) ? body.facts : [],
+      fotos: Array.isArray(body?.fotos) ? body.fotos : [],
       // La aceptación en la pantalla de revisión ES la verificación humana
       verifiedBy: auth.userId,
     });
 
     if (!resultado.ok) {
       return NextResponse.json({ error: resultado.error }, { status: resultado.status });
+    }
+
+    // Las fotos procesadas que no se usaron se borran de Cloudinary (sin bloquear).
+    const descartadas: string[] = Array.isArray(body?.fotosDescartadas) ? body.fotosDescartadas.filter((x: unknown) => typeof x === 'string') : [];
+    if (descartadas.length && cloudinaryConfigurado()) {
+      Promise.allSettled(descartadas.slice(0, 30).map(id => deleteFromCloudinary(id))).catch(() => {});
     }
 
     return NextResponse.json({

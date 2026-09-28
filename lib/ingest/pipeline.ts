@@ -13,6 +13,7 @@ import { z } from 'zod/v4';
 import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
 import { esErrorDeCuenta, explicarErrorClaude, pedirJson } from '@/lib/ai/claude';
 import { fetchPageText } from './fetcher';
+import { buscarFotos } from './fotos';
 import { discoverSources } from './sources';
 import { buscarFuentes, leerConClaude, type Contenido } from './buscar-fuentes';
 import { extractFromPage, resolveIdentity } from './extract';
@@ -313,12 +314,23 @@ export async function runIngestPipeline(input: {
   const impossible = allFacts.filter(f => f.outOfRange).length;
   if (impossible > 0) warningsEs.push(`${impossible} campos quedaron fuera del rango físico esperado (desmarcados por defecto).`);
 
-  // 6. Precio, con verificación contra el catálogo real
-  const { price: precioCrudo, remainingFacts } = await resolvePrice(allFacts, {
-    ...identity,
-    trim: versionObjetivo,
-    year: input.year,
-  });
+  // 6. Precio (con verificación contra el catálogo real) y fotos, en paralelo.
+  //    Las fotos nunca tumban la ingesta: si fallan, se avisa y se suben a mano.
+  const avisosFotos: string[] = [];
+  const [{ price: precioCrudo, remainingFacts }, fotos] = await Promise.all([
+    resolvePrice(allFacts, { ...identity, trim: versionObjetivo, year: input.year }),
+    buscarFotos({
+      nombre: `${identity.brand} ${modeloPublicado} ${input.year}`,
+      modelo: identity.model,
+      fuentes: toProcess,
+      avisos: avisosFotos,
+    }).catch(err => {
+      if (esErrorDeCuenta(err)) throw new Error(explicarErrorClaude(err));
+      avisosFotos.push(`No se pudieron buscar fotos: ${explicarErrorClaude(err).slice(0, 120)}`);
+      return [];
+    }),
+  ]);
+  warningsEs.push(...avisosFotos);
 
   let price = precioCrudo;
   let comparablesPrecio: { etiqueta: string; precio: number }[] = [];
@@ -357,6 +369,7 @@ export async function runIngestPipeline(input: {
     priceComparables: comparablesPrecio,
     facts: remainingFacts,
     sourcesReport,
+    fotos,
     warningsEs,
   };
 }

@@ -4,7 +4,9 @@
   "framework": "nextjs",
   "installCommand": "npm install",
   "devCommand": "next dev",
-  "regions": ["iad1"],
+  "regions": [
+    "iad1"
+  ],
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 30
@@ -14,6 +16,12 @@
     },
     "app/api/compare/ia/route.ts": {
       "maxDuration": 120
+    },
+    "app/api/admin/ingest/foto/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/admin/ingest/publish/route.ts": {
+      "maxDuration": 60
     }
   },
   "env": {

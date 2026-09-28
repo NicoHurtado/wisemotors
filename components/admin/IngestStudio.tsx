@@ -8,9 +8,9 @@
 // ============================================================================
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { adminFetch, mensajeDeErrorDeAuth } from '@/lib/admin-fetch';
 import { Button } from '@/components/ui/button';
+import { RevisionFotos, fotosIniciales, type FotoRevision } from '@/components/admin/RevisionFotos';
 import { parseVehicleList, type ParsedVehicleQuery } from '@/lib/ingest/parse-query';
 import { Loader2, ExternalLink, AlertTriangle, CheckCircle2, XCircle, Sparkles, Clock, ChevronRight } from 'lucide-react';
 
@@ -44,6 +44,7 @@ interface Draft {
   price: { value: number; estimated: boolean; reasoningEs: string; sourceUrl?: string; confidence: number } | null;
   facts: DraftFact[];
   sourcesReport: { url: string; nameEs: string; tier: number; ok: boolean; note?: string }[];
+  fotos?: Omit<FotoRevision, 'usar' | 'portada'>[];
   warningsEs: string[];
 }
 
@@ -60,6 +61,8 @@ interface ItemCola {
   error?: string;
   publicadoId?: string;
 }
+
+const CLAVE_COLA = 'wisemotors:cola-ingesta';
 
 const EJEMPLO = 'Onix RS 2026\nRenault Duster 2026\nBYD Dolphin Mini';
 
@@ -82,7 +85,6 @@ function EstadoIcono({ estado }: { estado: EstadoItem }) {
 }
 
 export function IngestStudio() {
-  const router = useRouter();
   const [phase, setPhase] = useState<Phase>('form');
   const [error, setError] = useState<string | null>(null);
 
@@ -96,11 +98,55 @@ export function IngestStudio() {
 
   const vistaPrevia = useMemo(() => parseVehicleList(texto), [texto]);
 
+  // La cola sobrevive a salir de la página: cada borrador ya costó una ingesta.
+  // Se guarda en este navegador; lo que estaba corriendo al salir queda como
+  // interrumpido (su resultado se perdió) y se reintenta a mano, nunca solo.
+  const colaCargada = useRef(false);
+  useEffect(() => {
+    try {
+      const guardada = JSON.parse(localStorage.getItem(CLAVE_COLA) ?? '[]') as ItemCola[];
+      if (Array.isArray(guardada) && guardada.length) {
+        setCola(
+          guardada.map(i =>
+            i.estado === 'buscando'
+              ? { ...i, estado: 'error', error: 'Se interrumpió al salir de la página. Dale Reintentar.' }
+              : i
+          )
+        );
+        siguienteId.current = Math.max(...guardada.map(i => i.id)) + 1;
+      }
+    } catch {
+      /* sin almacenamiento: la cola vive solo en esta pestaña */
+    }
+    colaCargada.current = true;
+  }, []);
+  useEffect(() => {
+    if (!colaCargada.current) return;
+    try {
+      localStorage.setItem(CLAVE_COLA, JSON.stringify(cola));
+    } catch {
+      /* cuota llena o bloqueado: se sigue sin guardar */
+    }
+  }, [cola]);
+
+  // Avisa antes de cerrar o recargar mientras algo se está buscando.
+  const buscando = cola.some(i => i.estado === 'buscando');
+  useEffect(() => {
+    if (!buscando) return;
+    const avisar = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', avisar);
+    return () => window.removeEventListener('beforeunload', avisar);
+  }, [buscando]);
+
   // Borrador en revisión
   const [draft, setDraft] = useState<Draft | null>(null);
   const [accepted, setAccepted] = useState<Record<string, boolean>>({});
   const [edited, setEdited] = useState<Record<string, string>>({});
   const [priceValue, setPriceValue] = useState<string>('');
+  const [fotos, setFotos] = useState<FotoRevision[]>([]);
   const [published, setPublished] = useState<{ id: string; label: string } | null>(null);
 
   const groups = useMemo(() => {
@@ -177,6 +223,7 @@ export function IngestStudio() {
     setAccepted(initial);
     setEdited({});
     setPriceValue(d.price ? String(d.price.value) : '');
+    setFotos(fotosIniciales(d.fotos));
     setError(null);
     setPhase('review');
   }
@@ -226,6 +273,14 @@ export function IngestStudio() {
           priceEstimated: draft.price?.estimated ?? true,
           priceReasoningEs: draft.price?.reasoningEs ?? 'Precio ingresado a mano en la revisión.',
           facts,
+          // Portada primero; solo fotos ya procesadas (o la original si no hay Cloudinary).
+          fotos: [...fotos.filter(f => f.usar && f.portada), ...fotos.filter(f => f.usar && !f.portada)]
+            .filter(f => f.procesada)
+            .map(f => ({ url: f.procesada, angulo: f.angulo, portada: f.portada })),
+          fotosDescartadas: [
+            ...fotos.filter(f => !f.usar && f.publicId).map(f => f.publicId),
+            ...fotos.flatMap(f => f.anteriores ?? []),
+          ],
         }),
       });
       const data = await res.json();
@@ -315,7 +370,7 @@ export function IngestStudio() {
                     </p>
                     <p className="text-xs text-tinta-2 truncate">
                       {item.estado === 'listo' && item.draft
-                        ? `${item.draft.facts.length} datos · ${item.draft.sourcesReport.filter(x => x.ok).length} fuentes${item.draft.warningsEs.length ? ` · ${item.draft.warningsEs.length} avisos` : ''}`
+                        ? `${item.draft.facts.length} datos · ${item.draft.sourcesReport.filter(x => x.ok).length} fuentes · ${item.draft.fotos?.filter(x => x.recomendada).length ?? 0} fotos${item.draft.warningsEs.length ? ` · ${item.draft.warningsEs.length} avisos` : ''}`
                         : item.estado === 'error'
                           ? item.error
                           : item.estado === 'buscando'
@@ -331,7 +386,7 @@ export function IngestStudio() {
                     </Button>
                   )}
                   {item.estado === 'publicado' && item.publicadoId && (
-                    <Button size="sm" variant="outline" onClick={() => router.push(`/vehicles/${item.publicadoId}`)}>
+                    <Button size="sm" variant="outline" onClick={() => window.open(`/vehicles/${item.publicadoId}`, '_blank', 'noopener')}>
                       Ver ficha
                     </Button>
                   )}
@@ -361,7 +416,8 @@ export function IngestStudio() {
         <h2 className="text-xl font-bold text-tinta mb-2">{published.label} publicado</h2>
         <p className="text-sm text-tinta-2 mb-6">Con los datos que aceptaste, su fuente y su cobertura calculada.</p>
         <div className="flex gap-3 justify-center">
-          <Button onClick={() => router.push(`/vehicles/${published.id}`)} variant="wise">Ver ficha</Button>
+          {/* En otra pestaña: la cola sigue corriendo aquí */}
+          <Button onClick={() => window.open(`/vehicles/${published.id}`, '_blank', 'noopener')} variant="wise">Ver ficha</Button>
           <Button variant="outline" onClick={volverACola}>
             {cola.some(i => i.estado === 'listo' || i.estado === 'en cola' || i.estado === 'buscando') ? 'Siguiente de la cola' : 'Subir otro'}
           </Button>
@@ -447,6 +503,9 @@ export function IngestStudio() {
         )}
       </div>
 
+      {/* Fotos */}
+      <RevisionFotos fotos={fotos} onChange={setFotos} />
+
       {/* Fuentes consultadas */}
       <div className="bg-blanco rounded-[28px] border border-linea p-6">
         <h3 className="font-bold text-tinta mb-3">Fuentes consultadas</h3>
@@ -516,11 +575,12 @@ export function IngestStudio() {
       <div className="sticky bottom-4 bg-white/95 backdrop-blur rounded-2xl shadow-lg border border-linea p-4 flex items-center justify-between gap-4">
         <p className="text-sm text-tinta-2">
           Se publicará con <span className="font-bold">{acceptedCount} datos verificados</span>
+          {fotos.some(f => f.usar) && <>, {fotos.filter(f => f.usar).length} fotos</>}
           {draft.price?.estimated && Number(priceValue) > 0 && <span className="text-rose-700"> y precio estimado</span>}.
         </p>
         <div className="flex gap-2">
           <Button variant="outline" onClick={volverACola}>Volver a la cola</Button>
-          <Button onClick={publish} disabled={phase === 'publishing' || !priceValue || Number(priceValue) <= 0}
+          <Button onClick={publish} disabled={phase === 'publishing' || !priceValue || Number(priceValue) <= 0 || fotos.some(f => f.procesando)}
             variant="wise">
             {phase === 'publishing'
               ? <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Publicando…</span>

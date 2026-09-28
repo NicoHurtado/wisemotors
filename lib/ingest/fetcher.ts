@@ -18,6 +18,45 @@ export const MAX_TEXT_CHARS = 25_000;
 // Cache simple en memoria por proceso (la ingesta de versiones del mismo
 // carro comparte el 90% de las fuentes).
 const pageCache = new Map<string, { at: number; text: string | null }>();
+// HTML crudo de las páginas ya descargadas: de ahí salen las fotos sin volver a pedirlas.
+const htmlCache = new Map<string, { at: number; html: string }>();
+
+/** HTML de una página que la ingesta ya descargó (o null). */
+export function htmlDescargado(url: string): string | null {
+  const c = htmlCache.get(url);
+  return c && Date.now() - c.at < CACHE_TTL_MS ? c.html : null;
+}
+
+/** Descarga el HTML de una página (respetando robots.txt). null si no se pudo. Nunca lanza. */
+export async function fetchHtml(url: string): Promise<string | null> {
+  const ya = htmlDescargado(url);
+  if (ya) return ya;
+  try {
+    if (!(await isAllowedByRobots(url))) return null;
+    const res = await fetchWithTimeout(url, 'text/html');
+    if (!res.ok || !(res.headers.get('content-type') ?? '').includes('html')) return null;
+    const html = await res.text();
+    htmlCache.set(url, { at: Date.now(), html });
+    return html;
+  } catch {
+    return null;
+  }
+}
+
+/** Descarga una imagen (bytes + tipo). null si no es imagen, es muy chica o muy grande. */
+export async function fetchImagen(url: string): Promise<{ datos: Buffer; tipo: string } | null> {
+  try {
+    const res = await fetchWithTimeout(url, 'image/avif,image/webp,image/png,image/jpeg,*/*');
+    const tipo = (res.headers.get('content-type') ?? '').split(';')[0].trim();
+    if (!res.ok || !/^image\/(jpeg|png|webp|gif)$/.test(tipo)) return null;
+    const datos = Buffer.from(await res.arrayBuffer());
+    // < 25 KB: íconos y miniaturas. > 4,5 MB: se pasa del límite de imágenes de Claude.
+    if (datos.length < 25_000 || datos.length > 4_500_000) return null;
+    return { datos, tipo };
+  } catch {
+    return null;
+  }
+}
 const robotsCache = new Map<string, { at: number; disallows: string[] }>();
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
@@ -108,6 +147,7 @@ export async function fetchPageText(url: string): Promise<string | null> {
       const contentType = res.headers.get('content-type') ?? '';
       if (res.ok && contentType.includes('html')) {
         const html = await res.text();
+        htmlCache.set(url, { at: Date.now(), html });
         const full = htmlToText(html);
         // Si la página es enorme, quedarse con la zona más densa en números
         // (las tablas de especificaciones), no con el arranque del artículo.
