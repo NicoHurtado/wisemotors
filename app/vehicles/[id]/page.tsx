@@ -3,6 +3,7 @@ import { FichaVehiculo } from '@/components/vehicles/FichaVehiculo'
 import { notFound } from 'next/navigation'
 import Script from 'next/script'
 import { getVehicle } from '@/lib/data/vehicles'
+import { indicesDeVehiculo } from '@/lib/indices/servidor'
 
 interface Props {
   params: { id: string }
@@ -48,6 +49,10 @@ export default async function VehicleDetailPage({ params }: Props) {
     notFound();
   }
 
+  // Índices WiseMotors (Altura, Palmas, Hueco, Costo Real de Tenencia).
+  // Si algo falla, la ficha sale igual, sin la sección.
+  const indices = await indicesDeVehiculo(vehicle).catch(() => null);
+
   // JSON-LD Structured Data
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -82,7 +87,7 @@ export default async function VehicleDetailPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <FichaVehiculo vehicle={vehicle} />
+      <FichaVehiculo vehicle={vehicle} indices={indices} />
     </div>
   );
 }

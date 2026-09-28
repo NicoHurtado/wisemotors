@@ -41,13 +41,15 @@ import {
 import { CarRender } from '@/components/car/CarRender';
 import { useEnVista } from '@/components/ui/useEnVista';
 import { leer, millones, rendimiento, specsDe, tanque } from '@/lib/vehiculo-datos';
+import { hayIndices, SeccionIndices } from './IndicesWise';
+import type { IndicesVehiculo } from '@/lib/indices/calculo';
 import { Anillo, BarrasPar, Carrera, Estrellas, Maletas, Nivel, Personas, Ruta, TiraCategoria, Velocimetro, type Tira } from './graficas';
 
 const fmt = (n: number, dec = 0) => new Intl.NumberFormat('es-CO', { maximumFractionDigits: dec }).format(n);
 
 type Tono = 'blanco' | 'tinta' | 'wise' | 'lila' | 'estudio';
 
-function Bloque({ tono = 'blanco', className = '', children }: { tono?: Tono; className?: string; children: React.ReactNode }) {
+export function Bloque({ tono = 'blanco', className = '', children }: { tono?: Tono; className?: string; children: React.ReactNode }) {
   const [ref, visto] = useEnVista<HTMLDivElement>(0.15);
   const fondo = {
     blanco: 'bg-blanco text-tinta',
@@ -67,7 +69,7 @@ function Bloque({ tono = 'blanco', className = '', children }: { tono?: Tono; cl
   );
 }
 
-function Titulito({ icono: Icono, children, claro = false }: { icono: LucideIcon; children: React.ReactNode; claro?: boolean }) {
+export function Titulito({ icono: Icono, children, claro = false }: { icono: LucideIcon; children: React.ReactNode; claro?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
       <span className={`flex h-9 w-9 items-center justify-center rounded-full ${claro ? 'bg-white/10 text-white' : 'bg-wise/10 text-wise'}`}>
@@ -78,7 +80,7 @@ function Titulito({ icono: Icono, children, claro = false }: { icono: LucideIcon
   );
 }
 
-function Cabecera({ id, icono: Icono, titulo, bajada }: { id: string; icono: LucideIcon; titulo: string; bajada: string }) {
+export function Cabecera({ id, icono: Icono, titulo, bajada }: { id: string; icono: LucideIcon; titulo: string; bajada: string }) {
   return (
     <div id={id} className="scroll-mt-40 flex flex-wrap items-end justify-between gap-4 pb-8 pt-20">
       <div className="flex items-center gap-4">
@@ -138,7 +140,7 @@ function valorEn(s: Record<string, any>, path: string) {
 }
 
 // ── Componente ─────────────────────────────────────────────────────────────
-export function SeccionesFicha({ vehicle }: { vehicle: any }) {
+export function SeccionesFicha({ vehicle, indices = null }: { vehicle: any; indices?: IndicesVehiculo | null }) {
   const s = useMemo(() => specsDe(vehicle.specifications), [vehicle.specifications]);
   const electrico = vehicle.fuelType === 'Eléctrico';
   const [catalogo, setCatalogo] = useState<any[]>([]);
@@ -240,6 +242,7 @@ export function SeccionesFicha({ vehicle }: { vehicle: any }) {
 
   const secciones = [
     { id: 'desempeno', texto: 'Desempeño', hay: potencia !== null || cero100 !== null },
+    { id: 'colombia', texto: 'Para Colombia', hay: hayIndices(indices) },
     { id: 'consumo', texto: electrico ? 'Batería' : 'Consumo', hay: alcance !== null || rinde !== null || bateria !== null },
     { id: 'espacio', texto: 'Espacio', hay: baul !== null || largo !== null || pasajeros !== null },
     { id: 'seguridad', texto: 'Seguridad', hay: airbags !== null || ncap !== null || ayudas.length > 0 },
@@ -357,6 +360,9 @@ export function SeccionesFicha({ vehicle }: { vehicle: any }) {
           </div>
         </section>
       )}
+
+      {/* ── ÍNDICES WISEMOTORS ─────────────────────────────────────────── */}
+      {indices && secciones.some(x => x.id === 'colombia') && <SeccionIndices indices={indices} />}
 
       {/* ── CONSUMO / BATERÍA ─────────────────────────────────────────── */}
       {secciones.some(x => x.id === 'consumo') && (

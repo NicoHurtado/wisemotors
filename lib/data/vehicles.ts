@@ -1,3 +1,4 @@
+import { leer } from '@/lib/vehiculo-datos';
 import { urlImagen } from '@/lib/data/imagen';
 import { prisma } from '@/lib/prisma';
 import { cache } from 'react';
@@ -125,8 +126,8 @@ export const getVehicle = cache(async (id: string) => {
     imageUrl: mainImageUrl,
     category: vehicle.type,
     status: vehicle.status || 'NUEVO',
-    power: parsedSpecs?.powertrain?.potenciaMaxMotorTermico || parsedSpecs?.powertrain?.potenciaMaxEV,
-    engine: parsedSpecs?.powertrain?.cilindrada,
+    power: leer(parsedSpecs ?? {}, 'combustion.maxPower', 'hybrid.maxPower', 'phev.maxPower', 'electric.maxPower') ?? undefined,
+    engine: leer(parsedSpecs ?? {}, 'combustion.displacement', 'hybrid.displacement', 'phev.displacement') ?? undefined,
     acceleration: parsedSpecs?.performance?.acceleration0to100,
     cityConsumption: parsedSpecs?.efficiency?.consumoCiudad,
     rating: 4.3,

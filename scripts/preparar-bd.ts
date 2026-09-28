@@ -4,7 +4,8 @@
 //   1. prisma db push: crea las tablas que falten y aplica cambios de schema
 //      NO destructivos. Si un cambio borraría datos, Prisma se niega y el
 //      deploy falla a propósito (hay que resolverlo a mano, nunca solo).
-//   2. Datos base: definiciones de atributos (siempre, es idempotente) y, si
+//   2. Datos base: definiciones de atributos y parámetros de los Índices
+//      WiseMotors (siempre, idempotente; un valor cambiado abre vigencia nueva) y, si
 //      la base está vacía, bandas de precio y percepción de marca.
 //   3. Los 10 vehículos de prueba (data/semillas/vehiculos-demo.json), UNA sola
 //      vez y marcados DEMO. Si el equipo los borra no vuelven. CARGAR_DEMO=no
@@ -25,6 +26,7 @@ import { VAR_BD, VAR_BD_DIRECTA, fuenteBaseDatos, fuenteBaseDatosDirecta } from 
 import { sembrarBandas, sembrarDefiniciones, sembrarPercepcion } from '../lib/db/semillas';
 import { crearAdminInicial } from '../lib/db/admin-inicial';
 import { cargarVehiculosDemo } from '../lib/db/vehiculos-demo';
+import { sembrarParametros } from '../lib/indices/parametros';
 
 async function main() {
   const produccion = process.env.VERCEL_ENV === 'production';
@@ -60,6 +62,9 @@ async function main() {
   try {
     const n = await sembrarDefiniciones(prisma);
     console.log(`[preparar-bd] ✓ ${n} definiciones de atributos al día`);
+
+    const cambios = await sembrarParametros(prisma);
+    console.log(`[preparar-bd] ✓ parámetros de los Índices WiseMotors al día (${cambios} con valor nuevo)`);
 
     if ((await prisma.priceBand.count()) === 0) {
       console.log(`[preparar-bd] ✓ ${await sembrarBandas(prisma)} bandas de precio sembradas (base nueva)`);

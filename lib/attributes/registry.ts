@@ -246,13 +246,16 @@ const wisemetrics: AttributeDef[] = [
 // ---------------------------------------------------------------------------
 // COMBUSTION — solo Gasolina / Diesel
 // ---------------------------------------------------------------------------
+// Atmosférico o turbo: define cuánta potencia pierde en altura (Índice Altura).
+const INDUCCION = ['Atmosférico', 'Turbo', 'Supercargado', 'Turbo y supercargado'];
+
 const G_MOTOR_ICE = { displayGroup: 'Motor a combustión', dimension: 'motor', appliesTo: ICE };
 const combustion: AttributeDef[] = [
   num('combustion.displacement', 'Cilindraje', { ...G_MOTOR_ICE, unit: 'cc', displayPriority: 80, cardEligible: true, expectedMin: 600, expectedMax: 8500 }),
   bool('combustion.turbo', 'Turbo', { ...G_MOTOR_ICE, displayPriority: 75, cardEligible: true }),
   bool('combustion.supercharger', 'Supercargador', { ...G_MOTOR_ICE, displayPriority: 30, coAvailability: 'rare' }),
   enm('combustion.engineConfiguration', 'Configuración del motor', { ...G_MOTOR_ICE, displayPriority: 45 }),
-  enm('combustion.inductionType', 'Tipo de inducción', { ...G_MOTOR_ICE, displayPriority: 50 }),
+  enm('combustion.inductionType', 'Tipo de inducción', { ...G_MOTOR_ICE, displayPriority: 50, opciones: INDUCCION }),
   num('combustion.compressionRatio', 'Relación de compresión', { ...G_MOTOR_ICE, displayPriority: 25, coAvailability: 'rare', expectedMin: 7, expectedMax: 16 }),
   txt('combustion.octanajeRecomendado', 'Octanaje recomendado', { ...G_MOTOR_ICE, displayPriority: 40 }),
   num('combustion.maxPower', 'Potencia máxima', { ...G_MOTOR_ICE, unit: 'HP', direction: 'higher_better', displayPriority: 95, cardEligible: true, expectedMin: 40, expectedMax: 1600 }),
@@ -386,6 +389,8 @@ const recuperados: AttributeDef[] = [
   num('combustion.cylinders', 'Número de cilindros', { ...G_MOTOR_ICE, displayPriority: 60, expectedMin: 2, expectedMax: 12 }),
   enm('combustion.workCycle', 'Ciclo del motor', { ...G_MOTOR_ICE, appliesTo: TERMICO, displayPriority: 20, coAvailability: 'rare', opciones: ['Otto', 'Atkinson', 'Miller', 'Diésel'] }),
   num('hybrid.combinedConsumption', 'Consumo mixto (HEV)', { ...G_HEV, unit: 'km/gal', direction: 'higher_better', displayPriority: 88, dimension: 'eficiencia', expectedMin: 20, expectedMax: 120 }),
+  enm('hybrid.inductionType', 'Tipo de inducción del motor a gasolina (HEV)', { ...G_HEV, displayPriority: 40, opciones: INDUCCION }),
+  enm('phev.inductionType', 'Tipo de inducción del motor a gasolina (PHEV)', { ...G_PHEV, displayPriority: 35, opciones: INDUCCION }),
   num('hybrid.enginePower', 'Potencia del motor a gasolina (HEV)', { ...G_HEV, unit: 'HP', direction: 'higher_better', displayPriority: 50, coAvailability: 'rare', expectedMin: 40, expectedMax: 600 }),
   num('hybrid.electricMotorPower', 'Potencia del motor eléctrico (HEV)', { ...G_HEV, unit: 'HP', direction: 'higher_better', displayPriority: 45, coAvailability: 'rare', expectedMin: 10, expectedMax: 400 }),
   num('phev.combinedConsumption', 'Consumo mixto (PHEV)', { ...G_PHEV, unit: 'km/gal', direction: 'higher_better', displayPriority: 78, dimension: 'eficiencia', expectedMin: 20, expectedMax: 200 }),

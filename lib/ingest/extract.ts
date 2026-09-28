@@ -107,6 +107,15 @@ export function normalizarOpcion(key: string, valor: string, opciones: string[])
     if (/fwd|delantera|4x2|traccionanterior|frontal/.test(v)) return 'Delantera';
     return null;
   }
+  if (key.endsWith('.inductionType')) {
+    const turbo = /turbo|tsi|tfsi|ecoboost|tgdi|tce/.test(v);
+    const super_ = /supercarg|compresor|supercharg/.test(v);
+    if (turbo && super_) return 'Turbo y supercargado';
+    if (turbo) return 'Turbo';
+    if (super_) return 'Supercargado';
+    if (/atmosf|aspiradonatural|aspiracionnatural|naturalmenteaspirado|natural/.test(v)) return 'Atmosférico';
+    return null;
+  }
   // Coincidencia parcial: "Frenos de tambor" → "Tambor"; "Latin NCAP 2024" → "Latin NCAP".
   const parcial = opciones.filter(o => v.includes(plano(o)) || plano(o).includes(v));
   return parcial.length === 1 ? parcial[0] : null;

@@ -35,6 +35,7 @@ import { CarRender } from '@/components/car/CarRender';
 import { TarjetaCarro, type VehiculoTarjeta } from '@/components/car/TarjetaCarro';
 import { DataProvenance } from '@/components/vehicles/DataProvenance';
 import { SeccionesFicha } from '@/components/vehicles/ficha/SeccionesFicha';
+import type { IndicesVehiculo } from '@/lib/indices/calculo';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
@@ -190,7 +191,7 @@ function fichaTecnica(s: Record<string, any>) {
   return Array.from(grupos.entries());
 }
 
-export function FichaVehiculo({ vehicle }: { vehicle: any }) {
+export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indices?: IndicesVehiculo | null }) {
   const router = useRouter();
   const { user } = useAuth();
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -389,7 +390,7 @@ export function FichaVehiculo({ vehicle }: { vehicle: any }) {
         </div>
       </section>
 
-      <SeccionesFicha vehicle={vehicle} />
+      <SeccionesFicha vehicle={vehicle} indices={indices} />
 
       {/* ── Ficha técnica completa (plegada: es para quien la quiera) ───── */}
       {ficha.length > 0 && (
