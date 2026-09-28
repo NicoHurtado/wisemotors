@@ -5,24 +5,23 @@
 //
 // Panel morado profundo a la izquierda, negro a la derecha. WISE gigante en
 // Anton, en dos tonos según el fondo que pisa, siempre (es la marca), y los
-// carros rotando encima. Los destacados rotan como en una tornamesa: el carro sale, el nuevo
-// entra desenfocado y se posa, la palabra sube letra por letra. Abajo: la
-// búsqueda con IA sobre el panel y los datos del carro sobre el negro.
+// carros de exhibición dibujados rotando encima como en una tornamesa: el carro
+// sale, el nuevo entra desenfocado y se posa.
+//
+// Solo imágenes, sin cifras: el protagonista es el buscador. Las fotos de los
+// carros publicados se ven pixeladas a este tamaño, así que aquí van los
+// renders hasta tener fotografía de estudio de verdad.
 // ============================================================================
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react';
-import { CarRender, fotoDe } from '@/components/car/CarRender';
-import type { VehiculoTarjeta } from '@/components/car/TarjetaCarro';
+import { useEffect, useState } from 'react';
+import { ArrowUpRight } from 'lucide-react';
+import { CarRender } from '@/components/car/CarRender';
 import { BuscadorIA } from '@/components/home/BuscadorIA';
-import { millones, tresDatos } from '@/lib/vehiculo-datos';
 
 const INTERVALO = 7000;
 
-// Sin carros publicados (base recién creada), el showroom no se queda vacío:
-// rotan carros de exhibición dibujados, uno por carrocería, sin datos
-// inventados. En cuanto hay carros reales, desaparecen.
+// Carros de exhibición dibujados, uno por carrocería, sin datos.
 const VITRINA: { id: string; tipo: string; car: any }[] = [
   { id: 'vitrina-suv', tipo: 'SUV', car: { id: 'vitrina-suv', brand: 'Exhibicion', model: 'suv familiar', type: 'SUV', fuelType: 'Híbrido' } },
   { id: 'vitrina-sedan', tipo: 'Sedán', car: { id: 'vitrina-sedan', brand: 'Exhibicion', model: 'sedan ejecutivo', type: 'Sedán', fuelType: 'Gasolina' } },
@@ -43,35 +42,20 @@ function Palabra({ texto, color }: { texto: string; color: string }) {
   );
 }
 
-export function HeroShowroom({ vehiculos, consulta }: { vehiculos: VehiculoTarjeta[]; consulta: string }) {
-  // Primero los que tienen foto real; luego el resto. Cinco como máximo.
-  const destacados = useMemo(
-    () => [...vehiculos].sort((a, b) => Number(!!fotoDe(b)) - Number(!!fotoDe(a))).slice(0, 5),
-    [vehiculos]
-  );
-  // Lo que rota junto a WISE: los carros publicados y, mientras sean pocos,
-  // carros de exhibición para que el showroom siempre tenga movimiento.
-  const items = useMemo(() => {
-    const reales = destacados.map(v => ({ clave: v.id, v, x: undefined as (typeof VITRINA)[number] | undefined }));
-    const relleno = reales.length >= 3 ? [] : VITRINA.slice(0, 5 - reales.length).map(x => ({ clave: x.id, v: undefined, x }));
-    return [...reales, ...relleno];
-  }, [destacados]);
+export function HeroShowroom({ consulta }: { consulta: string }) {
   const [i, setI] = useState(0);
   const [pausa, setPausa] = useState(false);
-  const total = items.length;
+  const total = VITRINA.length;
 
   useEffect(() => {
-    if (pausa || total < 2) return;
+    if (pausa) return;
     const t = setTimeout(() => setI(x => (x + 1) % total), INTERVALO);
     return () => clearTimeout(t);
   }, [i, pausa, total]);
 
-  const actual = items[i % total];
-  const v = actual?.v;
-  const exhibicion = actual?.x;
+  const exhibicion = VITRINA[i % total];
   // La palabra es siempre la marca: los carros cambian, WISE se queda.
   const palabra = 'WISE';
-  const datos = v ? tresDatos(v) : [];
 
   return (
     <section
@@ -83,7 +67,9 @@ export function HeroShowroom({ vehiculos, consulta }: { vehiculos: VehiculoTarje
       <div
         aria-hidden
         className="absolute inset-y-0 left-0 hidden w-[36vw] lg:block"
-        style={{ background: 'linear-gradient(170deg, #521672 0%, #3b0d55 55%, #2a0a3d 100%)' }}
+        style={{
+          background: 'linear-gradient(170deg, #521672 0%, #3b0d55 55%, #2a0a3d 100%)',
+        }}
       />
       {/* Luz de estudio sobre el negro */}
       <div
@@ -132,115 +118,47 @@ export function HeroShowroom({ vehiculos, consulta }: { vehiculos: VehiculoTarje
           <div aria-hidden className="pointer-events-none absolute left-0 top-[6%] lg:hidden" key={`m-${palabra}`}>
             <Palabra texto={palabra} color="#5b1a82" />
           </div>
-          {(v || exhibicion) && (
-            <div key={v?.id ?? exhibicion!.id} className="carro-entra absolute bottom-0 right-0 h-[62%] w-full lg:bottom-[-13%] lg:right-[2vw] lg:h-[84%] lg:w-[62vw] lg:max-w-[940px]">
-              {/* Halo morado y sombra de piso: el carro se posa, no flota */}
-              <div
-                aria-hidden
-                className="absolute inset-x-[4%] bottom-[-6%] h-[40%] rounded-[50%]"
-                style={{ background: 'radial-gradient(closest-side, rgba(136,28,183,0.28), transparent)', filter: 'blur(18px)' }}
-              />
-              <div
-                aria-hidden
-                className="absolute inset-x-[15%] bottom-[4%] h-[12%] rounded-[50%]"
-                style={{ background: 'radial-gradient(closest-side, rgba(0,0,0,0.7), transparent)', filter: 'blur(10px)' }}
-              />
-              <CarRender car={v ?? exhibicion!.car} prioridad abajo className="relative h-full w-full" />
-            </div>
-          )}
+          <div
+            key={exhibicion.id}
+            className="carro-entra absolute bottom-0 right-0 h-[62%] w-full lg:bottom-[-13%] lg:right-[2vw] lg:h-[84%] lg:w-[62vw] lg:max-w-[940px]"
+          >
+            {/* Halo morado y sombra de piso: el carro se posa, no flota */}
+            <div
+              aria-hidden
+              className="absolute inset-x-[4%] bottom-[-6%] h-[40%] rounded-[50%]"
+              style={{
+                background: 'radial-gradient(closest-side, rgba(136,28,183,0.28), transparent)',
+                filter: 'blur(18px)',
+              }}
+            />
+            <div
+              aria-hidden
+              className="absolute inset-x-[15%] bottom-[4%] h-[12%] rounded-[50%]"
+              style={{
+                background: 'radial-gradient(closest-side, rgba(0,0,0,0.7), transparent)',
+                filter: 'blur(10px)',
+              }}
+            />
+            <CarRender car={exhibicion.car} prioridad abajo className="relative h-full w-full" />
+          </div>
         </div>
 
-        {exhibicion && (
-          <div className="flex flex-col justify-end gap-6 pb-10 pt-6 lg:col-start-2 lg:row-start-2 lg:pb-12 lg:pt-8">
-            <div className="flex flex-wrap items-end justify-between gap-6">
-              <div className="min-w-0">
-                <p className="t-meta text-white/55">En el showroom</p>
-                <p key={exhibicion.id} className="sube mt-2 text-[26px] font-semibold tracking-[-0.03em] md:text-[30px]">
-                  {exhibicion.tipo}
-                </p>
-              </div>
-              <p className="max-w-[34ch] text-[14px] text-white/60">
-                Pregúntale a la búsqueda por el carro que necesitas: te mostramos los que se venden en Colombia y por qué te sirven.
-              </p>
-            </div>
-            <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-5">
-              <div className="flex items-center gap-3">
-                {items.map((it, k) => (
-                  <button
-                    key={it.clave}
-                    onClick={() => setI(k)}
-                    aria-label={`Ver ${it.v ? `${it.v.brand} ${it.v.model}` : it.x!.tipo}`}
-                    aria-pressed={k === i % total}
-                    className={`h-2 rounded-full transition-all duration-500 ${k === i % total ? 'w-8 bg-wise-lila' : 'w-2 bg-white/25 hover:bg-white/50'}`}
-                  />
-                ))}
-              </div>
-              <Link href="/vehicles" className="cta-corte">
-                Explorar catálogo <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </div>
+        <div className="flex items-center justify-between gap-4 pb-10 pt-6 lg:col-start-2 lg:row-start-2 lg:self-end lg:pb-12">
+          <div className="flex items-center gap-3">
+            {VITRINA.map((it, k) => (
+              <button
+                key={it.id}
+                onClick={() => setI(k)}
+                aria-label={`Ver ${it.tipo}`}
+                aria-pressed={k === i % total}
+                className={`h-2 rounded-full transition-all duration-500 ${k === i % total ? 'w-8 bg-wise-lila' : 'w-2 bg-white/25 hover:bg-white/50'}`}
+              />
+            ))}
           </div>
-        )}
-
-        {v && (
-          <div className="flex flex-col justify-end gap-6 pb-10 pt-6 lg:col-start-2 lg:row-start-2 lg:pb-12 lg:pt-8">
-            <div className="flex flex-wrap items-end justify-between gap-6">
-              <div className="min-w-0">
-                <p className="t-meta text-white/55">
-                  {v.brand} · {v.year} · {v.fuelType}
-                </p>
-                <p className="mt-2 text-[26px] font-semibold tracking-[-0.03em] md:text-[30px]">{v.model}</p>
-              </div>
-              <div className="fila-datos fila-datos--oscura">
-                <div className="pr-3 md:pr-6">
-                  <p className="text-[12px] text-white/55 md:text-[13px]">Desde</p>
-                  <p className="cifra mt-1 whitespace-nowrap text-[17px] font-semibold md:text-[26px]">{millones(v.price)}</p>
-                </div>
-                {datos.map(d => (
-                  <div key={d.clave} className="px-3 last:pr-0 md:px-6">
-                    <p className="whitespace-nowrap text-[12px] text-white/55 md:text-[13px]">{d.etiqueta}</p>
-                    <p className="cifra mt-1 whitespace-nowrap text-[17px] font-semibold md:text-[26px]">
-                      {d.valor}
-                      <span className="ml-1 text-[13px] font-normal text-white/55">{d.unidad}</span>
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-5">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setI(x => (x - 1 + total) % total)}
-                  aria-label="Carro anterior"
-                  className="flecha flecha--fija !border-white/15 !bg-white/5 !text-white hover:!bg-wise"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setI(x => (x + 1) % total)}
-                  aria-label="Carro siguiente"
-                  className="flecha flecha--fija !border-white/15 !bg-white/5 !text-white hover:!bg-wise"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-                <span className="cifra ml-2 text-[13px] text-white/60">
-                  {String(i + 1).padStart(2, '0')} <span className="text-white/30">/ {String(total).padStart(2, '0')}</span>
-                </span>
-                <span className="relative ml-2 hidden h-px w-24 overflow-hidden bg-white/15 sm:block">
-                  <span
-                    key={`${i}-${pausa}`}
-                    className="progreso-hero absolute inset-0 origin-left bg-wise-lila"
-                    style={{ animationDuration: `${INTERVALO}ms`, animationPlayState: pausa ? 'paused' : 'running' }}
-                  />
-                </span>
-              </div>
-              <Link href={`/vehicles/${v.id}`} className="cta-corte">
-                Ver ficha <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-        )}
+          <Link href="/vehicles" className="cta-corte">
+            Explorar catálogo <ArrowUpRight className="h-4 w-4" />
+          </Link>
+        </div>
       </div>
     </section>
   );

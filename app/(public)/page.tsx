@@ -53,7 +53,7 @@ function Inicio() {
 
   return (
     <>
-      <HeroShowroom vehiculos={vehiculos} consulta={query} />
+      <HeroShowroom consulta={query} />
 
       {query && (
         <section id="resultados" className="scroll-mt-24 border-b border-linea">
