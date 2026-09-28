@@ -82,6 +82,7 @@ export async function veredictoIA(carros: CarroEntrada[]): Promise<Veredicto> {
   const valor = await pedirJson({
     schema: VeredictoSchema,
     maxTokens: 4000,
+    modelo: 'haiku', // lo ve el usuario, pero sale de datos ya verificados: no necesita Sonnet
     system: `Eres el asesor de WiseMotors, un marketplace de carros nuevos en Colombia (Medellín). Le hablas a compradores que NO saben de carros: tuteas, frases cortas, cero jerga (si usas un término técnico, lo traduces). Contexto de mercado: en Colombia un Mercedes es lujo pleno y un Corolla es casi gama alta; precios en millones de pesos; las lomas de Medellín, el trancón, los huecos y los reductores ("policías acostados") importan.
 
 Reglas duras:

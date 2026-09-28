@@ -1,377 +1,249 @@
+// ============================================================================
+// Resultados del buscador.
+//
+// La IA SIEMPRE entiende la búsqueda (categorization.ts). Después:
+//   - OBJETIVA ("con turbo", "Toyota diésel 2026"): no hay nada que opinar.
+//     Se muestran TODOS los que cumplen, del más barato al más caro, sin podio
+//     y sin gastar IA en ordenar.
+//   - SUBJETIVA ("para la familia, que no gaste") o HÍBRIDA ("una SUV que no
+//     gaste"): filtros duros → orden determinístico con datos reales → la IA
+//     afina el orden, lo explica y escoge qué preguntarle al comprador.
+//
+// Cada carro viaja con `afinar` (precio, combustible, carrocería, caja y
+// puntajes de prioridad): el cliente filtra con las preguntas al instante, sin
+// volver a la IA (gratis y sin espera).
+// ============================================================================
+
 import { urlImagen } from '@/lib/data/imagen';
-// Advanced Result Processing for Different Query Types
 import { prisma } from '@/lib/prisma';
 import { CategorizedIntent, QueryType } from './categorization';
-import { getValidImageUrl, createImagePlaceholder } from '@/lib/utils/imageUtils';
 import { rerankWithLLM } from './rerank';
 import { ScoredCandidate, scoreCandidates } from './scoring';
-import { computeVehicleFeatures, getMarketStats, generateVehicleTags } from './features';
+import { computeVehicleFeatures, getMarketStats, generateVehicleTags, type VehicleFeatures } from './features';
+import { scoreDeterministically } from './deterministic';
+import { caja, cumpleEquipamiento, DIMENSIONES, type DatosAfinar, type Dimension, type Prioridad } from './filtros';
 
 export interface ProcessedResults {
   query_type: QueryType;
   total_matches: number;
 
-  // For SUBJECTIVE_PREFERENCE and HYBRID
+  /** Podio de la IA (solo subjetiva / híbrida). */
   top_recommendations?: {
     vehicles: any[];
     explanation: string;
   };
 
-  // For OBJECTIVE_FEATURE and HYBRID (fallback or full list)
+  /** El resto (o, en la objetiva, todos los que cumplen). */
   all_matches?: {
     vehicles: any[];
     filters_applied: string[];
-    count_by_category?: Record<string, number>;
   };
 
-  // Metadata
+  /** Preguntas para afinar, en el orden en que conviene hacerlas. */
+  preguntas: Dimension[];
+
   processing_time_ms: number;
   confidence: number;
   original_query: string;
+  /** Aviso honesto para el comprador (p. ej. una marca que no tenemos). */
+  aviso?: string;
 }
 
-// Main result processing function
-export async function processResults(categorizedIntent: CategorizedIntent): Promise<ProcessedResults> {
-  const startTime = Date.now();
-
-  switch (categorizedIntent.query_type) {
-    case QueryType.SUBJECTIVE_PREFERENCE:
-      return await processSubjectiveQuery(categorizedIntent, startTime);
-
-    case QueryType.OBJECTIVE_FEATURE:
-      return await processObjectiveQuery(categorizedIntent, startTime);
-
-    case QueryType.HYBRID:
-      return await processHybridQuery(categorizedIntent, startTime);
-
-    default:
-      throw new Error(`Unknown query type: ${categorizedIntent.query_type}`);
-  }
+export async function processResults(intent: CategorizedIntent): Promise<ProcessedResults> {
+  const faltan = intent.missing_brands ?? [];
+  if (faltan.length === 0) return procesar(intent);
+  // Marca que no tenemos: se dice una vez, arriba, y se muestran los más cercanos
+  // (la búsqueda pasa a ser subjetiva: "algo como un Ferrari").
+  const nombres = faltan.join(' ni ');
+  const r = await procesar({
+    ...intent,
+    query_type: intent.query_type === QueryType.OBJECTIVE_FEATURE ? QueryType.SUBJECTIVE_PREFERENCE : intent.query_type,
+    subjective_context:
+      `${intent.subjective_context ?? ''} (pidió ${nombres}, que no tenemos: recomienda lo más parecido en espíritu, sin repetir que no es ${nombres})`.trim(),
+  });
+  return { ...r, aviso: `Todavía no tenemos ${nombres} en el catálogo. Estos son los más cercanos a lo que buscas.` };
 }
 
-// ============================================================================
-// SUBJECTIVE QUERY: Pure AI Ranking based on "Vibes" / Knowledge
-// ============================================================================
-async function processSubjectiveQuery(intent: CategorizedIntent, startTime: number): Promise<ProcessedResults> {
-  // 1. Fetch a broad set of candidates
-  const vehicles = await prisma.vehicle.findMany({
-    take: 60, // Send a healthy batch to the LLM
-    orderBy: { year: 'desc' },
-    include: {
-      images: {
-        take: 1,
-        select: {
-          id: true,
-          url: true,
-          type: true,
-          order: true,
-          isThumbnail: true
-        }
-      }
-    }
+// ---------------------------------------------------------------------------
+
+type Vehiculo = Awaited<ReturnType<typeof traer>>[number];
+
+async function traer(intent: CategorizedIntent) {
+  const vehiculos = await prisma.vehicle.findMany({
+    where: whereDeFiltros(intent),
+    include: { images: { take: 1, select: { url: true } } },
+    orderBy: { price: 'asc' },
+    take: 500,
   });
+  // Equipamiento: contra el dato real de cada ficha (ver filtros.ts).
+  const pedidos = intent.objective_filters?.features ?? [];
+  return vehiculos.filter(v => pedidos.every(p => cumpleEquipamiento(v, p).cumple));
+}
 
-  const marketStats = await getMarketStats();
-
-  const candidates: ScoredCandidate[] = vehicles.map(v => {
-    const features = computeVehicleFeatures(v, marketStats);
-    const tags = generateVehicleTags(v, features);
-    const firstImage = (v as any).images?.[0];
-    const imageUrl = urlImagen(v.id, firstImage?.url);
-    return {
-      id: v.id,
-      brand: v.brand,
-      model: v.model,
-      year: v.year,
-      price: v.price,
-      fuelType: v.fuelType,
-      type: v.type,
-      vehicleType: v.vehicleType || 'Unknown',
-      imageUrl,
-      score: 0,
-      features,
-      tags
-    };
-  });
-
-  // 2. Orden base determinístico (reproducible); el LLM afina y explica ese orden
-  const { ranked } = scoreCandidates(
-    candidates,
-    `${intent.original_query} ${intent.subjective_context ?? ''}`
-  );
-
-  const rawRecommended = await rerankWithLLM(
-    ranked,
-    intent.subjective_context || intent.original_query,
-    intent.original_query
-  );
-
-  // Flatten structure for frontend
-  const allRanked = rawRecommended.map(rec => ({
-    ...rec.vehicle,
-    matchPercentage: rec.match,
-    reasons: rec.reasons
-  }));
-
-  // Split Top 3 vs Others
-  const top3 = allRanked.slice(0, 3);
-  const rankedothers = allRanked.slice(3);
-
-  // Filter out any ranked vehicle from the original list to get the unranked tail
-  // ALSO Filter out "Visual Duplicates" (same Brand + Model + Year) to avoid confusing the user
-  const rankedIds = new Set(allRanked.map(v => v.id));
-  const rankedSignatures = new Set(allRanked.map(v => `${v.brand}-${v.model}-${v.year}`.toLowerCase()));
-
-  const unranked = vehicles
-    .filter(v => {
-      if (rankedIds.has(v.id)) return false;
-
-      const sig = `${v.brand}-${v.model}-${v.year}`.toLowerCase();
-      if (rankedSignatures.has(sig)) return false;
-
-      return true;
-    })
-    .map(v => ({ ...v, matchPercentage: 0, reasons: [] }));
-
+function candidato(v: Vehiculo, contexto: Awaited<ReturnType<typeof getMarketStats>>): ScoredCandidate {
   return {
-    query_type: QueryType.SUBJECTIVE_PREFERENCE,
-    total_matches: vehicles.length,
-    top_recommendations: {
-      vehicles: top3,
-      explanation: `Recomendaciones basadas en: "${intent.subjective_context || intent.original_query}"`
-    },
-    all_matches: {
-      vehicles: [...rankedothers, ...unranked], // Ranked others first, then the rest
-      filters_applied: ['Análisis subjetivo IA']
-    },
-    processing_time_ms: Date.now() - startTime,
-    confidence: intent.confidence,
-    original_query: intent.original_query
+    id: v.id,
+    brand: v.brand,
+    model: v.model,
+    year: v.year,
+    price: v.price,
+    fuelType: v.fuelType,
+    type: v.type,
+    vehicleType: v.vehicleType || '',
+    imageUrl: urlImagen(v.id, v.images?.[0]?.url),
+    score: 0,
+    features: computeVehicleFeatures(v, contexto),
+    tags: generateVehicleTags(v),
+    specifications: v.specifications,
   };
 }
 
-// ============================================================================
-// OBJECTIVE QUERY: Strict Database Filtering
-// ============================================================================
-async function processObjectiveQuery(intent: CategorizedIntent, startTime: number): Promise<ProcessedResults> {
-  const where = sanitizeWhereClause(buildObjectiveWhereClause(intent));
+// Pesos de cada respuesta a "¿qué te importa más?" (claves reales de VehicleFeatures).
+const PESOS_PRIORIDAD: Record<Prioridad, Partial<Record<keyof VehicleFeatures, number>>> = {
+  comodidad: { comfort_norm: 1, space_norm: 0.4 },
+  economia: { quality_price_ratio_norm: 1, efficiency_norm: 1 },
+  seguridad: { safety_norm: 1 },
+  espacio: { space_norm: 1 },
+  desempeno: { power_to_weight_norm: 1, acceleration_norm: 1 },
+};
 
-  const vehicles = await prisma.vehicle.findMany({
-    where,
-    include: {
-      images: {
-        take: 1,
-        select: {
-          id: true,
-          url: true,
-          type: true,
-          order: true,
-          isThumbnail: true
-        }
-      }
-    },
-    take: 100
-  });
-
-  const formattedVehicles = vehicles.map(v => {
-    const firstImage = (v as any).images?.[0];
-    const imageUrl = urlImagen(v.id, firstImage?.url);
-    return {
-      id: v.id,
-      brand: v.brand,
-      model: v.model,
-      year: v.year,
-      price: v.price,
-      fuelType: v.fuelType,
-      type: v.type,
-      imageUrl,
-      matchPercentage: 100,
-      reasons: ['Coincide con tus filtros']
-    };
-  });
-
-  return {
-    query_type: QueryType.OBJECTIVE_FEATURE,
-    total_matches: vehicles.length,
-    all_matches: {
-      vehicles: formattedVehicles,
-      filters_applied: Object.keys(where)
-    },
-    processing_time_ms: Date.now() - startTime,
-    confidence: intent.confidence,
-    original_query: intent.original_query
-  };
+/** Datos para las preguntas, con los puntajes de prioridad calculados DENTRO de estos resultados. */
+function datosAfinar(cands: ScoredCandidate[]): Map<string, DatosAfinar> {
+  const puntajes = Object.fromEntries(
+    (Object.keys(PESOS_PRIORIDAD) as Prioridad[]).map(p => [
+      p,
+      scoreDeterministically(cands, { weights: PESOS_PRIORIDAD[p], activeProfiles: [], labelsEs: [] }),
+    ])
+  ) as unknown as Record<Prioridad, Map<string, { score: number }>>;
+  return new Map(
+    cands.map(c => [
+      c.id,
+      {
+        precio: c.price,
+        combustible: c.fuelType,
+        carroceria: c.type,
+        caja: caja(c),
+        prioridades: Object.fromEntries(
+          (Object.keys(puntajes) as Prioridad[]).map(p => [p, puntajes[p].get(c.id)?.score ?? 50])
+        ) as Record<Prioridad, number>,
+      },
+    ])
+  );
 }
 
-// ============================================================================
-// HYBRID QUERY: Filter (Objective) -> Rank (Subjective)
-// ============================================================================
-async function processHybridQuery(intent: CategorizedIntent, startTime: number): Promise<ProcessedResults> {
-  // 1. Apply Objective Filters
-  const where = sanitizeWhereClause(buildObjectiveWhereClause(intent));
+/** Quita las preguntas que el comprador ya respondió al buscar. */
+function preguntasUtiles(orden: Dimension[] | null, intent: CategorizedIntent): Dimension[] {
+  const f = intent.objective_filters ?? {};
+  const pedidos = (f.features ?? []).join(' ').toLowerCase();
+  const yaDicho: Partial<Record<Dimension, boolean>> = {
+    presupuesto: !!(f.price_range?.min || f.price_range?.max),
+    combustible: !!f.fuel_types?.length,
+    carroceria: !!f.body_types?.length,
+    caja: /autom|manual|mec[aá]nic/.test(pedidos),
+  };
+  // Primero las que escogió la IA, en su orden; después las demás (una pregunta
+  // que la IA no priorizó igual puede servir si la lista sigue larga).
+  const base = [...(orden ?? []), ...DIMENSIONES.filter(d => !orden?.includes(d))];
+  return base.filter(d => !yaDicho[d]);
+}
 
-  const vehicles = await prisma.vehicle.findMany({
-    where,
-    include: {
-      images: {
-        take: 1,
-        select: {
-          id: true,
-          url: true,
-          type: true,
-          order: true,
-          isThumbnail: true
-        }
-      }
-    },
-    take: 100
-  });
+async function procesar(intent: CategorizedIntent): Promise<ProcessedResults> {
+  const inicio = Date.now();
+  const [vehiculos, contexto] = await Promise.all([traer(intent), getMarketStats()]);
+  const cands = vehiculos.map(v => candidato(v, contexto));
+  const afinar = datosAfinar(cands);
+  const filtros = Object.keys(whereDeFiltros(intent)).concat(intent.objective_filters?.features?.length ? ['equipamiento'] : []);
 
-  const marketStats = await getMarketStats();
+  const base = {
+    total_matches: cands.length,
+    processing_time_ms: 0,
+    confidence: intent.confidence,
+    original_query: intent.original_query,
+  };
 
-  // 2. Prepare candidates
-  const candidates: ScoredCandidate[] = vehicles.map(v => {
-    const features = computeVehicleFeatures(v, marketStats);
-    const tags = generateVehicleTags(v, features);
-    const firstImage = (v as any).images?.[0];
-    const imageUrl = urlImagen(v.id, firstImage?.url);
-    return {
-      id: v.id,
-      brand: v.brand,
-      model: v.model,
-      year: v.year,
-      price: v.price,
-      fuelType: v.fuelType,
-      type: v.type,
-      vehicleType: v.vehicleType || 'Unknown',
-      imageUrl,
-      score: 0,
-      features,
-      tags
-    };
-  });
-
-  // 3. Rank utilizing Subjective Context
-  // 3. Rank utilizing Subjective Context
-  let allRanked: any[] = [];
-  if (candidates.length > 0) {
-    // Orden base determinístico también en la ruta híbrida
-    const { ranked } = scoreCandidates(
-      candidates,
-      `${intent.original_query} ${intent.subjective_context ?? ''}`
-    );
-
-    const rawRecommended = await rerankWithLLM(
-      ranked,
-      intent.subjective_context || intent.original_query,
-      intent.original_query
-    );
-
-    // Flatten structure for frontend
-    allRanked = rawRecommended.map(rec => ({
-      ...rec.vehicle,
-      matchPercentage: rec.match,
-      reasons: rec.reasons
+  // ── OBJETIVA: todos los que cumplen, sin podio ni IA para ordenar ─────────
+  if (intent.query_type === QueryType.OBJECTIVE_FEATURE) {
+    const pedidos = intent.objective_filters?.features ?? [];
+    const lista = cands.map(c => ({
+      ...plano(c),
+      reasons: pedidos.map(p => cumpleEquipamiento(c, p).razon),
+      afinar: afinar.get(c.id),
     }));
+    return {
+      ...base,
+      query_type: QueryType.OBJECTIVE_FEATURE,
+      all_matches: { vehicles: lista, filters_applied: filtros },
+      preguntas: preguntasUtiles(null, intent).filter(d => d !== 'prioridad'),
+      processing_time_ms: Date.now() - inicio,
+    };
   }
 
-  // Split Top 3 vs Others
-  const top3 = allRanked.slice(0, 3);
-  const rankedOthers = allRanked.slice(3);
-
-  // Filter out recommended vehicles from all_matches to avoid duplication
-  // ALSO Filter out "Visual Duplicates" (same Brand + Model + Year)
-  const rankedIds = new Set(allRanked.map(r => r.id));
-  const rankedSignatures = new Set(allRanked.map(v => `${v.brand}-${v.model}-${v.year}`.toLowerCase()));
-
-  const remainingVehicles = vehicles
-    .filter(v => {
-      if (rankedIds.has(v.id)) return false;
-
-      const sig = `${v.brand}-${v.model}-${v.year}`.toLowerCase();
-      if (rankedSignatures.has(sig)) return false;
-
-      return true;
-    })
-    .map(v => ({ ...v, matchPercentage: 0 }));
+  // ── SUBJETIVA / HÍBRIDA: orden con datos reales, la IA afina y explica ────
+  const contextoTexto = intent.subjective_context || intent.original_query;
+  let ordenados: any[] = [];
+  let preguntasIA: Dimension[] | null = null;
+  if (cands.length > 0) {
+    const { ranked } = scoreCandidates(cands, `${intent.original_query} ${intent.subjective_context ?? ''}`);
+    const { recs, preguntas } = await rerankWithLLM(ranked, contextoTexto, intent.original_query);
+    preguntasIA = preguntas;
+    const vistos = new Set(recs.map(r => r.vehicle.id));
+    ordenados = [
+      ...recs.map(r => ({ ...plano(r.vehicle), matchPercentage: r.match, reasons: r.reasons, afinar: afinar.get(r.vehicle.id) })),
+      // Los que la IA no alcanzó a ver siguen en la lista (en su orden base): afinar los puede subir.
+      ...ranked.filter(c => !vistos.has(c.id)).map(c => ({ ...plano(c), reasons: [], afinar: afinar.get(c.id) })),
+    ];
+  }
 
   return {
-    query_type: QueryType.HYBRID,
-    total_matches: vehicles.length,
+    ...base,
+    query_type: intent.query_type,
     top_recommendations: {
-      vehicles: top3,
-      explanation: `Filtros: ${Object.keys(where).join(', ')} | Ranking IA: "${intent.subjective_context}"`
+      vehicles: ordenados.slice(0, 3),
+      explanation: `Recomendaciones basadas en: "${contextoTexto}"`,
     },
-    all_matches: {
-      vehicles: [...rankedOthers, ...remainingVehicles],
-      filters_applied: Object.keys(where)
-    },
-    processing_time_ms: Date.now() - startTime,
-    confidence: intent.confidence,
-    original_query: intent.original_query
+    all_matches: { vehicles: ordenados.slice(3), filters_applied: filtros },
+    preguntas: preguntasUtiles(preguntasIA, intent),
+    processing_time_ms: Date.now() - inicio,
   };
 }
 
-// Helper: Keep only keys that exist as real Prisma columns (or valid operators).
-// FIX bug #7: `AND` (features dentro del JSON de specs) se descartaba en silencio.
-// FIX bug #8: `doors`/`seats`/`transmission` no son columnas y tumbaban findMany con 500.
-const PRISMA_SAFE_KEYS = ['brand', 'type', 'fuelType', 'year', 'price', 'AND'] as const;
-
-function sanitizeWhereClause(whereRaw: any): any {
-  const where: any = {};
-  for (const key of PRISMA_SAFE_KEYS) {
-    if (whereRaw[key] !== undefined) where[key] = whereRaw[key];
-  }
-  return where;
+function plano(c: { id: string; brand: string; model: string; year: number; price: number; fuelType: string; type: string; imageUrl: string | null }) {
+  return {
+    id: c.id,
+    brand: c.brand,
+    model: c.model,
+    year: c.year,
+    price: c.price,
+    fuelType: c.fuelType,
+    type: c.type,
+    imageUrl: c.imageUrl,
+  };
 }
 
-// Helper: Build Prisma Where Clause from Objective Filters
-function buildObjectiveWhereClause(intent: CategorizedIntent): any {
+// Filtros que son columnas de la tabla. El equipamiento se filtra aparte, contra
+// la ficha (filtros.ts). Puertas y puestos no tienen columna: no se filtran aquí.
+function whereDeFiltros(intent: CategorizedIntent): any {
   const where: any = {};
-  const filters = intent.objective_filters;
-  if (!filters) return where;
+  const f = intent.objective_filters;
+  if (!f) return where;
 
-  if (filters.brands && filters.brands.length > 0) {
-    where.brand = { in: filters.brands };
-  }
+  if (f.brands?.length) where.brand = { in: f.brands };
+  if (f.body_types?.length) where.type = { in: f.body_types };
+  if (f.fuel_types?.length) where.fuelType = { in: f.fuel_types };
 
-  if (filters.body_types && filters.body_types.length > 0) {
-    where.type = { in: filters.body_types };
-  }
-
-  if (filters.fuel_types && filters.fuel_types.length > 0) {
-    where.fuelType = { in: filters.fuel_types };
-  }
-
-  if (filters.year_range) {
-    const { min, max } = filters.year_range;
-    if (min && max && min === max) {
-      where.year = { equals: min };
-    } else {
+  if (f.year_range) {
+    const { min, max } = f.year_range;
+    if (min && max && min === max) where.year = { equals: min };
+    else {
       if (min) where.year = { ...where.year, gte: min };
       if (max) where.year = { ...where.year, lte: max };
     }
   }
 
-  if (filters.price_range) {
-    const { min, max } = filters.price_range;
+  if (f.price_range) {
+    const { min, max } = f.price_range;
     if (min) where.price = { ...where.price, gte: min };
     if (max) where.price = { ...where.price, lte: max };
   }
-
-  // door_count / seat_count NO tienen columna en Prisma ni campo confiable en el
-  // JSON de specs (el schema solo tiene seatRows/heatedSeats). Hasta que exista el
-  // Registro de Atributos, se ignoran de forma explícita en vez de romper la consulta.
-
-  // Filter by technical features (Turbo, 4x4, etc.) in the specifications JSON string
-  if (filters.features && filters.features.length > 0) {
-    where.AND = filters.features.map((feature: string) => ({
-      specifications: {
-        contains: feature,
-        mode: 'insensitive'
-      }
-    }));
-  }
-
   return where;
 }

@@ -8,7 +8,7 @@
 Marketplace de vehículos nuevos en Colombia (foco Medellín). Diferenciador: búsqueda en
 lenguaje natural con IA para gente que NO sabe de carros. Modelo de negocio: leads a
 WhatsApp (`WhatsAppLead`) para concesionarios. Stack: Next.js 14 App Router + TS +
-Tailwind/Radix + Prisma 5 + PostgreSQL + OpenAI (gpt-4o-mini/4o) + Cloudinary + Vercel.
+Tailwind/Radix + Prisma 5 + PostgreSQL + Claude (Anthropic: Sonnet solo en la ingesta, Haiku en todo lo demás) + Cloudinary + Vercel.
 
 **Contexto de mercado que debe permear todo:** en Colombia un Mercedes es lujo pleno y un
 Corolla es casi gama alta. Los umbrales, comparaciones y puntajes se calibran contra lo
@@ -158,14 +158,27 @@ cobertura, migración, seeds, motor de cohortes.
   (el registro no verifica correos). Otros admins: `scripts/set-admin.js`.
 - Deploy Vercel `iad1`, funciones `maxDuration: 30s`. Env vars: `WISE_DATABASE_URL`(+`_UNPOOLED`),
   `JWT_SECRET`, `ANTHROPIC_API_KEY` (+ `ANTHROPIC_WORKSPACE_ID` si la clave no es
-  de un workspace), `OPENAI_API_KEY`, `CLOUDINARY_*`, `NEXT_PUBLIC_APP_URL`.
-- **Modelos (decisión del equipo, costo): NUNCA Opus.** Sonnet (`claude-sonnet-5`) para lo crítico
-  (extracción, búsqueda de fuentes, identidad, precio, veredicto del comparador); Haiku
-  (`claude-haiku-4-5`) para lo no crítico (leer páginas con web_fetch, datos DEMO). Todo pasa por
+  de un workspace), `CLOUDINARY_*`, `NEXT_PUBLIC_APP_URL`.
+- **Modelos (decisión del equipo, costo): NUNCA Opus.** Sonnet (`claude-sonnet-5`) SOLO en la ingesta
+  (extracción, búsqueda de fuentes, identidad, precio). Todo el resto del producto en Haiku
+  (`claude-haiku-4-5`): veredicto del comparador, leer páginas con web_fetch, datos DEMO.
+  Toda la IA es Anthropic; OpenAI se eliminó del proyecto (sep-2026). Todo pasa por
   `MODELOS` en `lib/ai/claude.ts`. Ingesta: máx 4 fuentes, 25k caracteres por página, 3 búsquedas.
   No correr pruebas que gasten la clave de producción sin permiso del equipo.
 - LLM: la ingesta (`lib/ingest/`) usa Claude vía `lib/ai/claude.ts` (`pedirJson` +
-  esquema Zod, salida estructurada). La búsqueda (`lib/ai/categorization.ts`,
-  `rerank.ts`, `comparison.ts`) sigue en OpenAI hasta migrarla.
+  esquema Zod, salida estructurada). La búsqueda también, en Haiku: `categorization.ts`
+  clasifica (filtros vs. intención, cacheado 1 h). OBJETIVA ("con turbo") → TODOS los que
+  cumplen, del más barato al más caro, sin podio ni rerank. SUBJETIVA/HÍBRIDA → `rerank.ts`
+  ordena y explica los 30 mejores del orden determinístico y escoge el orden de las preguntas
+  para afinar. Equipamiento se filtra contra el dato real (`lib/ai/filtros.ts`), nunca con
+  `contains` sobre el JSON. "Camioneta" = SUV salvo que hable de platón/carga (regla en código).
+  Afinar (`components/home/Afinador.tsx`): presupuesto / motor / tipo / caja / prioridad, una a
+  la vez, solo si divide la lista, hasta que queden ≤3; filtra en el cliente, sin volver a la IA.
+  Falta un atributo de tracción (4x4/AWD) en el registro: hoy se busca en el texto de la ficha.
+  Sin clave o si Claude falla, el orden determinístico es el resultado.
+  `features.ts` lee DATOS REALES en sus unidades (km/gal, mm, hp); faltante = NaN = mediana
+  (nunca rellenar con valores inventados). La IA recibe cifras reales (`createCompactPayload`),
+  no índices internos; `rerank.ts` descarta razones con jerga interna. Marca que no tenemos →
+  `aviso` arriba de los resultados.
 - Stakeholder que da feedback: Olarte. Público objetivo: compradores NO expertos —
   el copy nunca asume conocimiento técnico.

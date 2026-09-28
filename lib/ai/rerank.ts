@@ -1,4 +1,8 @@
-// LLM Rerank final con contexto ultracompacto
+// Rerank final con Claude (Haiku): afina y explica el orden determinístico.
+import { z } from 'zod/v4';
+import { pedirJson } from './claude';
+import { datosClave, millones } from '@/lib/vehiculo-datos';
+import { DIMENSIONES, type Dimension } from './filtros';
 import type { ScoredCandidate } from './scoring';
 import type { VehicleFeatures } from './features';
 import { createCompactPayload } from './scoring';
@@ -21,124 +25,84 @@ export interface FinalRecommendation {
   };
 }
 
-// Schema para el rerank del LLM
-const rerankFunction = {
-  name: 'rerank_vehicles',
-  description: 'Reordena vehículos y proporciona justificaciones basadas en la intención del usuario',
-  parameters: {
-    type: 'object',
-    properties: {
-      recommendations: {
-        type: 'array',
-        maxItems: 12,
-        items: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', description: 'ID del vehículo (DEBE ser uno de los proporcionados)' },
-            match: { type: 'number', minimum: 0, maximum: 100, description: 'Porcentaje de compatibilidad' },
-            reasons: {
-              type: 'array',
-              maxItems: 3,
-              items: { type: 'string' },
-              description: 'Razones específicas y concisas (máximo 3)'
-            }
-          },
-          required: ['id', 'match', 'reasons']
-        }
-      }
-    },
-    required: ['recommendations']
-  }
-};
+// Esquema del rerank: Claude devuelve un JSON validado, nunca texto suelto.
+const RerankSchema = z.object({
+  recommendations: z.array(
+    z.object({
+      id: z.string().describe('id del vehículo, EXACTAMENTE uno de la lista'),
+      match: z.number().describe('Compatibilidad de 0 a 100 con lo que pidió'),
+      reasons: z.array(z.string()).describe('2 o 3 razones cortas, con cifra o dato real cuando lo haya'),
+    })
+  ),
+  preguntas: z
+    .array(z.enum(DIMENSIONES as [Dimension, ...Dimension[]]))
+    .describe('Orden en que conviene preguntarle al comprador para afinar, de la más útil a la menos. Omite lo que ya dijo.'),
+});
+
+export interface ResultadoRerank {
+  recs: FinalRecommendation[];
+  /** Orden de las preguntas para afinar; null si la IA no respondió. */
+  preguntas: Dimension[] | null;
+}
+
+/** Cuántos candidatos (ya ordenados por el scoring determinístico) ve la IA. */
+const MAX_CANDIDATOS_IA = 30;
 
 export async function rerankWithLLM(
   candidates: ScoredCandidate[],
   subjectiveContext: string,
   originalPrompt: string
-): Promise<FinalRecommendation[]> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    // Si no hay API key, usar fallback determinístico para no romper UX
-    return createFallbackRecommendations(candidates);
+): Promise<ResultadoRerank> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    // Sin clave: el orden determinístico ES el resultado, para no romper la búsqueda.
+    return { recs: createFallbackRecommendations(candidates), preguntas: null };
   }
 
-  // Crear payload ultracompacto
-  const compactCandidates = createCompactPayload(candidates);
+  // Payload compacto: solo los mejores del orden base, JSON sin espacios.
+  const compactCandidates = createCompactPayload(candidates.slice(0, MAX_CANDIDATOS_IA));
 
-  const systemPrompt = `Eres un experto consultor automotriz en Colombia. Tu trabajo es reordenar vehículos y explicar por qué son recomendables.
+  const systemPrompt = `Eres el asesor de WiseMotors, un marketplace de carros nuevos en Colombia (Medellín). Ordenas los candidatos para lo que pidió el comprador y explicas por qué, en palabras de persona: tuteas (tú, nunca vos ni usted), frases cortas, cero jerga. El comprador NO sabe de carros.
 
-REGLAS CRÍTICAS:
-1. SOLO puedes recomendar vehículos de la lista proporcionada (usar sus IDs exactos)
-2. NO inventes modelos, marcas o características
-3. Clasifica los mejores 10 vehículos (Top 10)
-4. Razones específicas y concisas (no genéricas)
-5. Considera el contexto colombiano/antioqueño
-6. Cada candidato trae "det_score": un ranking base calculado con datos reales.
-   La lista YA VIENE ordenada por él. Respétalo como punto de partida y solo
-   mueve un vehículo si el contexto subjetivo lo justifica claramente.
+REGLAS DURAS:
+1. SOLO carros de la lista, con su id exacto. Devuelve los 10 más recomendables (o todos si hay menos), del mejor al peor.
+2. Cada razón se apoya en un dato que ESTÁ en "datos", "precio", "tipo", "combustible" o "etiquetas" del carro, y cita la cifra ("rinde 45 km/gal", "baúl de 478 L", "$95 M"). Si un dato no está, NO lo afirmes: nada de "gasta poco", "es seguro" o "es cómodo" sin la cifra que lo muestre.
+3. Nunca menciones "orden_base", puntajes, índices ni decimales internos. No afirmes nada del mundo que no esté en los datos (estaciones de carga, repuestos, reventa, fama de la marca).
+   No hagas cuentas de veces ("el doble", "triple"): di las dos cifras ("$215 M frente a $95 M").
+4. Respeta el "tipo" tal cual (un Hatchback no es un sedán ni una SUV). Si el comprador pidió un tipo y el carro no lo es, dilo con honestidad en la razón.
+5. "orden_base" (0-100) es un orden calculado con los datos reales; la lista ya viene ordenada por él. Úsalo como punto de partida y mueve un carro solo si lo que pidió el comprador lo justifica claramente.
+6. "match" (0-100) = qué tan bien encaja con LO QUE PIDIÓ. Si no cumple algo que pidió explícitamente, que baje de 60.
+7. Razones distintas para cada carro, 2 o 3, de máximo 14 palabras cada una. Contexto local cuando aplique, cada cosa con su dato: lomas y Las Palmas → potencia, torque o 0 a 100; huecos y reductores → altura al piso; trancón y parqueo → largo; finca → altura y platón.
+8. Eléctrico: no gasta gasolina; su dato es la autonomía en km, no km/gal. No compares km/gal con autonomía.
 
-Contexto regional:
-- "Palmas" = zona montañosa, requiere potencia
-- "Huecos" = calles en mal estado, requiere altura
-- Medellín = tráfico, parqueo difícil
-- "Finca" = carga, terreno difícil
+PREGUNTAS PARA AFINAR: el comprador verá preguntas de un toque para reducir la lista. Ordena de la más útil a la menos las que tengan sentido para ESTA búsqueda: "presupuesto" (rango de precio), "combustible" (gasolina, híbrido, eléctrico), "carroceria" (SUV, sedán, hatchback…), "caja" (automática o manual), "prioridad" (qué le importa más: comodidad, economía, seguridad, espacio o desempeño). Omite lo que ya dijo (si pidió "eléctrico", no preguntes combustible; si dio una cifra de precio, no preguntes presupuesto; \"barato\" o \"económico\" sin cifra NO es presupuesto: pregúntalo).`;
 
-CATEGORÍAS WISEMOTORS:
-- Cada vehículo tiene categorías únicas y personalizadas que describen sus características especiales
-- Estas categorías pueden ser coloquiales, técnicas, o descriptivas (ej: "Bueno para correr", "Perfecto para las chicas", "Pa subir rápido")
-- Debes interpretar inteligentemente qué significa cada categoría y cuándo es relevante mencionarla
-- Las categorías aparecen en los tags de cada vehículo - úsalas para hacer recomendaciones más personalizadas
-- Si una categoría coincide con la búsqueda del usuario, dale prioridad y menciónala en la justificación
+  const userPrompt = `Búsqueda del comprador: "${originalPrompt}"
+Lo que más le importa: "${subjectiveContext}"
 
-Interpreta y usa las categorías WiseMotors para hacer recomendaciones más precisas y personalizadas.`;
-
-  const userPrompt = `BÚSQUEDA ORIGINAL: "${originalPrompt}"
-CONTEXTO SUBJETIVO: "${subjectiveContext}"
-
-CANDIDATOS DISPONIBLES (Muestra Top 10):
-${JSON.stringify(compactCandidates, null, 2)}
-
-Reordena estos vehículos priorizando los que mejor se ajusten a la intención. Proporciona razones específicas basadas en sus características reales.`;
+Candidatos:
+${JSON.stringify(compactCandidates)}`;
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        functions: [rerankFunction],
-        function_call: { name: 'rerank_vehicles' },
-        temperature: 0.2
-      })
+    const result = await pedirJson({
+      schema: RerankSchema,
+      modelo: 'haiku',
+      maxTokens: 2500,
+      system: systemPrompt,
+      prompt: userPrompt,
     });
-
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const functionCall = data.choices[0]?.message?.function_call;
-
-    if (!functionCall || functionCall.name !== 'rerank_vehicles') {
-      throw new Error('No se pudo obtener rerank del LLM');
-    }
-
-    const result = JSON.parse(functionCall.arguments);
     const recs = processLLMRerank(result.recommendations, candidates);
-    return ensureMinimum(recs, candidates, 10);
-
+    return { recs: ensureMinimum(recs, candidates, 10), preguntas: Array.from(new Set(result.preguntas)) };
   } catch (error) {
-    console.error('Error en LLM rerank:', error);
+    console.error('Error en el rerank con Claude:', error);
     // Fallback al scoring determinístico
-    return ensureMinimum(createFallbackRecommendations(candidates), candidates, 10);
+    return { recs: ensureMinimum(createFallbackRecommendations(candidates), candidates, 10), preguntas: null };
   }
+}
+
+// Red de seguridad: una razón que filtra jerga interna no se le muestra al comprador.
+const JERGA_INTERNA = /(\b0\.\d+|\b1\.0\b|orden[_ ]base|det_score|score|_norm|potholes|hill_climb|percentil|\burban\b)/i;
+function razonPresentable(r: unknown): r is string {
+  return typeof r === 'string' && r.trim().length > 0 && !JERGA_INTERNA.test(r);
 }
 
 // Procesar respuesta del LLM y crear recomendaciones finales
@@ -160,6 +124,7 @@ function processLLMRerank(
       console.warn(`Vehículo no encontrado: ${llmRec.id}`);
       continue;
     }
+    if (recommendations.some(r => r.vehicle.id === candidate.id)) continue; // repetido
 
     // Ensure match is strictly a number
     const matchVal = typeof llmRec.match === 'number' ? llmRec.match : parseInt(llmRec.match) || 0;
@@ -167,7 +132,7 @@ function processLLMRerank(
     recommendations.push({
       rank: i + 1,
       match: Math.max(0, Math.min(100, Math.round(matchVal))),
-      reasons: Array.isArray(llmRec.reasons) ? llmRec.reasons.slice(0, 3) : [],
+      reasons: Array.isArray(llmRec.reasons) ? llmRec.reasons.filter(razonPresentable).slice(0, 3) : [],
       vehicle: {
         id: candidate.id,
         brand: candidate.brand,
@@ -246,43 +211,8 @@ function createFallbackRecommendations(candidates: ScoredCandidate[]): FinalReco
   }));
 }
 
-// Generar razones básicas cuando el LLM falla
+// Razones sin IA: las cifras reales más relevantes del carro, sin adjetivos inventados.
 function generateFallbackReasons(candidate: ScoredCandidate): string[] {
-  const reasons: string[] = [];
-  const features = candidate.features;
-
-  if (features.hill_climb_score > 0.7) {
-    reasons.push('Excelente capacidad para subir pendientes');
-  }
-
-  if (features.efficiency_norm > 0.7) {
-    reasons.push('Muy eficiente en consumo de combustible');
-  }
-
-  if (features.comfort_norm > 0.7) {
-    reasons.push('Alto nivel de comodidad');
-  }
-
-  if (features.potholes_score > 0.7) {
-    reasons.push('Resistente para calles en mal estado');
-  }
-
-  if (features.prestige_norm > 0.7) {
-    reasons.push('Marca reconocida y prestigiosa');
-  }
-
-  if (features.quality_price_ratio_norm > 0.7) {
-    reasons.push('Excelente relación calidad-precio');
-  }
-
-  // Si no hay razones específicas, usar genéricas
-  if (reasons.length === 0) {
-    reasons.push(
-      `${candidate.type} confiable de ${candidate.year}`,
-      `Buenas especificaciones para su rango de precio`,
-      `Marca ${candidate.brand} reconocida en el mercado`
-    );
-  }
-
-  return reasons.slice(0, 3);
+  const datos = datosClave(candidate).map(d => `${d.etiqueta}: ${d.valor}${d.unidad ? ` ${d.unidad}` : ''}`);
+  return [`${candidate.type} ${candidate.fuelType.toLowerCase()} de ${millones(candidate.price)}`, ...datos].slice(0, 3);
 }

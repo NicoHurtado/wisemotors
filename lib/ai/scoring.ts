@@ -1,5 +1,6 @@
 // Helper types and functions for candidate scoring and payload generation
 import type { VehicleCandidate } from './features';
+import { datosClave, leer, millones, specsDe } from '@/lib/vehiculo-datos';
 import {
   detectQueryProfile,
   scoreDeterministically,
@@ -36,32 +37,30 @@ export function scoreCandidates(
   return { ranked: rankCandidates(scored), profile };
 }
 
-// Crear payload ultracompacto para el LLM de rerank
+/**
+ * Lo que la IA ve de cada candidato: SOLO datos reales de la ficha, en las
+ * unidades en que se le dicen al comprador. Nada de índices internos (0.91 en
+ * "potholes"): la IA los repetía tal cual y confundía, o inventaba a partir de ellos.
+ */
 export function createCompactPayload(candidates: ScoredCandidate[]): any[] {
-  return candidates.map(candidate => ({
-    id: candidate.id,
-    title: `${candidate.brand} ${candidate.model} ${candidate.year}`,
-    price: candidate.price,
-    fuelType: candidate.fuelType,
-    vehicleType: candidate.vehicleType,
-
-    // Features más importantes (6-10 números)
-    features: {
-      performance: Math.round(candidate.features.acceleration_norm * 100) / 100,
-      comfort: Math.round(candidate.features.comfort_norm * 100) / 100,
-      efficiency: Math.round(candidate.features.efficiency_norm * 100) / 100,
-      hill_climb: Math.round(candidate.features.hill_climb_score * 100) / 100,
-      potholes: Math.round(candidate.features.potholes_score * 100) / 100,
-      prestige: Math.round(candidate.features.prestige_norm * 100) / 100,
-      urban: Math.round(candidate.features.urban_score * 100) / 100,
-      value: Math.round(candidate.features.quality_price_ratio_norm * 100) / 100
-    },
-
-    // Tags descriptivos (incluye WiseMotors originales)
-    tags: candidate.tags.slice(0, 8),
-
-    // Puntaje determinístico real: el orden base que el LLM debe respetar
-    // salvo que el contexto subjetivo justifique moverlo.
-    det_score: candidate.score
-  }));
+  return candidates.map(c => {
+    const s = specsDe(c.specifications);
+    const datos = datosClave(c).map(d => `${d.etiqueta} ${d.valor}${d.unidad ? ` ${d.unidad}` : ''}`);
+    const ncap = leer(s, 'safety.ncapRating');
+    if (ncap !== null) datos.push(`NCAP ${ncap} estrellas`);
+    const caja = s.combustion?.transmissionType ?? s.hybrid?.transmissionType ?? s.phev?.transmissionType;
+    if (typeof caja === 'string' && caja) datos.push(`Caja ${caja}`);
+    const largo = leer(s, 'dimensions.length');
+    if (largo !== null) datos.push(`Largo ${(largo / 1000).toFixed(2).replace('.', ',')} m`);
+    return {
+      id: c.id,
+      carro: `${c.brand} ${c.model} ${c.year}`,
+      tipo: c.type,
+      combustible: c.fuelType,
+      precio: millones(c.price) + (s.commercial?.priceEstimated ? ' (estimado)' : ''),
+      datos: datos.join(' · ') || 'sin datos técnicos cargados',
+      ...(c.tags.length ? { etiquetas: c.tags } : {}),
+      orden_base: c.score,
+    };
+  });
 }

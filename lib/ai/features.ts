@@ -1,43 +1,54 @@
-// Sistema de features precomputadas para scoring determinístico
+// ============================================================================
+// Features de cada carro para el orden base del buscador.
+//
+// Regla: cada feature sale de un DATO REAL de la ficha, en sus unidades reales
+// (km/gal, mm, hp, s…), orientado para que "más alto = mejor". No se normaliza
+// aquí: el scoring (deterministic.ts) usa percentiles dentro de los candidatos,
+// así que solo importa el orden.
+//
+// Si el dato no existe, la feature es NaN ("no sabemos"): el scoring la trata
+// como la mediana — ni premia ni castiga. Antes se rellenaban valores inventados
+// (150 hp, 8 L/100 km) y el consumo se leía como L/100 km cuando la ficha está
+// en km/gal: un carro de 45 km/gal salía "gastón" y uno sin datos "económico".
+// ============================================================================
+
 import { prisma } from '@/lib/prisma';
-import type { CategorizedIntent } from './categorization';
-// VehicleIntent removed as it is deprecated
+import { leer, rendimiento, specsDe, tanque } from '@/lib/vehiculo-datos';
 
 export interface VehicleFeatures {
-  // Performance normalizadas (0-1)
-  power_to_weight_norm: number;
-  acceleration_norm: number; // 0-100 km/h (inverso, más rápido = mayor score)
-  braking_norm: number; // 100-0 km/h (inverso, menor distancia = mayor score)
-  max_speed_norm: number;
+  // Desempeño
+  power_to_weight_norm: number; // hp por tonelada
+  acceleration_norm: number; // −segundos de 0 a 100
+  braking_norm: number; // −metros de 100 a 0
+  max_speed_norm: number; // km/h
 
-  // Capacidades normalizadas (0-1)
-  ground_clearance_norm: number;
-  efficiency_norm: number; // Inverso del consumo
-  comfort_norm: number;
-  safety_norm: number;
-  tech_norm: number;
-  reliability_norm: number;
+  // Capacidades
+  ground_clearance_norm: number; // mm
+  efficiency_norm: number; // −pesos por km recorrido
+  comfort_norm: number; // equipamiento de confort presente
+  safety_norm: number; // estrellas NCAP + airbags + asistencias
+  tech_norm: number; // equipamiento de tecnología presente
+  reliability_norm: number; // confiabilidad percibida de la marca en CO (0-100)
+  space_norm: number; // baúl + pasajeros
 
-  // Scores compuestos (0-1)
-  urban_score: number; // Tamaño, maniobrabilidad, parqueo
-  highway_score: number; // Comodidad, estabilidad, consumo
-  offroad_score: number; // Altura, tracción, robustez
-  hill_climb_score: number; // Potencia, torque, tracción
-  potholes_score: number; // Altura, suspensión, robustez
+  // Usos
+  urban_score: number; // −largo (más corto = más fácil de parquear)
+  highway_score: number; // km que recorre con un tanque o una carga
+  offroad_score: number; // altura + ángulos + tipo
+  hill_climb_score: number; // torque (o potencia) por tonelada
+  potholes_score: number; // altura al piso
 
-  // Ratios de valor
-  quality_price_ratio_norm: number;
-  prestige_norm: number;
+  // Valor
+  quality_price_ratio_norm: number; // −precio
+  prestige_norm: number; // prestigio de la marca en CO (0-100)
 
-  // Scores adicionales para comparación
+  // Compatibilidad con la UI vieja del podio
   performance_score: number;
   efficiency_score: number;
   safety_score: number;
   comfort_score: number;
   tech_score: number;
   value_score: number;
-
-  // Scores de uso específico
   usage_urban: number;
   consumption_score: number;
   electric_range: number;
@@ -55,435 +66,164 @@ export interface VehicleCandidate {
   imageUrl: string | null;
   features: VehicleFeatures;
   tags: string[];
+  /** Ficha cruda: la IA recibe de aquí los datos reales para explicar. */
+  specifications?: unknown;
 }
 
-// Normalizar valor entre min y max a rango 0-1
-function normalize(value: number, min: number, max: number): number {
-  if (max === min) return 0.5;
-  return Math.max(0, Math.min(1, (value - min) / (max - min)));
+/** Contexto del mercado colombiano que no está en la ficha del carro. */
+export interface ContextoMercado {
+  marcas: Map<string, { prestige: number; reliability: number }>;
 }
 
-// Calcular features normalizadas para un vehículo
-export function computeVehicleFeatures(vehicle: any, marketStats: any): VehicleFeatures {
-  const specs = vehicle.specifications ? JSON.parse(vehicle.specifications) : {};
+// Precios de referencia para comparar gasolina contra electricidad por km.
+// Solo ordenan (el eléctrico siempre sale mucho más barato por km); no se
+// muestran como cifra al usuario.
+const PESOS_GALON = 16_000;
+const PESOS_KWH = 950;
 
-  // Extraer valores numéricos de las especificaciones reales
-  // Potencia: buscar en múltiples ubicaciones (powertrain, performance, combustion)
-  const power = parseFloat(specs.powertrain?.potenciaMaxMotorTermico) ||
-    parseFloat(specs.powertrain?.potenciaMaxSistemaHibrido) ||
-    parseFloat(specs.powertrain?.potenciaMaxEV) ||
-    parseFloat(specs.performance?.maxPower) ||
-    parseFloat(specs.combustion?.maxPower) ||
-    parseFloat(specs.hybrid?.maxPower) ||
-    parseFloat(specs.electric?.maxPower) ||
-    150;
-  const weight = parseFloat(specs.dimensions?.curbWeight) || parseFloat(specs.dimensions?.weight) || 1500; // kg default
-  const acceleration = parseFloat(specs.performance?.acceleration0to100) || 10; // 0-100 km/h
-  const topSpeed = parseFloat(specs.performance?.maxSpeed) || 180; // km/h
-  const fuelConsumption = parseFloat(specs.combustion?.cityConsumption) ||
-    parseFloat(specs.hybrid?.cityConsumption) ||
-    parseFloat(specs.phev?.cityConsumption) ||
-    8; // L/100km
-  const groundClearance = parseFloat(specs.chassis?.groundClearance) || 0;
-  const groundClearanceMM = groundClearance > 10 ? groundClearance : (groundClearance * 1000) || 150; // convertir m a mm si es necesario
+const PESO_TIPICO: Record<string, number> = { SUV: 1450, Sedán: 1300, Hatchback: 1150, Pickup: 2000 };
 
-  // Calcular scores basados en especificaciones reales (todos normalizados 0-1)
-  const sportiness = Math.max(0, Math.min(1, ((power / 200) + (10 - acceleration) / 10) / 2));
+const NO_SE = Number.NaN;
+const cuenta = (...xs: unknown[]) => xs.filter(x => x === true || x === 'true' || x === 'Sí').length;
 
-  // MEJORADO: Cálculo de comfort más robusto
-  // Nota: Este comfort se usa para features básicas, pero el scoring subjetivo usa calculateComprehensiveComfortScore
-  const comfort = calculateComfortScore(vehicle, specs);
-  const efficiency = Math.max(0, Math.min(1, (15 - fuelConsumption) / 10)); // 5-15 L/100km range
-  const luxury = Math.max(0, Math.min(1, (
-    (specs.technology?.touchscreen ? 0.25 : 0) +
-    (specs.technology?.navigation ? 0.25 : 0) +
-    (power / 1000) + 0.25 // Power contribution capped
-  )));
-  const reliability = Math.max(0, Math.min(1, (70 + Math.min(20, (vehicle.year - 2020) * 5)) / 100));
-  const practicality = Math.max(0, Math.min(1, (vehicle.type === 'SUV' ? 0.8 :
-    vehicle.type === 'Sedán' ? 0.7 : vehicle.type === 'Hatchback' ? 0.75 : 0.6)));
+export function computeVehicleFeatures(vehicle: any, contexto: ContextoMercado): VehicleFeatures {
+  const s = specsDe(vehicle.specifications);
+  const electrico = vehicle.fuelType === 'Eléctrico';
 
-  // Normalizar métricas de performance
-  const power_to_weight_norm = normalize(power / weight, marketStats.power_to_weight.min, marketStats.power_to_weight.max);
-  const acceleration_norm = normalize(15 - acceleration, 0, 10); // Inverso: menos tiempo = mejor
-  const braking_norm = normalize(45 - (acceleration * 3), 0, 15); // Estimado basado en aceleración
-  const max_speed_norm = normalize(topSpeed, marketStats.top_speed.min, marketStats.top_speed.max);
-  const ground_clearance_norm = normalize(groundClearanceMM, marketStats.ground_clearance.min, marketStats.ground_clearance.max);
-  const efficiency_norm = normalize(12 - fuelConsumption, 0, 8); // Inverso: menos consumo = mejor
+  const hp = leer(s, 'combustion.maxPower', 'hybrid.maxPower', 'phev.maxPower', 'electric.maxPower');
+  const torque = leer(s, 'combustion.maxTorque', 'hybrid.maxTorque', 'phev.maxTorque', 'electric.maxTorque');
+  const peso = leer(s, 'dimensions.curbWeight', 'dimensions.weight');
+  const acel = leer(s, 'performance.acceleration0to100');
+  const frenado = leer(s, 'chassis.brakingDistance100to0');
+  const vmax = leer(s, 'performance.maxSpeed');
+  let altura = leer(s, 'chassis.groundClearance');
+  if (altura !== null && altura < 1) altura *= 1000; // venía en metros
+  const largo = leer(s, 'dimensions.length');
+  const baul = leer(s, 'dimensions.cargoCapacity');
+  const pasajeros = leer(s, 'interior.passengerCapacity');
 
-  // Scores compuestos basados en tipo de vehículo y especificaciones
-  const urban_score = calculateUrbanScore(vehicle.type, specs, practicality);
-  const highway_score = calculateHighwayScore(comfort, efficiency_norm, max_speed_norm);
-  const offroad_score = calculateOffroadScore(vehicle.type, ground_clearance_norm, power_to_weight_norm);
-  const hill_climb_score = calculateHillClimbScore(power_to_weight_norm, specs.drivetrain, acceleration_norm);
-  const potholes_score = calculatePotholesScore(ground_clearance_norm, vehicle.type, comfort);
+  // Pesos por km: lo que de verdad le importa a "que no gaste mucho".
+  const kmGal = rendimiento(s);
+  const kwh100 = (() => {
+    const c = leer(s, 'electric.cityElectricConsumption');
+    const h = leer(s, 'electric.highwayElectricConsumption');
+    return c !== null && h !== null ? (c + h) / 2 : (c ?? h);
+  })();
+  const pesosKm = electrico
+    ? kwh100 !== null
+      ? (kwh100 * PESOS_KWH) / 100
+      : (16 * PESOS_KWH) / 100 // consumo típico de un eléctrico: solo para ordenar
+    : kmGal !== null
+      ? PESOS_GALON / kmGal
+      : null;
 
-  // Ratios de valor
-  const quality_price_ratio_norm = calculateQualityPriceRatio(vehicle.price, luxury, reliability, marketStats.price);
-  const prestige_norm = calculatePrestigeScore(vehicle.brand, luxury, vehicle.price, marketStats.price);
+  const autonomia = electrico
+    ? leer(s, 'electric.realRangeMixed', 'electric.electricRange', 'electric.theoreticalRangeMixed')
+    : kmGal !== null && tanque(s) !== null
+      ? kmGal * tanque(s)!
+      : null;
 
-  // Calcular scores adicionales para comparación
-  const performance_score = (power_to_weight_norm + acceleration_norm + max_speed_norm) / 3;
-  const efficiency_score = efficiency_norm;
-  const safety_score = reliability * 0.6 + (specs.safety?.airbags ? 0.2 : 0) + (specs.safety?.stabilityControl ? 0.2 : 0);
-  const comfort_score = comfort;
-  const tech_score = luxury * 0.7 + practicality * 0.3;
-  const value_score = quality_price_ratio_norm;
+  const ncap = leer(s, 'safety.ncapRating');
+  const airbags = leer(s, 'safety.airbags');
+  const asistencias = cuenta(
+    s.safety?.autonomousEmergencyBraking,
+    s.safety?.forwardCollisionWarning,
+    s.safety?.laneAssist,
+    s.safety?.adaptiveCruiseControl,
+    s.safety?.blindSpotDetection,
+    s.safety?.crossTrafficAlert,
+    s.safety?.fatigueMonitor,
+    s.safety?.stabilityControl
+  );
+  const hayDatosSeguridad = ncap !== null || airbags !== null || asistencias > 0;
 
-  // Scores de uso específico
-  const usage_urban = urban_score;
-  const consumption_score = 1 - efficiency_norm; // Inverso de efficiency
-  const electric_range = parseFloat(specs.electric?.electricRange) || 0;
+  const confort = cuenta(
+    s.comfort?.airConditioning,
+    s.comfort?.automaticClimateControl,
+    s.comfort?.heatedSeats,
+    s.comfort?.ventilatedSeats,
+    s.comfort?.massageSeats,
+    s.comfort?.automaticHighBeam
+  );
+  const tecnologia = cuenta(
+    s.technology?.bluetooth,
+    s.technology?.touchscreen,
+    s.technology?.navigation,
+    s.technology?.smartphoneIntegration,
+    s.technology?.wirelessCharger,
+    s.assistance?.reverseCamera,
+    s.assistance?.parkingSensors,
+    s.assistance?.cameras360
+  );
+
+  const marca = contexto.marcas.get((vehicle.brand ?? '').toLowerCase());
+  // Sin peso publicado se usa el típico de su carrocería: la potencia sigue
+  // ordenando, solo pierde el matiz del peso.
+  const toneladas = (peso ?? PESO_TIPICO[vehicle.type] ?? 1400) / 1000;
+
+  const potenciaPeso = hp !== null ? hp / toneladas : NO_SE;
+  const fuerzaPeso = torque !== null ? torque / toneladas : NO_SE;
+  const alto = altura ?? NO_SE;
+  const pickupOTodoterreno = /pickup|todoterreno/i.test(`${vehicle.type} ${vehicle.vehicleType ?? ''}`);
+  const angulos = (leer(s, 'offRoad.approachAngle') ?? 0) + (leer(s, 'offRoad.departureAngle') ?? 0);
+
+  const f = {
+    power_to_weight_norm: potenciaPeso,
+    acceleration_norm: acel !== null ? -acel : NO_SE,
+    braking_norm: frenado !== null ? -frenado : NO_SE,
+    max_speed_norm: vmax ?? NO_SE,
+    ground_clearance_norm: alto,
+    efficiency_norm: pesosKm !== null ? -pesosKm : NO_SE,
+    comfort_norm: confort > 0 ? confort : NO_SE,
+    safety_norm: hayDatosSeguridad ? (ncap ?? 0) * 4 + (airbags ?? 0) + asistencias * 1.5 : NO_SE,
+    tech_norm: tecnologia > 0 ? tecnologia : NO_SE,
+    reliability_norm: marca?.reliability ?? NO_SE,
+    space_norm: baul !== null || pasajeros !== null ? (baul ?? 0) + (pasajeros ?? 0) * 60 : NO_SE,
+    urban_score: largo !== null ? -largo : NO_SE,
+    highway_score: autonomia ?? NO_SE,
+    offroad_score: altura !== null ? altura + angulos + (pickupOTodoterreno ? 60 : 0) : NO_SE,
+    hill_climb_score: fuerzaPeso,
+    potholes_score: alto,
+    quality_price_ratio_norm: vehicle.price > 0 ? -vehicle.price : NO_SE,
+    prestige_norm: marca?.prestige ?? NO_SE,
+  };
 
   return {
-    power_to_weight_norm,
-    acceleration_norm,
-    braking_norm,
-    max_speed_norm,
-    ground_clearance_norm,
-    efficiency_norm,
-    comfort_norm: comfort,
-    safety_norm: reliability, // Usar reliability como proxy de safety
-    tech_norm: luxury * 0.7 + practicality * 0.3, // Tech correlaciona con lujo y practicidad
-    reliability_norm: reliability,
-    urban_score,
-    highway_score,
-    offroad_score,
-    hill_climb_score,
-    potholes_score,
-    quality_price_ratio_norm,
-    prestige_norm,
-    // Scores adicionales
-    performance_score,
-    efficiency_score,
-    safety_score,
-    comfort_score,
-    tech_score,
-    value_score,
-    // Scores de uso específico
-    usage_urban,
-    consumption_score,
-    electric_range
+    ...f,
+    performance_score: f.power_to_weight_norm,
+    efficiency_score: f.efficiency_norm,
+    safety_score: f.safety_norm,
+    comfort_score: f.comfort_norm,
+    tech_score: f.tech_norm,
+    value_score: f.quality_price_ratio_norm,
+    usage_urban: f.urban_score,
+    consumption_score: pesosKm ?? NO_SE,
+    electric_range: electrico ? (autonomia ?? NO_SE) : 0,
   };
 }
 
-// MEJORADO: Calcular comfort score considerando múltiples factores
-function calculateComfortScore(vehicle: any, specs: any): number {
-  let score = 0;
-  let maxScore = 0;
-
-  // 1. Si existe wisemetrics.comfort, usarlo como base (30% del score)
-  if (specs.wisemetrics?.comfort !== undefined && specs.wisemetrics.comfort !== null) {
-    const wisemetricsComfort = parseFloat(specs.wisemetrics.comfort);
-    if (!isNaN(wisemetricsComfort)) {
-      score += (wisemetricsComfort / 100) * 0.3;
-      maxScore += 0.3;
-    }
-  }
-
-  // 2. Características de comfort (40% del score)
-  const comfortFeatures = {
-    airConditioning: specs.comfort?.airConditioning ? 0.08 : 0,
-    automaticClimateControl: specs.comfort?.automaticClimateControl ? 0.08 : 0,
-    heatedSeats: specs.comfort?.heatedSeats ? 0.06 : 0,
-    ventilatedSeats: specs.comfort?.ventilatedSeats ? 0.06 : 0,
-    massageSeats: specs.comfort?.massageSeats ? 0.04 : 0,
-    // Campos adicionales de comfort si existen
-    climatizadorZonas: specs.comfort?.climatizadorZonas ? parseFloat(specs.comfort.climatizadorZonas) * 0.02 : 0,
-    ajusteElectricoConductor: specs.comfort?.ajusteElectricoConductor ? 0.04 : 0,
-    ajusteElectricoPasajero: specs.comfort?.ajusteElectricoPasajero ? 0.02 : 0,
-    memoriaAsientos: specs.comfort?.memoriaAsientos ? 0.02 : 0,
-    cristalesAcusticos: specs.comfort?.cristalesAcusticos ? 0.03 : 0,
-    iluminacionAmbiental: specs.comfort?.iluminacionAmbiental ? 0.02 : 0,
-    techoPanoramico: specs.comfort?.techoPanoramico || specs.comfort?.sunroof ? 0.03 : 0,
-  };
-
-  const comfortFeaturesScore = Object.values(comfortFeatures).reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
-  score += Math.min(comfortFeaturesScore, 0.4); // Cap at 0.4
-  maxScore += 0.4;
-
-  // 3. Tipo de vehículo (20% del score) - SUV y Sedán son más cómodos para uso diario
-  let typeScore = 0;
-  if (vehicle.type === 'SUV') typeScore = 0.15;
-  else if (vehicle.type === 'Sedán') typeScore = 0.12;
-  else if (vehicle.type === 'Hatchback') typeScore = 0.08;
-  else if (vehicle.type === 'Pickup') typeScore = 0.06;
-  else if (vehicle.type === 'Deportivo') typeScore = 0.04;
-  else typeScore = 0.05;
-
-  score += typeScore;
-  maxScore += 0.2;
-
-  // 4. Espacio interior (10% del score) - más espacio = más cómodo
-  const passengerCapacity = parseFloat(specs.interior?.passengerCapacity) || 0;
-  const seatRows = parseFloat(specs.interior?.seatRows) || 0;
-  const wheelbase = parseFloat(specs.dimensions?.wheelbase) || 0;
-
-  let spaceScore = 0;
-  if (passengerCapacity >= 7) spaceScore = 0.1;
-  else if (passengerCapacity >= 5) spaceScore = 0.08;
-  else if (passengerCapacity >= 4) spaceScore = 0.06;
-  else spaceScore = 0.04;
-
-  // Bonificación por wheelbase largo (más espacio entre ejes = más cómodo)
-  if (wheelbase > 2800) spaceScore += 0.02;
-  else if (wheelbase > 2700) spaceScore += 0.01;
-
-  score += Math.min(spaceScore, 0.1);
-  maxScore += 0.1;
-
-  // 5. Año del vehículo (10% del score) - vehículos más nuevos suelen ser más cómodos
-  const currentYear = new Date().getFullYear();
-  const age = currentYear - vehicle.year;
-  let ageScore = 0;
-  if (age <= 1) ageScore = 0.1;
-  else if (age <= 3) ageScore = 0.08;
-  else if (age <= 5) ageScore = 0.06;
-  else if (age <= 8) ageScore = 0.04;
-  else ageScore = 0.02;
-
-  score += ageScore;
-  maxScore += 0.1;
-
-  // 6. Si no hay wisemetrics.comfort, usar score base según tipo de vehículo
-  // Esto asegura que vehículos cómodos (SUV, Sedán) tengan un score mínimo razonable
-  if (!specs.wisemetrics?.comfort) {
-    const baseScoreByType = {
-      'SUV': 0.70,      // SUV son muy cómodos para uso diario
-      'Sedán': 0.65,    // Sedán son cómodos y elegantes
-      'Hatchback': 0.60, // Hatchback son prácticos y cómodos
-      'Pickup': 0.55,   // Pickup son cómodos pero más rústicos
-      'Deportivo': 0.45, // Deportivos priorizan performance sobre comfort
-      'Convertible': 0.50,
-    };
-    const baseScore = baseScoreByType[vehicle.type as keyof typeof baseScoreByType] || 0.55;
-
-    // Si el score calculado es muy bajo, usar el score base del tipo
-    // Pero combinar ambos: 60% score base del tipo + 40% score calculado
-    if (score / Math.max(maxScore, 1) < baseScore * 0.8) {
-      score = (baseScore * 0.6) + ((score / Math.max(maxScore, 1)) * 0.4);
-      maxScore = 1.0;
-    }
-  }
-
-  // Normalizar el score (0-1)
-  const normalizedScore = maxScore > 0 ? score / maxScore : 0.6; // Default 0.6 si no hay datos
-
-  // Asegurar que el score esté en el rango 0-1
-  // Para vehículos cómodos (SUV, Sedán), asegurar mínimo 0.5
-  const finalScore = Math.max(0, Math.min(1, normalizedScore));
-  const minComfortByType: Record<string, number> = {
-    'SUV': 0.55,
-    'Sedán': 0.50,
-    'Hatchback': 0.48,
-  };
-  const minComfort = minComfortByType[vehicle.type] || 0.4;
-
-  return Math.max(minComfort, finalScore);
+/** Percepción de marcas en Colombia (tabla curada), para confiabilidad y prestigio. */
+export async function getMarketStats(): Promise<ContextoMercado> {
+  const filas = await prisma.brandPerception
+    .findMany({ select: { brand: true, prestige: true, reliability: true } })
+    .catch(() => []);
+  return { marcas: new Map(filas.map(f => [f.brand.toLowerCase(), f])) };
 }
 
-function calculateUrbanScore(type: string, specs: any, practicality: number): number {
-  let base = practicality;
-
-  // Bonificación por tipo urbano
-  if (type === 'Hatchback') base += 0.2;
-  else if (type === 'Sedán') base += 0.1;
-  else if (type === 'SUV') base -= 0.1;
-  else if (type === 'Pickup') base -= 0.2;
-
-  // Penalización por tamaño excesivo
-  const length = parseFloat(specs.dimensions?.length) || 4500;
-  if (length > 4800) base -= 0.15;
-
-  return Math.max(0, Math.min(1, base));
-}
-
-function calculateHighwayScore(comfort: number, efficiency: number, speed: number): number {
-  return comfort * 0.5 + efficiency * 0.3 + speed * 0.2;
-}
-
-function calculateOffroadScore(type: string, clearance: number, power: number): number {
-  let base = clearance * 0.6 + power * 0.4;
-
-  // Bonificación por tipo apropiado
-  if (type === 'SUV') base += 0.2;
-  else if (type === 'Pickup') base += 0.3;
-  else if (type === 'Hatchback' || type === 'Sedán') base -= 0.2;
-
-  return Math.max(0, Math.min(1, base));
-}
-
-function calculateHillClimbScore(power: number, drivetrain: string, acceleration: number): number {
-  let score = power * 0.6 + acceleration * 0.4;
-
-  // Bonificación por tracción
-  if (drivetrain === 'AWD' || drivetrain === '4WD') score += 0.15;
-  else if (drivetrain === 'FWD') score += 0.05;
-
-  return Math.max(0, Math.min(1, score));
-}
-
-function calculatePotholesScore(clearance: number, type: string, comfort: number): number {
-  let score = clearance * 0.7 + comfort * 0.3;
-
-  // Bonificación por tipo robusto
-  if (type === 'SUV' || type === 'Pickup') score += 0.1;
-
-  return Math.max(0, Math.min(1, score));
-}
-
-function calculateQualityPriceRatio(price: number, luxury: number, reliability: number, priceStats: any): number {
-  const priceNorm = normalize(price, priceStats.min, priceStats.max);
-  const quality = (luxury + reliability) / 2;
-
-  // Mejor ratio = más calidad por menos precio (normalizado entre 0-1)
-  const ratio = quality / Math.max(0.1, priceNorm);
-  return Math.max(0, Math.min(1, ratio / 3)); // Dividir por 3 para mantener en rango 0-1
-}
-
-function calculatePrestigeScore(brand: string, luxury: number, price: number, priceStats: any): number {
-  const prestigeBrands = ['Mercedes', 'BMW', 'Audi', 'Porsche', 'Lexus'];
-  let brandBonus = prestigeBrands.includes(brand) ? 0.2 : 0;
-
-  const priceNorm = normalize(price, priceStats.min, priceStats.max);
-  return Math.min(1, luxury + brandBonus + (priceNorm * 0.3));
-}
-
-// Obtener estadísticas del mercado para normalización
-export async function getMarketStats() {
-  const vehicles = await prisma.vehicle.findMany({
-    select: {
-      price: true,
-      specifications: true
-    }
-  });
-
-  const specs = vehicles.map(v => {
-    try {
-      return JSON.parse(v.specifications || '{}');
-    } catch {
-      return {};
-    }
-  });
-
-  // Extraer potencia de múltiples ubicaciones
-  const powers = specs.map(s => {
-    return parseFloat(s.powertrain?.potenciaMaxMotorTermico) ||
-      parseFloat(s.powertrain?.potenciaMaxSistemaHibrido) ||
-      parseFloat(s.powertrain?.potenciaMaxEV) ||
-      parseFloat(s.performance?.maxPower) ||
-      parseFloat(s.combustion?.maxPower) ||
-      parseFloat(s.hybrid?.maxPower) ||
-      parseFloat(s.electric?.maxPower) ||
-      150;
-  }).filter(Boolean);
-  const weights = specs.map(s => parseFloat(s.dimensions?.curbWeight) || parseFloat(s.dimensions?.weight) || 1500).filter(Boolean);
-  const topSpeeds = specs.map(s => parseFloat(s.performance?.maxSpeed) || 180).filter(Boolean);
-  const clearances = specs.map(s => {
-    const clearance = parseFloat(s.chassis?.groundClearance) || 0;
-    return clearance > 10 ? clearance : (clearance * 1000) || 150;
-  }).filter(Boolean);
-  const prices = vehicles.map(v => v.price).filter(Boolean);
-
-  return {
-    power_to_weight: {
-      min: Math.min(...powers.map((p, i) => p / weights[i])),
-      max: Math.max(...powers.map((p, i) => p / weights[i]))
-    },
-    top_speed: {
-      min: Math.min(...topSpeeds),
-      max: Math.max(...topSpeeds)
-    },
-    ground_clearance: {
-      min: Math.min(...clearances),
-      max: Math.max(...clearances)
-    },
-    price: {
-      min: Math.min(...prices),
-      max: Math.max(...prices)
-    }
-  };
-}
-
-// Generar tags descriptivos para un vehículo
-export function generateVehicleTags(vehicle: any, features: VehicleFeatures): string[] {
+/**
+ * Etiquetas cortas y verificables para la IA: solo lo que es cierto por tipo,
+ * combustible o categoría editorial de WiseMotors. Las cifras van aparte.
+ */
+export function generateVehicleTags(vehicle: any): string[] {
   const tags: string[] = [];
-
-  // Tags basados en features
-  if (features.hill_climb_score > 0.7) tags.push('sube-palmas');
-  if (features.potholes_score > 0.7) tags.push('resistente-huecos');
-  if (features.efficiency_norm > 0.7) tags.push('economico');
-  if (features.comfort_norm > 0.7) tags.push('comodo');
-  if (features.prestige_norm > 0.7) tags.push('prestigioso');
-  if (features.urban_score > 0.7) tags.push('urbano');
-  if (features.highway_score > 0.7) tags.push('carretera');
-  if (features.offroad_score > 0.7) tags.push('todoterreno');
-
-  // Tags por tipo
-  if (vehicle.type === 'SUV') tags.push('familiar');
-  if (vehicle.type === 'Pickup') tags.push('trabajo', 'carga');
-  if (vehicle.type === 'Deportivo') tags.push('deportivo', 'rapido');
-  if (vehicle.fuelType === 'Eléctrico') tags.push('electrico', 'ecologico');
-
-  // Tags de categorías WiseMotors si existen - interpretación inteligente
+  if (vehicle.type === 'Pickup') tags.push('platón para carga');
+  if (vehicle.fuelType === 'Eléctrico') tags.push('eléctrico: cero gasolina');
+  if (vehicle.fuelType === 'Híbrido') tags.push('híbrido');
   if (vehicle.wiseCategories) {
-    const wiseCategories = vehicle.wiseCategories.split(',').map((cat: string) => cat.trim().toLowerCase());
-    wiseCategories.forEach((category: string) => {
-      // Interpretar categorías relacionadas con velocidad/performance
-      if (category.includes('correr') || category.includes('rápido') || category.includes('velocidad') ||
-        category.includes('deportiv') || category.includes('racing') || category.includes('speed')) {
-        tags.push('rapido', 'deportivo', 'performance');
-      }
-
-      // Interpretar categorías relacionadas con elegancia/estilo
-      if (category.includes('chica') || category.includes('elegante') || category.includes('estilo') ||
-        category.includes('bonito') || category.includes('lindo') || category.includes('fashion')) {
-        tags.push('elegante', 'urbano', 'estiloso');
-      }
-
-      // Interpretar categorías relacionadas con terreno/subidas
-      if (category.includes('subir') || category.includes('montaña') || category.includes('colina') ||
-        category.includes('finca') || category.includes('tierra') || category.includes('4x4')) {
-        tags.push('todoterreno', 'potente', 'rural');
-      }
-
-      // Interpretar categorías relacionadas con familia
-      if (category.includes('familiar') || category.includes('familia') || category.includes('niños') ||
-        category.includes('seguro') || category.includes('espacioso')) {
-        tags.push('familiar', 'espacioso', 'seguro');
-      }
-
-      // Interpretar categorías relacionadas con economía
-      if (category.includes('económico') || category.includes('ahorro') || category.includes('barato') ||
-        category.includes('eficient') || category.includes('consumo')) {
-        tags.push('economico', 'eficiente', 'ahorro');
-      }
-
-      // Interpretar categorías relacionadas con lujo
-      if (category.includes('lujo') || category.includes('premium') || category.includes('exclusivo') ||
-        category.includes('ejecutivo') || category.includes('vip')) {
-        tags.push('lujo', 'premium', 'exclusivo');
-      }
-
-      // Interpretar categorías relacionadas con trabajo
-      if (category.includes('trabajo') || category.includes('carga') || category.includes('negocio') ||
-        category.includes('comercial') || category.includes('herramientas')) {
-        tags.push('trabajo', 'comercial', 'utilitario');
-      }
-
-      // Interpretar categorías relacionadas con ciudad/urbano
-      if (category.includes('ciudad') || category.includes('urbano') || category.includes('parqueo') ||
-        category.includes('pequeño') || category.includes('ágil')) {
-        tags.push('urbano', 'compacto', 'maniobrable');
-      }
-
-      // Agregar la categoría original como tag también (limpia)
-      const cleanCategory = category.replace(/[^\w\s]/g, '').trim();
-      if (cleanCategory.length > 2) {
-        tags.push(cleanCategory.replace(/\s+/g, '_'));
-      }
-    });
+    for (const c of String(vehicle.wiseCategories).split(',')) {
+      const limpia = c.trim();
+      if (limpia) tags.push(`WiseMotors: ${limpia}`);
+    }
   }
-
-  return Array.from(new Set(tags)).slice(0, 10); // Remover duplicados y aumentar a 10 tags
+  return Array.from(new Set(tags)).slice(0, 6);
 }

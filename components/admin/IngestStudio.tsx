@@ -131,7 +131,7 @@ export function IngestStudio() {
   }
 
   // Un pipeline a la vez: cada uno hace ~6 fetch + varias llamadas LLM, y en
-  // paralelo se pisan los límites de OpenAI y de los sitios de prensa.
+  // paralelo se pisan los límites de Claude y de los sitios de prensa.
   useEffect(() => {
     if (corriendo.current) return;
     const item = cola.find(i => i.estado === 'en cola');

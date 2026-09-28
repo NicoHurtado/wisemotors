@@ -63,7 +63,7 @@ function Inicio() {
             <div className="mt-10">
               {cargandoIA && <AIResultsLoader />}
               {!cargandoIA && hayResultados && (
-                <ResultadosIA resultados={resultados} consulta={query} catalogo={vehiculos} onRefinar={irA} />
+                <ResultadosIA key={query} resultados={resultados} consulta={query} catalogo={vehiculos} />
               )}
               {!cargandoIA && resultados && !hayResultados && (
                 <div className="rounded-[28px] bg-tarjeta p-10">

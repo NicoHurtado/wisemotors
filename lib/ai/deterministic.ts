@@ -32,7 +32,7 @@ type ProfileWeights = Partial<Record<FeatureKey, number>>;
 const PROFILES: Record<string, { labelEs: string; weights: ProfileWeights }> = {
   palmas: {
     labelEs: 'para subir pendientes',
-    weights: { hill_climb_score: 1.0, power_to_weight_norm: 0.6, acceleration_norm: 0.3 },
+    weights: { hill_climb_score: 1.0, power_to_weight_norm: 0.8, acceleration_norm: 0.8 },
   },
   huecos: {
     labelEs: 'aguanta calles malas',
@@ -45,11 +45,15 @@ const PROFILES: Record<string, { labelEs: string; weights: ProfileWeights }> = {
   economia: {
     labelEs: 'económico de mantener',
     // "Que no gaste mucho" es primero no pagar de más y después gastar poco al mes.
-    weights: { quality_price_ratio_norm: 1.0, efficiency_norm: 0.8, reliability_norm: 0.4 },
+    // El precio pesa triple: combinado con otro perfil ("familia que no gaste"),
+    // un carro de $230 M no puede ganarle a uno de $95 M por tener más baúl.
+    weights: { quality_price_ratio_norm: 3.0, efficiency_norm: 1.0, reliability_norm: 0.4 },
   },
   familia: {
     labelEs: 'para la familia',
-    weights: { comfort_norm: 0.8, safety_norm: 1.0, reliability_norm: 0.5 },
+    // El espacio pesa doble: con "que no gaste", un Picanto de 255 L de baúl no
+    // puede ser la mejor opción para una familia solo por ser el más barato.
+    weights: { space_norm: 2.0, safety_norm: 1.0, comfort_norm: 0.5, reliability_norm: 0.4 },
   },
   ciudad: {
     labelEs: 'para la ciudad y el trancón',
@@ -96,7 +100,7 @@ const KEYWORDS: Record<string, RegExp> = {
   finca: /\b(finca|trocha|4x4|todo\s?terreno|campo|vereda|barro)/,
   // "que no gaste mucho", "gastar poco", "cuidar el bolsillo": así lo dice la gente.
   economia: /\b(econ[oó]mic|barat|ahorr|consum|rendidor|gast[aeo]|eficien|presupuest|bolsillo|plata)/,
-  familia: /\b(famili|ni[ñn]o|beb[eé]|espaci|ba[uú]l|puestos|asientos)/,
+  familia: /\b(famili|ni[ñn]o|hij[oa]|beb[eé]|espaci|ba[uú]l|puestos|asientos|mascota|perr[oa]|gat[oa])/,
   ciudad: /\b(ciudad|tranc[oó]n|parquear|parqueadero|compact|urban|medell[ií]n|bogot[aá]|peque[ñn]o)/,
   desempeno: /\b(r[aá]pid|deportiv|potenci|potente|veloz|correr|acelera)/,
   prestigio: /\b(lujo|prestigi|elegante|premium|ejecutiv|estatus|fino)/,
@@ -175,7 +179,8 @@ export function scoreDeterministically(
   // Pre-extraer columnas de valores por feature (una sola pasada por feature)
   const columns = new Map<FeatureKey, number[]>();
   for (const [key] of entries) {
-    columns.set(key, candidates.map(c => c.features[key] ?? 0));
+    // Solo los valores conocidos forman la escala; NaN = "no sabemos".
+    columns.set(key, candidates.map(c => c.features[key]).filter(v => Number.isFinite(v)));
   }
 
   for (const candidate of candidates) {
@@ -184,7 +189,10 @@ export function scoreDeterministically(
 
     for (const [key, weight] of entries) {
       const values = columns.get(key)!;
-      const pct = winsorizedPercentile(candidate.features[key] ?? 0, values);
+      const v = candidate.features[key];
+      // Dato faltante = mediana: ni premia ni castiga. Con menos de 2 datos la
+      // feature no separa a nadie.
+      const pct = Number.isFinite(v) && values.length >= 2 ? winsorizedPercentile(v, values) : 50;
       const contribution = (pct * weight) / totalWeight;
       breakdown[key] = Math.round(contribution * 10) / 10;
       sum += contribution;
