@@ -40,6 +40,7 @@ import { CarRender } from '@/components/car/CarRender';
 import { Fila } from '@/components/compare/FrenteAFrente';
 import { CompareMatrix } from '@/components/compare/CompareMatrix';
 import { useEnVista } from '@/components/ui/useEnVista';
+import { CalificarIA } from '@/components/ui/CalificarIA';
 import { adminFetch } from '@/lib/admin-fetch';
 import { runDuel } from '@/lib/comparison/duel';
 import { serie } from '@/lib/palette';
@@ -507,6 +508,16 @@ function VeredictoIA({ vehiculos, nombre, color }: { vehiculos: Vehiculo[]; nomb
           </div>
         );
       })}
+
+      {/* ¿Sirvió el veredicto? Lo lee el equipo en el panel para mejorarlo. */}
+      <div className="md:col-span-12">
+        <CalificarIA
+          tipo="comparacion"
+          clave={[...ids.split(',')].sort().join(',')}
+          pregunta="¿Te sirvió este veredicto para decidir?"
+          detalle={{ carros: vehiculos.map(x => `${x.brand} ${x.model}`), titular: v.titular }}
+        />
+      </div>
     </div>
   );
 }

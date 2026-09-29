@@ -16,6 +16,7 @@ import { Afinador, aplicar, type Carro, type Respuestas } from '@/components/hom
 import { CarRender } from '@/components/car/CarRender';
 import { TarjetaCarro, type VehiculoTarjeta } from '@/components/car/TarjetaCarro';
 import { BuscadorIA } from '@/components/home/BuscadorIA';
+import { CalificarIA } from '@/components/ui/CalificarIA';
 import { datosClave, millones, palabraGigante, tresDatos } from '@/lib/vehiculo-datos';
 
 /** Razones comparativas, calculadas con datos reales, frente a los otros del podio. */
@@ -213,6 +214,20 @@ export function ResultadosIA({
             </Link>
           ))}
         </div>
+      )}
+
+      {/* ¿Sirvió? Lo lee el equipo en el panel para mejorar la búsqueda. */}
+      {todos.length > 0 && (
+        <CalificarIA
+          tipo="busqueda"
+          clave={consulta}
+          pregunta={podio.length ? '¿Te sirvieron estas recomendaciones?' : '¿Encontraste lo que buscabas?'}
+          detalle={{
+            tipoConsulta: resultados.query_type,
+            total: todos.length,
+            mostrados: (podio.length ? podio : resto).slice(0, 5).map(c => `${c.brand} ${c.model}`),
+          }}
+        />
       )}
 
       {resto.length > 0 && (

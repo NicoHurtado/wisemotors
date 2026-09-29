@@ -11,18 +11,20 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowUpRight, Building2, Car, ClipboardCheck, MessageCircle, Sparkles, Star } from 'lucide-react';
+import { ArrowUpRight, Building2, Car, ClipboardCheck, MessageCircle, Sparkles, Star, ThumbsUp } from 'lucide-react';
 import { VehiclesTable } from './VehiclesTable';
 import { DealershipsTable } from './DealershipsTable';
 import { TrendingManagement } from './TrendingManagement';
 import { ColaAuditoria } from './ColaAuditoria';
+import { Calificaciones } from './Calificaciones';
 import { specsDe } from '@/lib/vehiculo-datos';
 
-type Pestana = 'vehicles' | 'auditoria' | 'dealerships' | 'trending';
+type Pestana = 'vehicles' | 'auditoria' | 'calificaciones' | 'dealerships' | 'trending';
 
 const PESTANAS: { clave: Pestana; texto: string; icono: typeof Car }[] = [
   { clave: 'vehicles', texto: 'Vehículos', icono: Car },
   { clave: 'auditoria', texto: 'Por revisar', icono: ClipboardCheck },
+  { clave: 'calificaciones', texto: 'Calificaciones', icono: ThumbsUp },
   { clave: 'dealerships', texto: 'Concesionarios', icono: Building2 },
   { clave: 'trending', texto: 'Destacados', icono: Star },
 ];
@@ -118,6 +120,8 @@ export function AdminDashboard() {
           <VehiclesTable />
         ) : pestana === 'auditoria' ? (
           <ColaAuditoria />
+        ) : pestana === 'calificaciones' ? (
+          <Calificaciones />
         ) : pestana === 'dealerships' ? (
           <DealershipsTable />
         ) : (

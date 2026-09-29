@@ -243,3 +243,23 @@ model ParametroIndice {
   @@index([clave, validTo])
   @@map("parametros_indices")
 }
+
+// Calificaciones de las respuestas de la IA (búsqueda y veredicto del
+// comparador): 👍/👎 + comentario opcional, para mejorar el sistema.
+// Una por navegador y respuesta (sesion anónima): votar de nuevo la cambia.
+model CalificacionIA {
+  id         String   @id @default(cuid())
+  tipo       String // busqueda | comparacion
+  clave      String // la búsqueda normalizada, o los ids comparados
+  util       Boolean
+  comentario String?
+  detalle    String? // JSON: qué se le mostró (ids, tipo de consulta, veredicto)
+  sesion     String // id anónimo del navegador
+  userId     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([tipo, clave, sesion])
+  @@index([tipo, createdAt])
+  @@map("calificaciones_ia")
+}
