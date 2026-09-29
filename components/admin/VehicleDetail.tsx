@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Car, Edit, ArrowLeft, Trash2 } from 'lucide-react';
 import { adminFetch } from '@/lib/admin-fetch';
+import { ComplementarIA } from './ComplementarIA';
+import { DatosClave } from './DatosClave';
+import { sinDatoDeSpecs, valoresDeSpecs } from '@/lib/attributes/clave';
 
 interface Vehicle {
   id: string;
@@ -34,26 +37,37 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchVehicle = async () => {
-      try {
-        const response = await fetch(`/api/vehicles/${vehicleId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setVehicle(data);
-        } else {
-          alert('Error al cargar el vehículo');
-        }
-      } catch (error) {
-        console.error('Error fetching vehicle:', error);
+  const fetchVehicle = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/vehicles/${vehicleId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setVehicle(data);
+      } else {
         alert('Error al cargar el vehículo');
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchVehicle();
+    } catch (error) {
+      console.error('Error fetching vehicle:', error);
+      alert('Error al cargar el vehículo');
+    } finally {
+      setLoading(false);
+    }
   }, [vehicleId]);
+
+  useEffect(() => {
+    fetchVehicle();
+  }, [fetchVehicle]);
+
+  /** Completar un dato clave o marcarlo "no existe" (mismas acciones de la cola de auditoría). */
+  const auditar = async (cuerpo: Record<string, unknown>) => {
+    const res = await adminFetch('/api/admin/auditoria', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...cuerpo, vehicleId }),
+    });
+    if (!res.ok) alert((await res.json().catch(() => null))?.error ?? 'No se pudo guardar');
+    await fetchVehicle();
+  };
 
   const handleDelete = async () => {
     if (confirm('¿Estás seguro de que quieres eliminar este vehículo?')) {
@@ -132,6 +146,18 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Datos clave y complementar con IA */}
+      <div className="grid gap-4 px-8 py-6 lg:grid-cols-2">
+        <DatosClave
+          fuelType={vehicle.fuelType}
+          valores={valoresDeSpecs(vehicle.specifications ?? {})}
+          sinDato={sinDatoDeSpecs(vehicle.specifications ?? {})}
+          onValor={(key, valor) => auditar({ accion: 'agregar', key, valor })}
+          onSinDato={(id, marcar) => auditar({ accion: 'sinDato', id, marcar })}
+        />
+        <ComplementarIA vehicleId={vehicle.id} onAplicado={fetchVehicle} />
       </div>
 
       {/* Información Básica */}

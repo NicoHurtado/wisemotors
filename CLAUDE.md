@@ -116,8 +116,42 @@ cobertura, migración, seeds, motor de cohortes.
 - **Plan concesionarios:** su carpeta de fotos y fichas técnicas entra como fuente tier 1 por
   delante de la web (fotos → mismas candidatas de `buscarFotos`; fichas PDF → `extractFromPage`),
   y Haiku/Sonnet completan solo lo que falte.
-- Pendiente de ingesta v2: asociar concesionario, cola de
-  auditoría, `maxDuration: 60` puede quedar corto en Vercel para 6 fuentes (~45s local).
+
+**28/29-sep-2026:**
+- **Registro recuperado:** el de julio solo recorrió los bloques tipados del schema viejo y
+  perdió ~80 de los 140 campos acordados (`campos_seleccionados.md`). Bloque `recuperados`
+  en `registry.ts` (249 atributos): tracción (`drivetrain.traction`), potencia/torque de EV
+  (`electric.maxPower/maxTorque`, no existían), llantas, frenos, ISOFIX, techo, pantalla…
+  Enums con `opciones`: la ingesta normaliza (`normalizarOpcion`: "4WD"→"4x4") o descarta.
+  La cobertura cuenta solo `coAvailability: 'common'`.
+- **Campos clave** (`lib/attributes/clave.ts`, 41, por tren motriz): los que alimentan ficha,
+  tarjetas, comparador e índices. La ingesta hace una 2.ª búsqueda dirigida
+  (`buscarFuentesPara` + extracción limitada a esas keys) si faltan; la revisión los
+  muestra (`DatosClave.tsx`) con entrada manual y "no existe" (`specifications.meta.sinDato`);
+  publicar sin ellos pide confirmación. "No lo tiene" confirmado por una persona = dato.
+- **Documentos del concesionario:** PDF o foto de la ficha en el formulario de subida
+  (multipart, ≤4 MB por el límite de Vercel). Se leen primero como tier 1 y ganan empates.
+- **Fotos: seis vistas** (lateral=portada, frontal, trasera, 3/4 delantera, 3/4 trasera,
+  interior). Las del concesionario se suben por vista y se procesan al elegirlas; la IA
+  solo busca las vacías (`cubiertos`). Revisión por vistas con "Usar como…".
+- **Concesionario** al publicar ('¿Quién lo vende?') → `VehicleDealer`.
+- **Cola "Por revisar"** (`lib/auditoria.ts`): hechos sin revisor / confianza < 0.7 / tier 3,
+  precios estimados y datos clave faltantes. `escribirHechos()` escribe hecho +
+  specifications + cobertura en una transacción (lo usan completar y complementar).
+- **Complementar con IA** (detalle del carro en el admin): se pega un texto (p. ej. una
+  investigación hecha con otra IA) → `lib/ingest/complementar.ts` lo reparte con citas
+  verificadas CONTRA EL TEXTO → propuesta nuevo/igual/distinto → el revisor aplica (tier 2, 0.85).
+  El precio no entra por aquí.
+- **Índices WiseMotors** (`lib/indices/`): Altura (por ciudad), Palmas, Hueco y Costo Real de
+  Tenencia 5 años. Parámetros en `parametros_indices` con vigencia, sembrados en cada deploy
+  desde `lib/indices/parametros.ts` (cambiar ahí el valor + fuente y desplegar). Un índice sin
+  sus datos NO se muestra (nunca "nos falta" al comprador). Tests: `scripts/verify-indices.ts`.
+- **Ficha:** sin sección de procedencia ni "Estimado" (decisión del usuario: verificar es
+  trabajo del equipo, no del comprador). 3 similares (`lib/similares.ts`) con "Comparar con
+  este" → `/compare?ids=a,b` (sin cuenta; el veredicto IA sí pide cuenta).
+- **Carros DEMO:** `lib/db/vehiculos-demo.ts` los siembra UNA vez en el deploy (bandera
+  `demo_cargado` en `estado_sistema`); `CARGAR_DEMO=no` los apaga.
+- **Inicio:** solo los renders dibujados rotando, sin cifras (las fotos se pixelaban).
 
 ## Backlog en orden (del plan, secciones 8-9)
 
@@ -154,7 +188,10 @@ cobertura, migración, seeds, motor de cohortes.
   BD** — el registro nuevo (`FT` en `lib/attributes/registry.ts`) ya la usa. Unificar hacia ella.
 - `getMarketStats()` en `lib/ai/features.ts` trae TODO el catálogo por búsqueda, sin
   caché — cuello de botella conocido.
-- Sin tests. Cualquier trabajo en `lib/ai/` o `lib/attributes/` debería estrenar los primeros.
+- Tests (npx tsx, sin BD ni API): `scripts/verify-scoring.ts`, `verify-indices.ts`, `verify-clave.ts`.
+- Git: push directo a `main` (sin ramas ni PRs), decisión del usuario.
+- Prueba local sin tocar producción: Postgres en Docker (`wise-pg`, puerto 55432) + la
+  configuración `wisemotors-local-db` de `.claude/launch.json` (puerto 3007).
 - Docs viejos engañosos: `BUSQUEDA_OBJETIVA_CAMPOS.md` describe código que ya no existe.
 - Base de datos: Neon conectado por la integración de Vercel con prefijo `WISE`:
   `WISE_DATABASE_URL` (pooler, app) y `WISE_DATABASE_URL_UNPOOLED` (directa, schema).
@@ -186,7 +223,8 @@ cobertura, migración, seeds, motor de cohortes.
   `contains` sobre el JSON. "Camioneta" = SUV salvo que hable de platón/carga (regla en código).
   Afinar (`components/home/Afinador.tsx`): presupuesto / motor / tipo / caja / prioridad, una a
   la vez, solo si divide la lista, hasta que queden ≤3; filtra en el cliente, sin volver a la IA.
-  Falta un atributo de tracción (4x4/AWD) en el registro: hoy se busca en el texto de la ficha.
+  Tracción, techo, cuero, ISOFIX, repuesto… se filtran contra el dato del registro; el
+  afinador pregunta "¿tracción en las 4 ruedas?" si divide la lista.
   Sin clave o si Claude falla, el orden determinístico es el resultado.
   `features.ts` lee DATOS REALES en sus unidades (km/gal, mm, hp); faltante = NaN = mediana
   (nunca rellenar con valores inventados). La IA recibe cifras reales (`createCompactPayload`),

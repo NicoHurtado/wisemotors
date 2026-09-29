@@ -114,6 +114,12 @@ export function ColaAuditoria({ onCambio }: { onCambio?: (pendientes: number) =>
 
               {esteAbierto && (
                 <div className="border-t border-linea px-5 pb-5">
+                  <p className="mt-4 text-[13px] text-tinta-2">
+                    ¿Mucho por llenar?{' '}
+                    <a href={`/admin/vehicles/${v.id}`} className="text-wise hover:underline">
+                      Complementar con IA pegando una investigación ↗
+                    </a>
+                  </p>
                   {v.faltanClave > 0 && (
                     <div className="mt-4">
                       <DatosClave

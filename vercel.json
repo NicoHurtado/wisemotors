@@ -22,6 +22,9 @@
     },
     "app/api/admin/ingest/publish/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/admin/vehicles/*/complementar/route.ts": {
+      "maxDuration": 120
     }
   },
   "env": {
