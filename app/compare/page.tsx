@@ -117,10 +117,10 @@ function CompararFavoritos() {
   if (!user) {
     return (
       <Vacio titulo="Ponlos frente a frente." texto="Crea una cuenta para guardar los carros que te gusten y compararlos pregunta por pregunta.">
-        <Link href="/register" className="pastilla pastilla--wise h-12 px-6">
+        <Link href="/register?next=%2Fcompare" className="pastilla pastilla--wise h-12 px-6">
           Crear cuenta <ArrowUpRight className="h-4 w-4" />
         </Link>
-        <Link href="/login" className="pastilla h-12 px-6">
+        <Link href="/login?next=%2Fcompare" className="pastilla h-12 px-6">
           Ya tengo cuenta
         </Link>
       </Vacio>

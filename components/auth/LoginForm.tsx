@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { loginSchema, type LoginInput } from '@/lib/schemas/auth';
 import { useAuth } from '@/contexts/AuthContext';
+import { destinoDeLaUrl } from '@/lib/destino';
 
 export function LoginForm() {
   const router = useRouter();
@@ -61,8 +62,9 @@ export function LoginForm() {
         
         
         // Usar window.location.href para asegurar que la página se recargue
-        // y el estado se sincronice correctamente
-        window.location.href = '/';
+        // y el estado se sincronice correctamente. Vuelve a donde estaba
+        // (ej. la comparación) si llegó con ?next=.
+        window.location.href = destinoDeLaUrl();
       } else {
         setError(data.error || 'Error al iniciar sesión');
       }

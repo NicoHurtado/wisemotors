@@ -211,7 +211,7 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
   }));
 
   const favorito = async () => {
-    if (!user) return router.push('/login');
+    if (!user) return router.push(`/login?next=${encodeURIComponent(`/vehicles/${vehicle.id}`)}`);
     await toggleFavorite(vehicle.id);
   };
 

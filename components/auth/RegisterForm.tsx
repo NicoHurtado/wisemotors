@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { registerSchema, type RegisterInput } from '@/lib/schemas/auth';
 import { useAuth } from '@/contexts/AuthContext';
+import { destinoDeLaUrl } from '@/lib/destino';
 
 export function RegisterForm() {
   const router = useRouter();
@@ -57,8 +58,8 @@ export function RegisterForm() {
         // El rol viene del servidor: registrarse con cierto email ya no otorga admin.
         login(data.user, data.token);
         
-        // Redirigir a la página principal
-        window.location.href = '/';
+        // Vuelve a donde estaba (ej. la comparación) o al inicio.
+        window.location.href = destinoDeLaUrl();
       } else {
         setError(data.error || 'Error al registrar usuario');
       }
