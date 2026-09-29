@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const body = (await request.json().catch(() => null)) as AccionAuditoria | null;
-  const validas = ['confirmar', 'corregir', 'quitar', 'confirmarVehiculo', 'precio'];
+  const validas = ['confirmar', 'corregir', 'quitar', 'confirmarVehiculo', 'precio', 'agregar', 'sinDato'];
   if (!body || !validas.includes(body.accion)) {
     return NextResponse.json({ error: 'Acción inválida' }, { status: 400 });
   }

@@ -103,6 +103,53 @@ Evita concesionarios, clasificados de usados, foros y videos. Prefiere páginas 
   return Array.from(unicas.values()).sort((a, b) => a.tier - b.tier).slice(0, 4);
 }
 
+/**
+ * Segunda búsqueda, dirigida: páginas que traigan ESTOS datos que las primeras
+ * fuentes no tenían (el 0-100, el rendimiento, el equipamiento). Mismas reglas:
+ * solo URLs vistas en la búsqueda y ninguna ya leída.
+ */
+export async function buscarFuentesPara(
+  marca: string,
+  modelo: string,
+  version: string,
+  anio: number,
+  datos: string[],
+  yaLeidas: string[]
+): Promise<DiscoveredSource[]> {
+  const nombre = `${marca} ${modelo}${version ? ` ${version}` : ''}`;
+  const excluir = new Set(yaLeidas.map(normalizar));
+  const res = await claude().beta.messages.parse({
+    model: MODELOS.sonnet,
+    max_tokens: 4000,
+    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }],
+    system: `Buscas páginas que publiquen datos técnicos concretos de un carro vendido en Colombia. Sirven: la ficha técnica oficial (a veces PDF), pruebas de manejo de prensa automotriz (colombiana o internacional seria) y catálogos de versiones con equipamiento. Evita clasificados de usados, foros y videos.`,
+    messages: [
+      {
+        role: 'user',
+        content: `Del ${nombre} (modelo ${anio} o la generación vigente), necesito páginas que digan estos datos: ${datos.join(', ')}.
+Busca, por ejemplo, "${nombre} ficha técnica", "${nombre} prueba de manejo 0 a 100 consumo", "${nombre} equipamiento versiones".
+No repitas estas páginas, ya las leí: ${yaLeidas.join(' · ') || '(ninguna)'}.
+Devuelve entre 1 y 3 URLs que hayas visto en los resultados, copiadas exactas.`,
+      },
+    ],
+    output_config: { format: betaZodOutputFormat(FuentesSchema) },
+  });
+
+  const vistas = new Set<string>();
+  for (const b of res.content as any[]) {
+    if (b.type === 'web_search_tool_result' && Array.isArray(b.content)) {
+      for (const r of b.content) if (r?.url) vistas.add(normalizar(r.url));
+    }
+  }
+  const unicas = new Map<string, DiscoveredSource>();
+  for (const f of res.parsed_output?.fuentes ?? []) {
+    const n = normalizar(f.url);
+    if (!vistas.has(n) || excluir.has(n) || unicas.has(n)) continue;
+    unicas.set(n, { url: f.url.trim(), tier: tierDe(f.tipo, f.url, marca), nameEs: f.nombre.slice(0, 60) });
+  }
+  return Array.from(unicas.values()).sort((a, b) => a.tier - b.tier).slice(0, 3);
+}
+
 /** Contenido de una fuente: texto plano, o PDF (las fichas técnicas oficiales suelen serlo). */
 export type Contenido = { texto: string } | { pdfBase64: string };
 

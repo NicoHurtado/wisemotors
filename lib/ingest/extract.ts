@@ -44,9 +44,9 @@ const ExtraccionSchema = z.object({
     .describe('Nombres de las OTRAS versiones de este modelo que aparecen en el texto (ej. "LT", "LTZ", "Premier"), sin la versión objetivo. Vacío si no hay.'),
 });
 
-function buildCatalog(): string {
+function buildCatalog(soloKeys?: string[]): string {
   // Catálogo compacto: key | etiqueta | unidad esperada | tipo
-  return EXTRACTABLE
+  return EXTRACTABLE.filter(d => !soloKeys || soloKeys.includes(d.key))
     .map(d => `${d.key} | ${d.labelEs}${d.unit ? ` (${d.unit})` : ''} | ${d.opciones ? `uno de: ${d.opciones.join(' / ')}` : d.dataType}`)
     .join('\n');
 }
@@ -150,14 +150,16 @@ export async function extractFromPage(
   tier: SourceTier,
   vehicleLabel: string,
   /** Versión pedida ("RS"). Vacía = versión de entrada. */
-  version = ''
+  version = '',
+  /** Solo buscar estas keys (búsqueda dirigida de campos clave que faltan). */
+  soloKeys?: string[]
 ): Promise<ResultadoExtraccion> {
   const c: Contenido = typeof contenido === 'string' ? { texto: contenido } : contenido;
   const esPdf = 'pdfBase64' in c;
   const encabezado = `VEHÍCULO OBJETIVO: ${vehicleLabel}
 
 CATÁLOGO DE ATRIBUTOS (key | etiqueta | tipo):
-${buildCatalog()}
+${buildCatalog(soloKeys)}
 `;
   const cierre = `Extrae las especificaciones del vehículo objetivo presentes en ${esPdf ? 'el documento' : 'el texto'}. Si habla de otro vehículo, no reportes nada.`;
 
@@ -187,6 +189,7 @@ ${buildCatalog()}
   for (const f of parsed.facts ?? []) {
     // El LLM no inventa campos: keys fuera del registro mueren aquí.
     if (!VALID_KEYS.has(f.key)) continue;
+    if (soloKeys && !soloKeys.includes(f.key)) continue;
 
     // Regla de versiones, verificada en código y no solo pedida al modelo:
     //  - lo que el modelo marcó como de otra versión, fuera;

@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Check, ChevronDown, ExternalLink, Loader2, Trash2 } from 'lucide-react';
 import { adminFetch, mensajeDeErrorDeAuth } from '@/lib/admin-fetch';
 import type { HechoPendiente, VehiculoPendiente } from '@/lib/auditoria';
+import { DatosClave } from '@/components/admin/DatosClave';
 
 const host = (u: string | null) => {
   if (!u) return '';
@@ -78,8 +79,9 @@ export function ColaAuditoria({ onCambio }: { onCambio?: (pendientes: number) =>
       <div className="mb-5 max-w-2xl">
         <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-tinta">Por revisar</h2>
         <p className="mt-1 text-[14px] leading-snug text-tinta-2">
-          Datos publicados que merecen una segunda mirada: nadie los revisó, la confianza es baja o vienen de una fuente
-          de comunidad. Si no se sostienen, quítalos: un dato faltante es mejor que uno falso.
+          Carros con datos clave sin completar (sus bloques no salen en la ficha) y datos publicados que merecen una
+          segunda mirada: nadie los revisó, la confianza es baja o vienen de una fuente de comunidad. Si no se sostienen,
+          quítalos: un dato faltante es mejor que uno falso.
         </p>
       </div>
 
@@ -103,12 +105,26 @@ export function ColaAuditoria({ onCambio }: { onCambio?: (pendientes: number) =>
                 <span className="font-semibold text-tinta">{v.nombre}</span>
                 {v.demo && <span className="rounded-full bg-papel px-2 py-0.5 text-[11px] font-semibold text-tinta-2">DEMO</span>}
                 {v.precioEstimado && <span className="rounded-full bg-[#efe4f7] px-2 py-0.5 text-[11px] font-semibold text-wise">precio estimado</span>}
-                <span className="text-[13px] text-tinta-2">{v.hechos.length} datos por revisar</span>
+                {v.faltanClave > 0 && (
+                  <span className="rounded-full bg-wise px-2 py-0.5 text-[11px] font-semibold text-white">faltan {v.faltanClave} datos clave</span>
+                )}
+                {v.hechos.length > 0 && <span className="text-[13px] text-tinta-2">{v.hechos.length} datos por revisar</span>}
                 <ChevronDown className={`ml-auto h-4 w-4 text-tinta-2 transition-transform ${esteAbierto ? 'rotate-180' : ''}`} />
               </button>
 
               {esteAbierto && (
                 <div className="border-t border-linea px-5 pb-5">
+                  {v.faltanClave > 0 && (
+                    <div className="mt-4">
+                      <DatosClave
+                        fuelType={v.fuelType}
+                        valores={v.valores}
+                        sinDato={v.sinDato}
+                        onValor={(key, valor) => accion(`add-${key}`, { accion: 'agregar', vehicleId: v.id, key, valor })}
+                        onSinDato={(id, marcar) => accion(`sd-${id}`, { accion: 'sinDato', vehicleId: v.id, id, marcar })}
+                      />
+                    </div>
+                  )}
                   {v.precioEstimado && (
                     <PrecioEstimado
                       v={v}

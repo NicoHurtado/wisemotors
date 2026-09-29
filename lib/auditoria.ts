@@ -6,8 +6,9 @@
 //   - sin revisor (cargas automáticas, carros DEMO),
 //   - confianza < 0.7,
 //   - fuente de comunidad (tier 3),
-// más todo vehículo con precio ESTIMADO. Sale cuando alguien lo confirma, lo
-// corrige o lo quita. Corregir o quitar actualiza también `specifications`
+// más todo vehículo con precio ESTIMADO o con DATOS CLAVE faltantes
+// (lib/attributes/clave), que aquí se completan a mano. Sale cuando alguien lo
+// confirma, lo corrige o lo quita. Corregir o quitar actualiza también `specifications`
 // (lo que lee la interfaz) y la cobertura, para que nunca se contradigan.
 // ============================================================================
 
@@ -16,6 +17,7 @@ import { prisma } from '@/lib/prisma';
 import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
 import { computeCoverage } from '@/lib/attributes/coverage';
 import { specsDe } from '@/lib/vehiculo-datos';
+import { clavesFaltantes, sinDatoDeSpecs, valoresDeSpecs } from '@/lib/attributes/clave';
 
 export const CONFIANZA_MINIMA = 0.7;
 
@@ -49,12 +51,19 @@ export interface VehiculoPendiente {
   precioEstimado: boolean;
   razonPrecio: string | null;
   hechos: HechoPendiente[];
+  fuelType: string;
+  /** key → valor de todo lo que tiene (para calcular los datos clave en pantalla). */
+  valores: Record<string, unknown>;
+  sinDato: string[];
+  faltanClave: number;
 }
 
 export async function colaDeAuditoria(): Promise<{ vehiculos: VehiculoPendiente[]; totalHechos: number }> {
   const [hechos, vehiculos] = await Promise.all([
     prisma.vehicleAttribute.findMany({ where: PENDIENTE, orderBy: { vehicleId: 'asc' } }),
-    prisma.vehicle.findMany({ select: { id: true, brand: true, model: true, year: true, price: true, history: true, specifications: true } }),
+    prisma.vehicle.findMany({
+      select: { id: true, brand: true, model: true, year: true, price: true, fuelType: true, history: true, specifications: true },
+    }),
   ]);
 
   const porVehiculo = new Map<string, HechoPendiente[]>();
@@ -87,7 +96,10 @@ export async function colaDeAuditoria(): Promise<{ vehiculos: VehiculoPendiente[
     const s = specsDe(v.specifications);
     const precioEstimado = !!s.commercial?.priceEstimated;
     const lista = porVehiculo.get(v.id) ?? [];
-    if (!precioEstimado && lista.length === 0) continue;
+    const valores = valoresDeSpecs(s);
+    const sinDato = sinDatoDeSpecs(s);
+    const faltanClave = clavesFaltantes(v.fuelType, valores, sinDato).length;
+    if (!precioEstimado && lista.length === 0 && faltanClave === 0) continue;
     lista.sort((a, b) => (DEF.get(b.key)?.displayPriority ?? 0) - (DEF.get(a.key)?.displayPriority ?? 0));
     out.push({
       id: v.id,
@@ -97,10 +109,14 @@ export async function colaDeAuditoria(): Promise<{ vehiculos: VehiculoPendiente[
       precioEstimado,
       razonPrecio: s.commercial?.priceReasoningEs ?? null,
       hechos: lista,
+      fuelType: v.fuelType,
+      valores,
+      sinDato,
+      faltanClave,
     });
   }
   // Primero los reales (lo que ven compradores de verdad), después los DEMO.
-  out.sort((a, b) => Number(a.demo) - Number(b.demo) || b.hechos.length - a.hechos.length);
+  out.sort((a, b) => Number(a.demo) - Number(b.demo) || b.faltanClave - a.faltanClave || b.hechos.length - a.hechos.length);
   return { vehiculos: out, totalHechos: hechos.length };
 }
 
@@ -142,15 +158,89 @@ export function valorAuditado(key: string, crudo: unknown): number | string | bo
   return t;
 }
 
+/**
+ * Escribe hechos nuevos (o reemplaza los que haya) en un carro publicado:
+ * VehicleAttribute + specifications + cobertura, en una transacción. Lo usan
+ * "completar a mano" (datos clave) y "Complementar con IA".
+ */
+export async function escribirHechos(
+  vehicleId: string,
+  hechos: { key: string; valor: unknown; confianza: number; tier: number; fuente?: string | null }[],
+  userId: string
+): Promise<{ ok: true; escritos: number } | { ok: false; error: string }> {
+  const v = await prisma.vehicle.findUnique({ where: { id: vehicleId }, select: { specifications: true, fuelType: true } });
+  if (!v) return { ok: false, error: 'Vehículo no encontrado' };
+  const s = specsDe(v.specifications);
+  const ahora = new Date();
+  const limpios = hechos
+    .map(h => ({ ...h, valor: valorAuditado(h.key, h.valor) }))
+    .filter((h): h is typeof h & { valor: number | string | boolean } => h.valor !== null);
+  if (limpios.length === 0) return { ok: false, error: 'Ningún valor válido (revisa unidades y rangos)' };
+
+  const ops = limpios.map(h => {
+    const d = DEF.get(h.key)!;
+    fijarEnSpecs(s, h.key, h.valor);
+    const datos = {
+      valueNum: d.dataType === 'numeric' ? (h.valor as number) : null,
+      valueBool: d.dataType === 'boolean' ? (h.valor as boolean) : null,
+      valueText: d.dataType === 'text' || d.dataType === 'enum' ? String(h.valor) : null,
+      confidence: Math.max(0, Math.min(1, h.confianza)),
+      sourceTier: [1, 2, 3].includes(h.tier) ? h.tier : 3,
+      sourceUrl: h.fuente ? String(h.fuente).slice(0, 500) : null,
+      verifiedBy: userId,
+      verifiedAt: ahora,
+      auditedBy: userId,
+      auditedAt: ahora,
+    };
+    return prisma.vehicleAttribute.upsert({
+      where: { vehicleId_attributeKey: { vehicleId, attributeKey: h.key } },
+      create: { vehicleId, attributeKey: h.key, ...datos },
+      update: datos,
+    });
+  });
+  const existentes = await prisma.vehicleAttribute.findMany({ where: { vehicleId }, select: { attributeKey: true } });
+  const cobertura = computeCoverage(v.fuelType, new Set([...existentes.map(e => e.attributeKey), ...limpios.map(h => h.key)]));
+  await prisma.$transaction([
+    ...ops,
+    prisma.vehicle.update({
+      where: { id: vehicleId },
+      data: { specifications: JSON.stringify(s), coverageGlobal: cobertura.global, coverageByDimension: JSON.stringify(cobertura.byDimension) },
+    }),
+  ]);
+  return { ok: true, escritos: limpios.length };
+}
+
+/** Marca o desmarca un campo clave como "el dato no existe" (specifications.meta.sinDato). */
+export async function marcarSinDato(vehicleId: string, id: string, marcar: boolean) {
+  const v = await prisma.vehicle.findUnique({ where: { id: vehicleId }, select: { specifications: true } });
+  if (!v) return { ok: false as const, error: 'Vehículo no encontrado' };
+  const s = specsDe(v.specifications);
+  const actual = new Set(sinDatoDeSpecs(s));
+  if (marcar) actual.add(id);
+  else actual.delete(id);
+  s.meta = { ...(s.meta ?? {}), sinDato: Array.from(actual) };
+  await prisma.vehicle.update({ where: { id: vehicleId }, data: { specifications: JSON.stringify(s) } });
+  return { ok: true as const };
+}
+
 export type AccionAuditoria =
   | { accion: 'confirmar'; id: string }
   | { accion: 'corregir'; id: string; valor: unknown }
   | { accion: 'quitar'; id: string }
   | { accion: 'confirmarVehiculo'; vehicleId: string }
-  | { accion: 'precio'; vehicleId: string; precio: number };
+  | { accion: 'precio'; vehicleId: string; precio: number }
+  | { accion: 'agregar'; vehicleId: string; key: string; valor: unknown }
+  | { accion: 'sinDato'; vehicleId: string; id: string; marcar: boolean };
 
 export async function aplicarAuditoria(a: AccionAuditoria, userId: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const ahora = new Date();
+
+  if (a.accion === 'agregar') {
+    // Lo pone una persona: confianza plena.
+    const r = await escribirHechos(a.vehicleId, [{ key: a.key, valor: a.valor, confianza: 1, tier: 1 }], userId);
+    return r.ok ? { ok: true } : r;
+  }
+  if (a.accion === 'sinDato') return marcarSinDato(a.vehicleId, a.id, !!a.marcar);
 
   if (a.accion === 'confirmarVehiculo') {
     await prisma.vehicleAttribute.updateMany({

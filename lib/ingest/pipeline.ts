@@ -15,10 +15,11 @@ import { esErrorDeCuenta, explicarErrorClaude, pedirJson } from '@/lib/ai/claude
 import { fetchPageText } from './fetcher';
 import { buscarFotos } from './fotos';
 import { discoverSources } from './sources';
-import { buscarFuentes, leerConClaude, type Contenido } from './buscar-fuentes';
+import { buscarFuentes, buscarFuentesPara, leerConClaude, type Contenido } from './buscar-fuentes';
+import { clavesFaltantes } from '@/lib/attributes/clave';
 import { extractFromPage, resolveIdentity } from './extract';
 import { normalizarCop, verificarPrecio } from './price-check';
-import type { DraftFact, PriceDraft, RawFact, VehicleDraft } from './types';
+import type { DiscoveredSource, DraftFact, PriceDraft, RawFact, VehicleDraft } from './types';
 
 const PRICE_KEY = 'commercial.priceCop';
 /** Discrepancia relativa entre fuentes que marca conflicto (plan §5.1 paso 4). */
@@ -184,6 +185,62 @@ export function mesesDesde(vigencia: string | undefined, hoy = new Date()): numb
 }
 
 // ---------------------------------------------------------------------------
+// Una fuente: lectura directa (rápida y gratis) y, solo si el sitio bloquea o
+// es PDF, lectura con web_fetch de Anthropic. Una página que se leyó y no trae
+// datos NO se vuelve a leer (costo doble). Fuentes de más de un año modelo
+// atrás se descartan: pueden ser otra generación o una versión que ya cambió.
+// ---------------------------------------------------------------------------
+async function procesarFuente(
+  source: DiscoveredSource,
+  ctx: { label: string; versionObjetivo: string; anio: number },
+  soloKeys?: string[]
+): Promise<{ source: DiscoveredSource; facts: RawFact[]; ok: boolean; note: string }> {
+  const nota = (n: number, descartados: number, como: string) =>
+    `${n} datos extraídos${como}${descartados ? ` · ${descartados} descartados por ser de otra versión` : ''}`;
+  const extraer = async (c: string | Contenido) => {
+    const r = await extractFromPage(c, source.url, source.tier, ctx.label, ctx.versionObjetivo, soloKeys);
+    const anioViejo = r.anioModeloFuente > 1990 && r.anioModeloFuente < ctx.anio - 1;
+    return { ...r, facts: anioViejo ? [] : r.facts, anioViejo };
+  };
+  const viejo = (anio: number) => ({ source, facts: [] as RawFact[], ok: false, note: `Es del modelo ${anio}: demasiado viejo para el ${ctx.anio}, se descartó` });
+
+  const esPdf = /\.pdf($|\?)/i.test(source.url);
+  const directo = esPdf ? null : await fetchPageText(source.url);
+  if (directo && directo.length >= 300) {
+    const r = await extraer(directo);
+    if (r.anioViejo) return viejo(r.anioModeloFuente);
+    return {
+      source,
+      facts: r.facts,
+      ok: r.facts.length > 0,
+      note: r.facts.length > 0 ? nota(r.facts.length, r.descartadosPorVersion, '') : 'Se leyó, pero no trae especificaciones de esta versión',
+    };
+  }
+  let contenido: Contenido | null = null;
+  try {
+    contenido = await leerConClaude(source.url);
+  } catch (err) {
+    if (esErrorDeCuenta(err)) throw new Error(explicarErrorClaude(err));
+    contenido = null;
+  }
+  if (!contenido) return { source, facts: [], ok: false, note: 'No se pudo leer la página (vacía, bloqueada o no existe)' };
+  const r = await extraer(contenido);
+  if (r.anioViejo) return viejo(r.anioModeloFuente);
+  const como = 'pdfBase64' in contenido ? ' del PDF' : '';
+  return {
+    source,
+    facts: r.facts,
+    ok: r.facts.length > 0,
+    note:
+      r.facts.length > 0
+        ? nota(r.facts.length, r.descartadosPorVersion, como)
+        : r.descartadosPorVersion > 0
+          ? `Se leyó${como}: sus ${r.descartadosPorVersion} datos son de otras versiones, se descartaron`
+          : `Se leyó${como}, pero no trae especificaciones de este modelo`,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Pipeline completo
 // ---------------------------------------------------------------------------
 export async function runIngestPipeline(input: {
@@ -229,15 +286,6 @@ export async function runIngestPipeline(input: {
     warningsEs.push('No se encontraron fuentes candidatas. Revisar el nombre del modelo.');
   }
 
-  // Una fuente de hace más de un año modelo puede ser otra generación o una
-  // versión que ya cambió (el RS manual de 2021 vs el RS automático de hoy): fuera.
-  const viejo = (r: Awaited<ReturnType<typeof extractFromPage>>) => {
-    const anioViejo = r.anioModeloFuente > 1990 && r.anioModeloFuente < input.year - 1;
-    return anioViejo ? { ...r, facts: [] as RawFact[], anioViejo } : { ...r, anioViejo };
-  };
-  const nota = (n: number, descartados: number, como: string) =>
-    `${n} datos extraídos${como}${descartados ? ` · ${descartados} descartados por ser de otra versión` : ''}`;
-
   // 3+4. Lectura + extracción, fuentes en paralelo (máx 4, por costo).
   //   a) descarga directa (rápida y gratis);
   //   b) solo si el sitio bloquea o es PDF: lectura con web_fetch de Anthropic.
@@ -246,50 +294,9 @@ export async function runIngestPipeline(input: {
   const rawFacts: RawFact[] = [];
 
   const toProcess = candidates.slice(0, 4);
-  const results = await Promise.allSettled(
-    toProcess.map(async source => {
-      const esPdf = /\.pdf($|\?)/i.test(source.url);
-      const directo = esPdf ? null : await fetchPageText(source.url);
-      if (directo && directo.length >= 300) {
-        const r = viejo(await extractFromPage(directo, source.url, source.tier, label, versionObjetivo));
-        if (r.anioViejo) {
-          return { source, facts: [] as RawFact[], ok: false, note: `Es del modelo ${r.anioModeloFuente}: demasiado viejo para el ${input.year}, se descartó` };
-        }
-        return {
-          source,
-          facts: r.facts,
-          ok: r.facts.length > 0,
-          note: r.facts.length > 0 ? nota(r.facts.length, r.descartadosPorVersion, '') : 'Se leyó, pero no trae especificaciones de esta versión',
-        };
-      }
-      let contenido: Contenido | null = null;
-      try {
-        contenido = await leerConClaude(source.url);
-      } catch (err) {
-        if (esErrorDeCuenta(err)) throw new Error(explicarErrorClaude(err));
-        contenido = null;
-      }
-      if (!contenido) {
-        return { source, facts: [] as RawFact[], ok: false, note: 'No se pudo leer la página (vacía, bloqueada o no existe)' };
-      }
-      const r = viejo(await extractFromPage(contenido, source.url, source.tier, label, versionObjetivo));
-      if (r.anioViejo) {
-        return { source, facts: [] as RawFact[], ok: false, note: `Es del modelo ${r.anioModeloFuente}: demasiado viejo para el ${input.year}, se descartó` };
-      }
-      const como = 'pdfBase64' in contenido ? ' del PDF' : '';
-      return {
-        source,
-        facts: r.facts,
-        ok: r.facts.length > 0,
-        note:
-          r.facts.length > 0
-            ? nota(r.facts.length, r.descartadosPorVersion, como)
-            : r.descartadosPorVersion > 0
-              ? `Se leyó${como}: sus ${r.descartadosPorVersion} datos son de otras versiones, se descartaron`
-              : `Se leyó${como}, pero no trae especificaciones de este modelo`,
-      };
-    })
-  );
+  const procesar = (source: DiscoveredSource, soloKeys?: string[]) =>
+    procesarFuente(source, { label, versionObjetivo, anio: input.year }, soloKeys);
+  const results = await Promise.allSettled(toProcess.map(source => procesar(source)));
 
   for (const r of results) {
     if (r.status === 'fulfilled') {
@@ -305,6 +312,44 @@ export async function runIngestPipeline(input: {
     warningsEs.push('Ninguna fuente respondió con contenido útil. El borrador está vacío: no publicar.');
   } else if (okSources === 1) {
     warningsEs.push('Solo una fuente respondió: sin reconciliación multi-fuente, revisar con más cuidado.');
+  }
+
+  // 4b. Campos clave que faltan (0-100, rendimiento, equipamiento…): una
+  //     segunda búsqueda dirigida SOLO a esos datos, en páginas nuevas.
+  const valoresDe = (facts: RawFact[]) => Object.fromEntries(facts.map(f => [f.key, f.value]));
+  const faltanAntes = clavesFaltantes(identity.fuelType, valoresDe(rawFacts));
+  if (faltanAntes.length > 0) {
+    const extra = await buscarFuentesPara(
+      identity.brand,
+      identity.model,
+      versionObjetivo,
+      input.year,
+      faltanAntes.map(c => c.etiqueta),
+      toProcess.map(x => x.url)
+    ).catch(err => {
+      if (esErrorDeCuenta(err)) throw new Error(explicarErrorClaude(err));
+      return [] as DiscoveredSource[];
+    });
+    const soloKeys = faltanAntes.flatMap(c => c.keys);
+    const extras = await Promise.allSettled(extra.map(source => procesar(source, soloKeys)));
+    for (const r of extras) {
+      if (r.status !== 'fulfilled') continue;
+      sourcesReport.push({
+        url: r.value.source.url,
+        nameEs: r.value.source.nameEs,
+        tier: r.value.source.tier,
+        ok: r.value.ok,
+        note: `Búsqueda de datos que faltaban: ${r.value.note}`,
+      });
+      rawFacts.push(...r.value.facts);
+    }
+    toProcess.push(...extra);
+  }
+  const faltan = clavesFaltantes(identity.fuelType, valoresDe(rawFacts));
+  if (faltan.length > 0) {
+    warningsEs.push(
+      `Faltan ${faltan.length} datos clave (${faltan.map(c => c.etiqueta).join(', ')}): complétalos en la revisión o márcalos como "no existe".`
+    );
   }
 
   // 5. Reconciliación + validación

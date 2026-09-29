@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
       facts: Array.isArray(body?.facts) ? body.facts : [],
       fotos: Array.isArray(body?.fotos) ? body.fotos : [],
       dealerIds: Array.isArray(body?.dealerIds) ? body.dealerIds : [],
+      sinDato: Array.isArray(body?.sinDato) ? body.sinDato : [],
       // La aceptación en la pantalla de revisión ES la verificación humana
       verifiedBy: auth.userId,
     });

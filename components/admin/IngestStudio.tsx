@@ -12,6 +12,9 @@ import { adminFetch, mensajeDeErrorDeAuth } from '@/lib/admin-fetch';
 import { Button } from '@/components/ui/button';
 import { RevisionFotos, fotosIniciales, type FotoRevision } from '@/components/admin/RevisionFotos';
 import { parseVehicleList, type ParsedVehicleQuery } from '@/lib/ingest/parse-query';
+import { DatosClave, type ValorManual } from '@/components/admin/DatosClave';
+import { clavesFaltantes } from '@/lib/attributes/clave';
+import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
 import { Loader2, ExternalLink, AlertTriangle, CheckCircle2, XCircle, Sparkles, Clock, ChevronRight } from 'lucide-react';
 
 const TYPES = ['Sedán', 'SUV', 'Pickup', 'Deportivo', 'Wagon', 'Hatchback', 'Convertible'];
@@ -147,6 +150,9 @@ export function IngestStudio() {
   const [edited, setEdited] = useState<Record<string, string>>({});
   const [priceValue, setPriceValue] = useState<string>('');
   const [fotos, setFotos] = useState<FotoRevision[]>([]);
+  // Datos clave completados a mano en la revisión, y los marcados "no existe".
+  const [manuales, setManuales] = useState<Record<string, ValorManual>>({});
+  const [sinDato, setSinDato] = useState<string[]>([]);
   const [published, setPublished] = useState<{ id: string; label: string } | null>(null);
 
   // Concesionarios que venden el carro. La última selección se recuerda: en una
@@ -182,6 +188,15 @@ export function IngestStudio() {
   }, [draft]);
 
   const acceptedCount = draft ? draft.facts.filter(f => accepted[f.key]).length : 0;
+
+  /** key → valor de lo que se publicaría: lo aceptado (con ediciones) + lo puesto a mano. */
+  const valoresPublicables = useMemo(() => {
+    const out: Record<string, unknown> = {};
+    for (const f of draft?.facts ?? []) {
+      if (accepted[f.key]) out[f.key] = edited[f.key] !== undefined && edited[f.key] !== '' ? edited[f.key] : f.value;
+    }
+    return { ...out, ...manuales };
+  }, [draft, accepted, edited, manuales]);
 
   function encolar(e: React.FormEvent) {
     e.preventDefault();
@@ -245,6 +260,8 @@ export function IngestStudio() {
     setEdited({});
     setPriceValue(d.price ? String(d.price.value) : '');
     setFotos(fotosIniciales(d.fotos));
+    setManuales({});
+    setSinDato([]);
     setError(null);
     setPhase('review');
   }
@@ -266,6 +283,13 @@ export function IngestStudio() {
 
   async function publish() {
     if (!draft) return;
+    const faltan = clavesFaltantes(draft.fuelType, valoresPublicables, sinDato);
+    if (
+      faltan.length > 0 &&
+      !confirm(`Faltan ${faltan.length} datos clave (${faltan.map(c => c.etiqueta).join(', ')}). Sus bloques no saldrán en la ficha. ¿Publicar igual?`)
+    ) {
+      return;
+    }
     setError(null);
     setPhase('publishing');
     try {
@@ -278,7 +302,9 @@ export function IngestStudio() {
           }
           return { key: f.key, value, confidence: f.confidence, sourceTier: f.tier, sourceUrl: f.sourceUrl };
         })
-        .filter(f => !(typeof f.value === 'number' && !Number.isFinite(f.value)));
+        .filter(f => !(typeof f.value === 'number' && !Number.isFinite(f.value)))
+        // Lo que el revisor puso a mano: un humano lo afirmó, confianza plena.
+        .concat(Object.entries(manuales).map(([key, value]) => ({ key, value, confidence: 1, sourceTier: 1, sourceUrl: undefined as any })));
 
       const res = await adminFetch('/api/admin/ingest/publish', {
         method: 'POST',
@@ -294,6 +320,7 @@ export function IngestStudio() {
           priceEstimated: draft.price?.estimated ?? true,
           priceReasoningEs: draft.price?.reasoningEs ?? 'Precio ingresado a mano en la revisión.',
           facts,
+          sinDato,
           dealerIds: dealerIds.filter(id => concesionarios.some(c => c.id === id)),
           // Portada primero; solo fotos ya procesadas (o la original si no hay Cloudinary).
           fotos: [...fotos.filter(f => f.usar && f.portada), ...fotos.filter(f => f.usar && !f.portada)]
@@ -493,6 +520,37 @@ export function IngestStudio() {
               <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" /> {w}
             </p>
           ))}
+        </div>
+      )}
+
+      {/* Datos clave */}
+      <DatosClave
+        fuelType={draft.fuelType}
+        valores={valoresPublicables}
+        sinDato={sinDato}
+        onValor={(key, v) => setManuales({ ...manuales, [key]: v })}
+        onSinDato={(id, marcar) => setSinDato(marcar ? [...sinDato, id] : sinDato.filter(x => x !== id))}
+      />
+      {Object.keys(manuales).length > 0 && (
+        <div className="bg-blanco rounded-[28px] border border-linea p-6">
+          <h3 className="font-bold text-tinta mb-2">Puestos a mano</h3>
+          <ul className="text-sm divide-y divide-linea">
+            {Object.entries(manuales).map(([key, v]) => {
+              const def = ATTRIBUTE_REGISTRY.find(d => d.key === key);
+              return (
+                <li key={key} className="py-2 flex items-center justify-between gap-3">
+                  <span className="text-tinta-2">{def?.labelEs ?? key}</span>
+                  <span className="font-semibold">
+                    {v === true ? 'Sí' : v === false ? 'No lo tiene' : `${v}${def?.unit ? ` ${def.unit}` : ''}`}
+                    <button type="button" className="ml-3 text-xs font-normal text-wise hover:underline"
+                      onClick={() => setManuales(Object.fromEntries(Object.entries(manuales).filter(([k]) => k !== key)))}>
+                      quitar
+                    </button>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
 

@@ -31,6 +31,8 @@ export interface PublishInput {
   facts: AcceptedFact[];
   /** Fotos aprobadas en la revisión, en orden; la de `portada` es la principal. */
   fotos?: { url: string; angulo: string; portada?: boolean }[];
+  /** Campos clave que el revisor marcó "el dato no existe" (lib/attributes/clave). */
+  sinDato?: string[];
   /** Concesionarios que lo venden (ids de Dealer). Los que no existan se ignoran. */
   dealerIds?: string[];
   /** userId del revisor humano; null en cargas automáticas de prueba. */
@@ -117,6 +119,9 @@ export async function publishDraft(input: PublishInput): Promise<PublishResult> 
     specs.commercial.priceEstimated = true;
     specs.commercial.priceReasoningEs = String(input.priceReasoningEs ?? '');
   }
+
+  const sinDato = (input.sinDato ?? []).filter(x => typeof x === 'string').slice(0, 60);
+  if (sinDato.length) specs.meta = { ...(specs.meta ?? {}), sinDato };
 
   const coverage = computeCoverage(fuelType, new Set(clean.map(f => f.key)));
 
