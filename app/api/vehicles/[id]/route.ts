@@ -17,6 +17,7 @@ export async function GET(
           select: {
             id: true,
             url: true,
+            alt: true,
             type: true,
             order: true,
             isThumbnail: true

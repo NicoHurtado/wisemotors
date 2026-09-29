@@ -210,6 +210,28 @@ export async function escribirHechos(
   return { ok: true, escritos: limpios.length };
 }
 
+/** Borra datos de un carro publicado: hecho + specifications + cobertura. */
+export async function quitarHechos(vehicleId: string, keys: string[]): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (keys.length === 0) return { ok: true };
+  const v = await prisma.vehicle.findUnique({ where: { id: vehicleId }, select: { specifications: true, fuelType: true } });
+  if (!v) return { ok: false, error: 'Vehículo no encontrado' };
+  const s = specsDe(v.specifications);
+  for (const k of keys) fijarEnSpecs(s, k, undefined);
+  const restantes = await prisma.vehicleAttribute.findMany({
+    where: { vehicleId, attributeKey: { notIn: keys } },
+    select: { attributeKey: true },
+  });
+  const cobertura = computeCoverage(v.fuelType, new Set(restantes.map(r => r.attributeKey)));
+  await prisma.$transaction([
+    prisma.vehicleAttribute.deleteMany({ where: { vehicleId, attributeKey: { in: keys } } }),
+    prisma.vehicle.update({
+      where: { id: vehicleId },
+      data: { specifications: JSON.stringify(s), coverageGlobal: cobertura.global, coverageByDimension: JSON.stringify(cobertura.byDimension) },
+    }),
+  ]);
+  return { ok: true };
+}
+
 /** Marca o desmarca un campo clave como "el dato no existe" (specifications.meta.sinDato). */
 export async function marcarSinDato(vehicleId: string, id: string, marcar: boolean) {
   const v = await prisma.vehicle.findUnique({ where: { id: vehicleId }, select: { specifications: true } });
