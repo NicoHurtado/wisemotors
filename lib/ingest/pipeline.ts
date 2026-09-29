@@ -13,7 +13,7 @@ import { z } from 'zod/v4';
 import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
 import { esErrorDeCuenta, explicarErrorClaude, pedirJson } from '@/lib/ai/claude';
 import { fetchPageText } from './fetcher';
-import { buscarFotos } from './fotos';
+import { buscarFotos, type Angulo } from './fotos';
 import { discoverSources } from './sources';
 import { buscarFuentes, buscarFuentesPara, leerConClaude, type Contenido } from './buscar-fuentes';
 import { clavesFaltantes } from '@/lib/attributes/clave';
@@ -256,6 +256,8 @@ export async function runIngestPipeline(input: {
   country: string;
   /** Documentos del concesionario: la fuente principal; la web solo complementa. */
   documentos?: DocumentoConcesionario[];
+  /** Vistas que ya tienen foto del concesionario: la IA solo busca las demás. */
+  angulosCubiertos?: Angulo[];
 }): Promise<VehicleDraft> {
   const warningsEs: string[] = [];
 
@@ -411,6 +413,7 @@ export async function runIngestPipeline(input: {
       modelo: identity.model,
       fuentes: toProcess,
       avisos: avisosFotos,
+      cubiertos: input.angulosCubiertos,
     }).catch(err => {
       if (esErrorDeCuenta(err)) throw new Error(explicarErrorClaude(err));
       avisosFotos.push(`No se pudieron buscar fotos: ${explicarErrorClaude(err).slice(0, 120)}`);

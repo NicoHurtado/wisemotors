@@ -64,7 +64,7 @@ export function cloudinaryConfigurado(): boolean {
 export async function procesarFotoCarro(
   origen: string,
   opciones: { recortar: boolean; voltear: boolean; carpeta?: string }
-): Promise<{ url: string; publicId: string; recortada: boolean }> {
+): Promise<{ url: string; publicId: string; recortada: boolean; original: string }> {
   const pasos: Record<string, unknown>[] = [];
   if (opciones.recortar) pasos.push({ effect: 'background_removal' }, { effect: 'trim' });
   if (opciones.voltear) pasos.push({ angle: 'hflip' });
@@ -82,13 +82,14 @@ export async function procesarFotoCarro(
 
   try {
     const r = await subir(pasos);
-    return { url: r.eager?.[0]?.secure_url ?? r.secure_url, publicId: r.public_id, recortada: opciones.recortar };
+    // `original` es la foto subida sin transformar: sirve para volver a procesarla (voltear).
+    return { url: r.eager?.[0]?.secure_url ?? r.secure_url, publicId: r.public_id, recortada: opciones.recortar, original: r.secure_url };
   } catch (err) {
     if (!opciones.recortar) throw err;
     // Sin el recorte con IA habilitado en la cuenta: la foto sigue, con su fondo.
     console.warn('Cloudinary no pudo quitar el fondo; se sube sin recorte:', err);
     const r = await subir(pasos.filter(p => p.effect !== 'background_removal' && p.effect !== 'trim'));
-    return { url: r.eager?.[0]?.secure_url ?? r.secure_url, publicId: r.public_id, recortada: false };
+    return { url: r.eager?.[0]?.secure_url ?? r.secure_url, publicId: r.public_id, recortada: false, original: r.secure_url };
   }
 }
 

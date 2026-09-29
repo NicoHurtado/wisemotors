@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/api-auth';
 import { runIngestPipeline, type DocumentoConcesionario } from '@/lib/ingest/pipeline';
 import { parseVehicleQuery } from '@/lib/ingest/parse-query';
+import { ANGULOS, type Angulo } from '@/lib/ingest/fotos';
 
 // La ingesta hace varias llamadas LLM + fetch de fuentes: necesita más que
 // los 30s por defecto del proyecto.
@@ -39,6 +40,12 @@ async function leerCuerpo(request: NextRequest): Promise<{ body: any; documentos
   return { body, documentos };
 }
 
+/** Vistas ya cubiertas: arreglo en JSON o "lado,frente" en multipart. */
+function angulosDe(x: unknown): Angulo[] {
+  const lista = Array.isArray(x) ? x : typeof x === 'string' ? x.split(',') : [];
+  return lista.filter((a): a is Angulo => ANGULOS.includes(a as Angulo));
+}
+
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
@@ -72,6 +79,7 @@ export async function POST(request: NextRequest) {
       year: yearNum,
       country: String(country ?? 'CO').trim().toUpperCase(),
       documentos,
+      angulosCubiertos: angulosDe(body?.angulosCubiertos),
     });
 
     return NextResponse.json({ draft });

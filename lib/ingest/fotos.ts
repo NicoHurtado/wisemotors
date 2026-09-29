@@ -7,12 +7,13 @@
 // 2. Haiku MIRA las candidatas (visión) y dice de cada una: ángulo, hacia dónde
 //    mira el carro, si es de verdad este modelo, si es foto de estudio y qué tan
 //    buena es. No se adivina por el nombre del archivo.
-// 3. Se recomiendan hasta 4 (lado, 3/4 delantero, 3/4 trasero, interior) y se
-//    procesan en Cloudinary con el mismo acabado (ver procesarFotoCarro).
+// 3. Se recomienda la mejor de cada una de las SEIS vistas (lateral, frontal,
+//    trasera, 3/4 delantera, 3/4 trasera, interior) y se procesan en
+//    Cloudinary con el mismo acabado (ver procesarFotoCarro).
 // 4. El humano aprueba, cambia o quita en la revisión. Nada se publica solo.
 //
-// Futuro (concesionarios): su carpeta de fotos entra como candidatas de tier 1
-// por delante de todo lo demás; este mismo flujo las clasifica y procesa.
+// Las fotos que manda el concesionario se suben a su vista (procesarFotoSubida)
+// y la búsqueda solo intenta las vistas que quedaron vacías (`cubiertos`).
 // ============================================================================
 
 import { z } from 'zod/v4';
@@ -25,8 +26,8 @@ import type { DiscoveredSource, FotoDraft } from './types';
 export const ANGULOS = ['lado', 'tres_cuartos_frente', 'tres_cuartos_atras', 'frente', 'atras', 'interior', 'detalle', 'otro'] as const;
 export type Angulo = (typeof ANGULOS)[number];
 
-/** Lo que se busca para la ficha, en orden: el primero es la portada. */
-const BUSCADOS: Angulo[] = ['lado', 'tres_cuartos_frente', 'tres_cuartos_atras', 'interior'];
+/** Las seis vistas de la ficha, en orden: la primera es la portada. */
+export const VISTAS: Angulo[] = ['lado', 'frente', 'atras', 'tres_cuartos_frente', 'tres_cuartos_atras', 'interior'];
 
 const MAX_CANDIDATAS = 14;
 
@@ -161,6 +162,26 @@ function puntaje(c: { calidad: number; estudio: boolean }, origenOficial: boolea
  * Procesa una foto en Cloudinary según su ángulo. Sin Cloudinary, queda la original.
  * `voltear`: espejo horizontal (lo pide el revisor para que el carro mire a la derecha).
  */
+/** Una foto que subió el revisor (la del concesionario), ya en su vista. */
+export async function procesarFotoSubida(dataUrl: string, angulo: Angulo, voltear = false): Promise<FotoDraft> {
+  const exterior = angulo !== 'interior' && angulo !== 'detalle';
+  const r = await procesarFotoCarro(dataUrl, { recortar: exterior, voltear });
+  return {
+    original: r.original,
+    pagina: 'concesionario',
+    oficial: true,
+    angulo,
+    miraA: 'no_aplica',
+    estudio: true,
+    calidad: 5,
+    recomendada: true,
+    procesada: r.url,
+    publicId: r.publicId,
+    recortada: r.recortada,
+    volteada: voltear,
+  };
+}
+
 export async function procesarFoto(
   f: Pick<FotoDraft, 'original' | 'angulo'> & { voltear?: boolean }
 ): Promise<Pick<FotoDraft, 'procesada' | 'publicId' | 'recortada' | 'volteada'>> {
@@ -183,8 +204,12 @@ export async function buscarFotos(opts: {
   modelo: string;
   fuentes: DiscoveredSource[];
   avisos: string[];
+  /** Vistas que ya tienen foto (del concesionario): no se buscan. */
+  cubiertos?: Angulo[];
 }): Promise<FotoDraft[]> {
   const { nombre, fuentes, avisos } = opts;
+  const buscados = VISTAS.filter(v => !(opts.cubiertos ?? []).includes(v));
+  if (buscados.length === 0) return [];
 
   // Candidatas de las fuentes ya leídas, la oficial primero.
   const porPagina = async (url: string) => {
@@ -257,15 +282,15 @@ export async function buscarFotos(opts: {
     });
   });
 
-  // La mejor de cada ángulo buscado.
-  for (const angulo of BUSCADOS) {
+  // La mejor de cada vista que falta.
+  for (const angulo of buscados) {
     const mejor = candidatas
       .filter(c => c.angulo === angulo)
       .sort((a, b) => puntaje(b, b.oficial) - puntaje(a, a.oficial))[0];
     if (mejor) mejor.recomendada = true;
   }
-  const faltan = BUSCADOS.filter(a => !candidatas.some(c => c.angulo === a && c.recomendada));
-  if (faltan.length) avisos.push(`Fotos: no se encontró ${faltan.map(a => ETIQUETA_ANGULO[a]).join(', ')}.`);
+  const faltan = buscados.filter(a => !candidatas.some(c => c.angulo === a && c.recomendada));
+  if (faltan.length) avisos.push(`Fotos: no se encontró la vista ${faltan.map(a => ETIQUETA_ANGULO[a].toLowerCase()).join(', ')}. Súbela en la revisión.`);
   if (!cloudinaryConfigurado()) {
     avisos.push('Cloudinary no está configurado: las fotos quedan con su fondo original (sin recortar).');
   }
@@ -284,16 +309,16 @@ export async function buscarFotos(opts: {
   );
 
   // Recomendadas primero (en el orden buscado), luego el resto por calidad.
-  const orden = (c: FotoDraft) => (c.recomendada ? BUSCADOS.indexOf(c.angulo) : 10 + (5 - c.calidad));
+  const orden = (c: FotoDraft) => (c.recomendada ? VISTAS.indexOf(c.angulo) : 10 + (5 - c.calidad));
   return candidatas.sort((a, b) => orden(a) - orden(b));
 }
 
 export const ETIQUETA_ANGULO: Record<Angulo, string> = {
-  lado: 'De lado',
-  tres_cuartos_frente: '3/4 delantero',
-  tres_cuartos_atras: '3/4 trasero',
-  frente: 'De frente',
-  atras: 'De atrás',
+  lado: 'Lateral',
+  tres_cuartos_frente: '3/4 delantera',
+  tres_cuartos_atras: '3/4 trasera',
+  frente: 'Frontal',
+  atras: 'Trasera',
   interior: 'Interior',
   detalle: 'Detalle',
   otro: 'Otro',

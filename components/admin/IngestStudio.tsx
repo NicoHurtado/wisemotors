@@ -10,7 +10,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { adminFetch, mensajeDeErrorDeAuth } from '@/lib/admin-fetch';
 import { Button } from '@/components/ui/button';
-import { RevisionFotos, fotosIniciales, type FotoRevision } from '@/components/admin/RevisionFotos';
+import { RevisionFotos, fotosIniciales, subirFotoVista, VISTAS, type FotoRevision } from '@/components/admin/RevisionFotos';
 import { parseVehicleList, type ParsedVehicleQuery } from '@/lib/ingest/parse-query';
 import { DatosClave, type ValorManual } from '@/components/admin/DatosClave';
 import { clavesFaltantes } from '@/lib/attributes/clave';
@@ -65,6 +65,8 @@ interface ItemCola {
   publicadoId?: string;
   /** Nombres de los documentos del concesionario (los archivos viven en memoria). */
   documentos?: string[];
+  /** Fotos del concesionario ya subidas y procesadas, por vista. */
+  fotosPropias?: FotoRevision[];
 }
 
 /** Vercel corta el cuerpo en ~4,5 MB. */
@@ -123,6 +125,8 @@ export function IngestStudio() {
   const corriendo = useRef(false);
   // Documentos del concesionario por item de la cola (no caben en localStorage).
   const [adjuntos, setAdjuntos] = useState<File[]>([]);
+  // Fotos del concesionario por vista: se suben y procesan apenas se eligen.
+  const [fotosForm, setFotosForm] = useState<Record<string, FotoRevision | 'subiendo'>>({});
   const archivos = useRef(new Map<number, File[]>());
 
   const vistaPrevia = useMemo(() => parseVehicleList(texto), [texto]);
@@ -242,9 +246,22 @@ export function IngestStudio() {
       archivos.current.set(nuevos[0].id, adjuntos);
       nuevos[0].documentos = adjuntos.map(f => f.name);
     }
+    const propias = Object.values(fotosForm).filter((f): f is FotoRevision => f !== 'subiendo');
+    if (Object.values(fotosForm).includes('subiendo')) {
+      setError('Espera a que terminen de subir las fotos.');
+      return;
+    }
+    if (propias.length > 0) {
+      if (nuevos.length > 1) {
+        setError('Las fotos son de un solo carro: escribe una sola línea cuando subas fotos.');
+        return;
+      }
+      nuevos[0].fotosPropias = propias;
+    }
     setCola(prev => [...prev, ...nuevos]);
     setTexto('');
     setAdjuntos([]);
+    setFotosForm({});
   }
 
   // Un pipeline a la vez: cada uno hace ~6 fetch + varias llamadas LLM, y en
@@ -271,6 +288,7 @@ export function IngestStudio() {
           form.set('model', item.parsed.model);
           form.set('year', String(item.parsed.year));
           form.set('country', country);
+          form.set('angulosCubiertos', (item.fotosPropias ?? []).map(f => f.angulo).join(','));
           for (const f of docs) form.append('documentos', f);
           res = await adminFetch('/api/admin/ingest', { method: 'POST', body: form });
         } else {
@@ -282,12 +300,17 @@ export function IngestStudio() {
               model: item.parsed.model,
               year: item.parsed.year,
               country,
+              angulosCubiertos: (item.fotosPropias ?? []).map(f => f.angulo),
             }),
           });
         }
         const data = await res.json();
         if (!res.ok) throw new Error(mensajeDeErrorDeAuth(res) ?? data.error ?? 'Falló la ingesta');
-        actualizar({ estado: 'listo', draft: data.draft });
+        // Las fotos del concesionario van primero: ocupan su vista en la revisión.
+        const draftConFotos = item.fotosPropias?.length
+          ? { ...data.draft, fotos: [...item.fotosPropias, ...(data.draft.fotos ?? [])] }
+          : data.draft;
+        actualizar({ estado: 'listo', draft: draftConFotos });
       } catch (err) {
         actualizar({ estado: 'error', error: err instanceof Error ? err.message : 'Error inesperado' });
       } finally {
@@ -473,6 +496,49 @@ export function IngestStudio() {
                   ))}
                 </ul>
               )}
+            </div>
+
+            <div className="rounded-xl border border-dashed border-linea p-4">
+              <p className="text-sm text-tinta-2">
+                <span className="font-medium text-tinta">Fotos del concesionario</span> (opcional). Las vistas que dejes vacías las
+                busca la IA.
+              </p>
+              <div className="mt-3 grid grid-cols-3 gap-2 md:grid-cols-6">
+                {VISTAS.map(v => {
+                  const f = fotosForm[v.angulo];
+                  return (
+                    <label key={v.angulo} className="group relative flex aspect-[4/3] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border border-linea bg-white text-center hover:border-wise">
+                      {f === 'subiendo' ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-wise" />
+                      ) : f ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={f.procesada ?? f.original} alt={v.etiqueta} className="h-full w-full object-contain p-1" />
+                      ) : (
+                        <Paperclip className="h-4 w-4 text-tinta-2 group-hover:text-wise" />
+                      )}
+                      <span className="absolute inset-x-0 bottom-0 bg-white/85 py-0.5 text-[11px] text-tinta">{v.etiqueta}</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="sr-only"
+                        onChange={async e => {
+                          const archivo = e.target.files?.[0];
+                          e.target.value = '';
+                          if (!archivo) return;
+                          setFotosForm(x => ({ ...x, [v.angulo]: 'subiendo' }));
+                          try {
+                            const subida = await subirFotoVista(archivo, v.angulo);
+                            setFotosForm(x => ({ ...x, [v.angulo]: subida }));
+                          } catch (err) {
+                            setFotosForm(x => Object.fromEntries(Object.entries(x).filter(([k]) => k !== v.angulo)));
+                            setError(err instanceof Error ? err.message : 'No se pudo subir la foto');
+                          }
+                        }}
+                      />
+                    </label>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="flex items-center gap-3">
