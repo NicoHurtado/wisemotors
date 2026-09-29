@@ -155,22 +155,28 @@ export async function extractFromPage(
   soloKeys?: string[]
 ): Promise<ResultadoExtraccion> {
   const c: Contenido = typeof contenido === 'string' ? { texto: contenido } : contenido;
+  // Documentos (PDF o imagen): no hay texto contra el cual verificar la cita;
+  // son fichas del fabricante o del concesionario.
   const esPdf = 'pdfBase64' in c;
+  const esImagen = 'imagenBase64' in c;
+  const esDocumento = esPdf || esImagen;
   const encabezado = `VEHÍCULO OBJETIVO: ${vehicleLabel}
 
 CATÁLOGO DE ATRIBUTOS (key | etiqueta | tipo):
 ${buildCatalog(soloKeys)}
 `;
-  const cierre = `Extrae las especificaciones del vehículo objetivo presentes en ${esPdf ? 'el documento' : 'el texto'}. Si habla de otro vehículo, no reportes nada.`;
+  const cierre = `Extrae las especificaciones del vehículo objetivo presentes en ${esDocumento ? 'el documento' : 'el texto'}. Si habla de otro vehículo, no reportes nada.`;
 
   let parsed: z.infer<typeof ExtraccionSchema>;
   try {
     parsed = await pedirJson({
       schema: ExtraccionSchema,
       system: SYSTEM_PROMPT,
-      prompt: esPdf
+      prompt: esDocumento
         ? [
-            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: c.pdfBase64 } },
+            'pdfBase64' in c
+              ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: c.pdfBase64 } }
+              : { type: 'image', source: { type: 'base64', media_type: (c as any).mediaType, data: (c as any).imagenBase64 } },
             { type: 'text', text: `${encabezado}\nEl documento adjunto es ${sourceUrl}.\n\n${cierre}` },
           ]
         : `${encabezado}\nTEXTO DE LA PÁGINA (${sourceUrl}):\n"""\n${c.texto.length <= MAX_TEXT_CHARS ? c.texto : denserWindow(c.texto, MAX_TEXT_CHARS)}\n"""\n\n${cierre}`,
@@ -179,7 +185,7 @@ ${buildCatalog(soloKeys)}
     throw new Error(`Claude falló extrayendo de ${sourceUrl}: ${err instanceof Error ? err.message : err}`);
   }
 
-  const textoPlano = esPdf ? null : plano(c.texto);
+  const textoPlano = esDocumento ? null : plano((c as { texto: string }).texto);
   const facts: RawFact[] = [];
   let descartadosPorVersion = 0;
   // Palabras que delatan otra versión ("Premier", "LTZ"…), comparadas palabra por palabra:

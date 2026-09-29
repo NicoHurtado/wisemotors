@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/api-auth';
-import { runIngestPipeline } from '@/lib/ingest/pipeline';
+import { runIngestPipeline, type DocumentoConcesionario } from '@/lib/ingest/pipeline';
 import { parseVehicleQuery } from '@/lib/ingest/parse-query';
 
 // La ingesta hace varias llamadas LLM + fetch de fuentes: necesita más que
@@ -14,12 +14,37 @@ export const dynamic = 'force-dynamic';
 //
 // Acepta { query: "Ónix RS 2026" } (una línea, lo normal) o { brand, model, year }.
 // Con query la marca puede faltar: resolveIdentity la deduce del modelo.
+//
+// Con documentos del concesionario (fichas en PDF o foto) llega como
+// multipart/form-data: los mismos campos + archivos en "documentos". Vercel
+// corta el cuerpo en ~4,5 MB: el cliente reduce las fotos antes de subir.
+const TIPOS_IMAGEN = ['image/jpeg', 'image/png', 'image/webp'] as const;
+
+async function leerCuerpo(request: NextRequest): Promise<{ body: any; documentos: DocumentoConcesionario[] }> {
+  if (!(request.headers.get('content-type') ?? '').includes('multipart/form-data')) {
+    return { body: await request.json(), documentos: [] };
+  }
+  const form = await request.formData();
+  const body = Object.fromEntries(Array.from(form.entries()).filter(([, v]) => typeof v === 'string'));
+  const documentos: DocumentoConcesionario[] = [];
+  for (const archivo of form.getAll('documentos')) {
+    if (typeof archivo === 'string') continue;
+    const base64 = Buffer.from(await archivo.arrayBuffer()).toString('base64');
+    const nombre = (archivo.name || 'documento').slice(0, 80);
+    if (archivo.type === 'application/pdf') documentos.push({ nombre, contenido: { pdfBase64: base64 } });
+    else if ((TIPOS_IMAGEN as readonly string[]).includes(archivo.type)) {
+      documentos.push({ nombre, contenido: { imagenBase64: base64, mediaType: archivo.type as (typeof TIPOS_IMAGEN)[number] } });
+    }
+  }
+  return { body, documentos };
+}
+
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const body = await request.json();
+    const { body, documentos } = await leerCuerpo(request);
     let { brand, model, year } = body ?? {};
     const { query, country } = body ?? {};
 
@@ -46,6 +71,7 @@ export async function POST(request: NextRequest) {
       model: String(model).trim(),
       year: yearNum,
       country: String(country ?? 'CO').trim().toUpperCase(),
+      documentos,
     });
 
     return NextResponse.json({ draft });

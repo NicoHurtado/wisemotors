@@ -150,8 +150,14 @@ Devuelve entre 1 y 3 URLs que hayas visto en los resultados, copiadas exactas.`,
   return Array.from(unicas.values()).sort((a, b) => a.tier - b.tier).slice(0, 3);
 }
 
-/** Contenido de una fuente: texto plano, o PDF (las fichas técnicas oficiales suelen serlo). */
-export type Contenido = { texto: string } | { pdfBase64: string };
+/**
+ * Contenido de una fuente: texto plano, PDF (las fichas técnicas oficiales
+ * suelen serlo) o imagen (la foto de una ficha que mandó el concesionario).
+ */
+export type Contenido =
+  | { texto: string }
+  | { pdfBase64: string }
+  | { imagenBase64: string; mediaType: 'image/jpeg' | 'image/png' | 'image/webp' };
 
 /**
  * Lee una página o PDF con web_fetch de Anthropic. null si no se pudo.

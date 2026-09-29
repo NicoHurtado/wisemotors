@@ -15,7 +15,7 @@ import { parseVehicleList, type ParsedVehicleQuery } from '@/lib/ingest/parse-qu
 import { DatosClave, type ValorManual } from '@/components/admin/DatosClave';
 import { clavesFaltantes } from '@/lib/attributes/clave';
 import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
-import { Loader2, ExternalLink, AlertTriangle, CheckCircle2, XCircle, Sparkles, Clock, ChevronRight } from 'lucide-react';
+import { Loader2, ExternalLink, AlertTriangle, CheckCircle2, XCircle, Sparkles, Clock, ChevronRight, Paperclip, FileText } from 'lucide-react';
 
 const TYPES = ['Sedán', 'SUV', 'Pickup', 'Deportivo', 'Wagon', 'Hatchback', 'Convertible'];
 const VEHICLE_TYPES = ['Automóvil', 'Deportivo', 'Todoterreno', 'Lujo', 'Económico'];
@@ -63,6 +63,28 @@ interface ItemCola {
   draft?: Draft;
   error?: string;
   publicadoId?: string;
+  /** Nombres de los documentos del concesionario (los archivos viven en memoria). */
+  documentos?: string[];
+}
+
+/** Vercel corta el cuerpo en ~4,5 MB. */
+const MAX_BYTES_DOCUMENTOS = 4.2 * 1024 * 1024;
+
+/**
+ * Reduce una foto de ficha técnica a 2000 px de lado mayor en JPEG: sigue
+ * legible para la IA y pesa una fracción. Los PDF pasan tal cual.
+ */
+async function prepararArchivo(f: File): Promise<File> {
+  if (!f.type.startsWith('image/')) return f;
+  const bitmap = await createImageBitmap(f).catch(() => null);
+  if (!bitmap) return f;
+  const escala = Math.min(1, 2000 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * escala);
+  canvas.height = Math.round(bitmap.height * escala);
+  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise<Blob | null>(r => canvas.toBlob(r, 'image/jpeg', 0.85));
+  return blob && blob.size < f.size ? new File([blob], f.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }) : f;
 }
 
 const CLAVE_COLA = 'wisemotors:cola-ingesta';
@@ -70,6 +92,7 @@ const CLAVE_COLA = 'wisemotors:cola-ingesta';
 const EJEMPLO = 'Onix RS 2026\nRenault Duster 2026\nBYD Dolphin Mini';
 
 function host(url: string): string {
+  if (url.startsWith('concesionario://')) return `documento del concesionario (${url.slice(16)})`;
   try { return new URL(url).hostname.replace('www.', ''); } catch { return url; }
 }
 
@@ -98,6 +121,9 @@ export function IngestStudio() {
   const [abierto, setAbierto] = useState<number | null>(null);
   const siguienteId = useRef(1);
   const corriendo = useRef(false);
+  // Documentos del concesionario por item de la cola (no caben en localStorage).
+  const [adjuntos, setAdjuntos] = useState<File[]>([]);
+  const archivos = useRef(new Map<number, File[]>());
 
   const vistaPrevia = useMemo(() => parseVehicleList(texto), [texto]);
 
@@ -208,8 +234,17 @@ export function IngestStudio() {
       setError('Escribe al menos un vehículo, por ejemplo "Onix RS 2026".');
       return;
     }
+    if (adjuntos.length > 0) {
+      if (nuevos.length > 1) {
+        setError('Los documentos son de un solo carro: escribe una sola línea cuando adjuntes fichas.');
+        return;
+      }
+      archivos.current.set(nuevos[0].id, adjuntos);
+      nuevos[0].documentos = adjuntos.map(f => f.name);
+    }
     setCola(prev => [...prev, ...nuevos]);
     setTexto('');
+    setAdjuntos([]);
   }
 
   // Un pipeline a la vez: cada uno hace ~6 fetch + varias llamadas LLM, y en
@@ -225,16 +260,31 @@ export function IngestStudio() {
 
     (async () => {
       try {
-        const res = await adminFetch('/api/admin/ingest', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            brand: item.parsed.brand,
-            model: item.parsed.model,
-            year: item.parsed.year,
-            country,
-          }),
-        });
+        const docs = archivos.current.get(item.id) ?? [];
+        if (item.documentos?.length && docs.length === 0) {
+          throw new Error('Los documentos adjuntos se perdieron al recargar la página: quítalo de la cola y agrégalo de nuevo con sus archivos.');
+        }
+        let res: Response;
+        if (docs.length > 0) {
+          const form = new FormData();
+          form.set('brand', item.parsed.brand ?? '');
+          form.set('model', item.parsed.model);
+          form.set('year', String(item.parsed.year));
+          form.set('country', country);
+          for (const f of docs) form.append('documentos', f);
+          res = await adminFetch('/api/admin/ingest', { method: 'POST', body: form });
+        } else {
+          res = await adminFetch('/api/admin/ingest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              brand: item.parsed.brand,
+              model: item.parsed.model,
+              year: item.parsed.year,
+              country,
+            }),
+          });
+        }
         const data = await res.json();
         if (!res.ok) throw new Error(mensajeDeErrorDeAuth(res) ?? data.error ?? 'Falló la ingesta');
         actualizar({ estado: 'listo', draft: data.draft });
@@ -385,6 +435,46 @@ export function IngestStudio() {
               </div>
             )}
 
+            <div className="rounded-xl border border-dashed border-linea p-4">
+              <label className="flex cursor-pointer flex-wrap items-center gap-3 text-sm">
+                <span className="pastilla h-10 px-4"><Paperclip className="h-4 w-4" /> Adjuntar ficha técnica</span>
+                <span className="text-tinta-2">
+                  ¿El concesionario te pasó la ficha o el catálogo? PDF o foto. Se lee primero y la IA completa lo que falte.
+                </span>
+                <input
+                  type="file"
+                  multiple
+                  accept="application/pdf,image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  onChange={async e => {
+                    const elegidos = Array.from(e.target.files ?? []);
+                    e.target.value = '';
+                    const listos = await Promise.all(elegidos.map(prepararArchivo));
+                    const todos = [...adjuntos, ...listos].slice(0, 6);
+                    const total = todos.reduce((t, f) => t + f.size, 0);
+                    if (total > MAX_BYTES_DOCUMENTOS) {
+                      setError(`Los documentos pesan ${(total / 1048576).toFixed(1)} MB y el máximo es 4 MB. Sube menos páginas o comprime el PDF.`);
+                      return;
+                    }
+                    setError(null);
+                    setAdjuntos(todos);
+                  }}
+                />
+              </label>
+              {adjuntos.length > 0 && (
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {adjuntos.map((f, i) => (
+                    <li key={i} className="flex items-center gap-1.5 rounded-full bg-wise/10 px-3 py-1 text-xs text-wise">
+                      <FileText className="h-3.5 w-3.5" /> {f.name} · {(f.size / 1024).toFixed(0)} KB
+                      <button type="button" aria-label={`Quitar ${f.name}`} onClick={() => setAdjuntos(adjuntos.filter((_, k) => k !== i))}>
+                        <XCircle className="h-3.5 w-3.5" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
             <div className="flex items-center gap-3">
               <select value={country} onChange={e => setCountry(e.target.value)}
                 className="px-3 py-2 border border-linea rounded-lg text-sm focus:ring-2 focus:ring-wise focus:border-wise">
@@ -416,6 +506,11 @@ export function IngestStudio() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-tinta truncate">
                       {item.draft ? `${item.draft.brand} ${item.draft.model} ${item.draft.year}` : item.raw}
+                      {item.documentos?.length ? (
+                        <span className="ml-2 text-xs font-normal text-wise">
+                          <Paperclip className="inline h-3 w-3" /> {item.documentos.length} documento{item.documentos.length > 1 ? 's' : ''}
+                        </span>
+                      ) : null}
                     </p>
                     <p className="text-xs text-tinta-2 truncate">
                       {item.estado === 'listo' && item.draft
@@ -617,9 +712,13 @@ export function IngestStudio() {
             <li key={i} className="flex items-center gap-2 text-sm">
               {s.ok ? <CheckCircle2 className="w-4 h-4 text-purple-500 shrink-0" /> : <XCircle className="w-4 h-4 text-gray-300 shrink-0" />}
               <TierBadge tier={s.tier} />
-              <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-wise hover:underline flex items-center gap-1">
-                {s.nameEs} <ExternalLink className="w-3 h-3" />
-              </a>
+              {s.url.startsWith('concesionario://') ? (
+                <span className="text-tinta font-medium flex items-center gap-1"><FileText className="w-3 h-3" /> {s.nameEs}</span>
+              ) : (
+                <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-wise hover:underline flex items-center gap-1">
+                  {s.nameEs} <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
               <span className="text-tinta-2/80 truncate">{s.note}</span>
             </li>
           ))}

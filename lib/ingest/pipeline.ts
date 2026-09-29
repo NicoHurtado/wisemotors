@@ -243,11 +243,19 @@ async function procesarFuente(
 // ---------------------------------------------------------------------------
 // Pipeline completo
 // ---------------------------------------------------------------------------
+/** Ficha técnica o catálogo que mandó el concesionario (PDF o foto). */
+export interface DocumentoConcesionario {
+  nombre: string;
+  contenido: Contenido;
+}
+
 export async function runIngestPipeline(input: {
   brand: string;
   model: string;
   year: number;
   country: string;
+  /** Documentos del concesionario: la fuente principal; la web solo complementa. */
+  documentos?: DocumentoConcesionario[];
 }): Promise<VehicleDraft> {
   const warningsEs: string[] = [];
 
@@ -293,6 +301,40 @@ export async function runIngestPipeline(input: {
   const sourcesReport: VehicleDraft['sourcesReport'] = [];
   const rawFacts: RawFact[] = [];
 
+  // 3a. Documentos del concesionario primero: tier 1 y de primeros en la lista,
+  //     así ganan cualquier empate con la web en la reconciliación.
+  const docs = (input.documentos ?? []).slice(0, 6);
+  const leidosDocs = await Promise.allSettled(
+    docs.map(async d => {
+      const url = `concesionario://${d.nombre}`;
+      const r = await extractFromPage(d.contenido, url, 1, label, versionObjetivo);
+      const anioViejo = r.anioModeloFuente > 1990 && r.anioModeloFuente < input.year - 1;
+      return { d, url, r, anioViejo };
+    })
+  );
+  for (const x of leidosDocs) {
+    if (x.status !== 'fulfilled') {
+      if (esErrorDeCuenta(x.reason)) throw new Error(explicarErrorClaude(x.reason));
+      warningsEs.push(`No se pudo leer un documento: ${String(x.reason).slice(0, 120)}`);
+      continue;
+    }
+    const { d, url, r, anioViejo } = x.value;
+    const facts = anioViejo ? [] : r.facts;
+    sourcesReport.push({
+      url,
+      nameEs: `Concesionario: ${d.nombre.slice(0, 40)}`,
+      tier: 1,
+      ok: facts.length > 0,
+      note: anioViejo
+        ? `Es del modelo ${r.anioModeloFuente}: demasiado viejo para el ${input.year}, se descartó`
+        : facts.length > 0
+          ? `${facts.length} datos del documento${r.descartadosPorVersion ? ` · ${r.descartadosPorVersion} de otras versiones descartados` : ''}`
+          : 'Se leyó, pero no trae datos de esta versión',
+    });
+    rawFacts.push(...facts);
+  }
+
+  // 3b. La web complementa.
   const toProcess = candidates.slice(0, 4);
   const procesar = (source: DiscoveredSource, soloKeys?: string[]) =>
     procesarFuente(source, { label, versionObjetivo, anio: input.year }, soloKeys);
