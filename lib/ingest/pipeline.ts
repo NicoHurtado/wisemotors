@@ -256,6 +256,9 @@ export async function runIngestPipeline(input: {
   country: string;
   /** Documentos del concesionario: la fuente principal; la web solo complementa. */
   documentos?: DocumentoConcesionario[];
+  /** Enlaces que eligió el equipo (página oficial, ficha en PDF…): fuentes
+   *  principales como los documentos; la web solo complementa. */
+  enlaces?: string[];
   /** Vistas que ya tienen foto del concesionario: la IA solo busca las demás. */
   angulosCubiertos?: Angulo[];
 }): Promise<VehicleDraft> {
@@ -336,20 +339,33 @@ export async function runIngestPipeline(input: {
     rawFacts.push(...facts);
   }
 
-  // 3b. La web complementa.
-  const toProcess = candidates.slice(0, 4);
   const procesar = (source: DiscoveredSource, soloKeys?: string[]) =>
     procesarFuente(source, { label, versionObjetivo, anio: input.year }, soloKeys);
-  const results = await Promise.allSettled(toProcess.map(source => procesar(source)));
-
-  for (const r of results) {
-    if (r.status === 'fulfilled') {
-      sourcesReport.push({ url: r.value.source.url, nameEs: r.value.source.nameEs, tier: r.value.source.tier, ok: r.value.ok, note: r.value.note });
-      rawFacts.push(...r.value.facts);
-    } else {
-      warningsEs.push(`Una fuente falló: ${String(r.reason).slice(0, 120)}`);
+  const reportar = (results: PromiseSettledResult<Awaited<ReturnType<typeof procesar>>>[]) => {
+    for (const r of results) {
+      if (r.status === 'fulfilled') {
+        sourcesReport.push({ url: r.value.source.url, nameEs: r.value.source.nameEs, tier: r.value.source.tier, ok: r.value.ok, note: r.value.note });
+        rawFacts.push(...r.value.facts);
+      } else {
+        if (esErrorDeCuenta(r.reason)) throw new Error(explicarErrorClaude(r.reason));
+        warningsEs.push(`Una fuente falló: ${String(r.reason).slice(0, 120)}`);
+      }
     }
-  }
+  };
+
+  // 3b. Enlaces que puso el equipo: también tier 1 y antes que la web.
+  const enlaces: DiscoveredSource[] = (input.enlaces ?? []).slice(0, 6).map(url => ({
+    url,
+    tier: 1,
+    nameEs: `Enlace del equipo: ${new URL(url).hostname.replace(/^www\./, '')}`,
+  }));
+  reportar(await Promise.allSettled(enlaces.map(source => procesar(source))));
+
+  // 3c. La web complementa (sin repetir los enlaces ya leídos).
+  const deLaWeb = candidates.filter(c => !enlaces.some(e => e.url === c.url)).slice(0, 4);
+  reportar(await Promise.allSettled(deLaWeb.map(source => procesar(source))));
+  // Leídas: los enlaces cuentan para las fotos y para no releerlos en la búsqueda dirigida.
+  const toProcess = [...enlaces, ...deLaWeb];
 
   const okSources = sourcesReport.filter(s => s.ok).length;
   if (okSources === 0) {

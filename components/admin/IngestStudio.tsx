@@ -15,7 +15,7 @@ import { parseVehicleList, type ParsedVehicleQuery } from '@/lib/ingest/parse-qu
 import { DatosClave, type ValorManual } from '@/components/admin/DatosClave';
 import { clavesFaltantes } from '@/lib/attributes/clave';
 import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
-import { Loader2, ExternalLink, AlertTriangle, CheckCircle2, XCircle, Sparkles, Clock, ChevronRight, Paperclip, FileText } from 'lucide-react';
+import { Loader2, ExternalLink, AlertTriangle, CheckCircle2, XCircle, Sparkles, Clock, ChevronRight, Paperclip, FileText, Link2 } from 'lucide-react';
 
 const TYPES = ['Sedán', 'SUV', 'Pickup', 'Deportivo', 'Wagon', 'Hatchback', 'Convertible'];
 const VEHICLE_TYPES = ['Automóvil', 'Deportivo', 'Todoterreno', 'Lujo', 'Económico'];
@@ -65,6 +65,8 @@ interface ItemCola {
   publicadoId?: string;
   /** Nombres de los documentos del concesionario (los archivos viven en memoria). */
   documentos?: string[];
+  /** Enlaces que puso el equipo como fuentes principales. */
+  enlaces?: string[];
   /** Fotos del concesionario ya subidas y procesadas, por vista. */
   fotosPropias?: FotoRevision[];
 }
@@ -125,6 +127,12 @@ export function IngestStudio() {
   const corriendo = useRef(false);
   // Documentos del concesionario por item de la cola (no caben en localStorage).
   const [adjuntos, setAdjuntos] = useState<File[]>([]);
+  // Enlaces principales (página oficial, ficha en PDF…), uno por línea.
+  const [textoEnlaces, setTextoEnlaces] = useState('');
+  const enlacesForm = useMemo(
+    () => Array.from(new Set(textoEnlaces.split(/\s+/).map(x => x.trim()).filter(x => /^https?:\/\/[^\s.]+\.[^\s]+/i.test(x)))).slice(0, 6),
+    [textoEnlaces]
+  );
   // Fotos del concesionario por vista: se suben y procesan apenas se eligen.
   const [fotosForm, setFotosForm] = useState<Record<string, FotoRevision | 'subiendo'>>({});
   const archivos = useRef(new Map<number, File[]>());
@@ -246,6 +254,13 @@ export function IngestStudio() {
       archivos.current.set(nuevos[0].id, adjuntos);
       nuevos[0].documentos = adjuntos.map(f => f.name);
     }
+    if (enlacesForm.length > 0) {
+      if (nuevos.length > 1) {
+        setError('Los enlaces son de un solo carro: escribe una sola línea cuando pongas enlaces.');
+        return;
+      }
+      nuevos[0].enlaces = enlacesForm;
+    }
     const propias = Object.values(fotosForm).filter((f): f is FotoRevision => f !== 'subiendo');
     if (Object.values(fotosForm).includes('subiendo')) {
       setError('Espera a que terminen de subir las fotos.');
@@ -261,6 +276,7 @@ export function IngestStudio() {
     setCola(prev => [...prev, ...nuevos]);
     setTexto('');
     setAdjuntos([]);
+    setTextoEnlaces('');
     setFotosForm({});
   }
 
@@ -289,6 +305,7 @@ export function IngestStudio() {
           form.set('year', String(item.parsed.year));
           form.set('country', country);
           form.set('angulosCubiertos', (item.fotosPropias ?? []).map(f => f.angulo).join(','));
+          form.set('enlaces', (item.enlaces ?? []).join('\n'));
           for (const f of docs) form.append('documentos', f);
           res = await adminFetch('/api/admin/ingest', { method: 'POST', body: form });
         } else {
@@ -300,6 +317,7 @@ export function IngestStudio() {
               model: item.parsed.model,
               year: item.parsed.year,
               country,
+              enlaces: item.enlaces ?? [],
               angulosCubiertos: (item.fotosPropias ?? []).map(f => f.angulo),
             }),
           });
@@ -499,6 +517,29 @@ export function IngestStudio() {
             </div>
 
             <div className="rounded-xl border border-dashed border-linea p-4">
+              <label htmlFor="enlaces-principales" className="flex flex-wrap items-center gap-2 text-sm text-tinta-2">
+                <Link2 className="h-4 w-4 text-wise" />
+                <span className="font-medium text-tinta">Enlaces principales</span> (opcional). La página oficial, la ficha en PDF o
+                una reseña que confíes: se leen primero y la IA completa lo que falte.
+              </label>
+              <textarea
+                id="enlaces-principales"
+                value={textoEnlaces}
+                onChange={e => setTextoEnlaces(e.target.value)}
+                rows={2}
+                placeholder={'https://www.chevrolet.com.co/autos/onix-rs\nhttps://…/ficha-tecnica.pdf'}
+                className="mt-3 w-full rounded-xl border border-linea px-4 py-2.5 text-[14px] focus:border-wise focus:ring-2 focus:ring-wise"
+              />
+              {textoEnlaces.trim() && (
+                <p className="mt-1 text-xs text-tinta-2">
+                  {enlacesForm.length === 0
+                    ? 'Pega enlaces completos, con https://'
+                    : `${enlacesForm.length} enlace${enlacesForm.length > 1 ? 's' : ''} (máximo 6), uno por línea`}
+                </p>
+              )}
+            </div>
+
+            <div className="rounded-xl border border-dashed border-linea p-4">
               <p className="text-sm text-tinta-2">
                 <span className="font-medium text-tinta">Fotos del concesionario</span> (opcional). Las vistas que dejes vacías las
                 busca la IA.
@@ -575,6 +616,11 @@ export function IngestStudio() {
                       {item.documentos?.length ? (
                         <span className="ml-2 text-xs font-normal text-wise">
                           <Paperclip className="inline h-3 w-3" /> {item.documentos.length} documento{item.documentos.length > 1 ? 's' : ''}
+                        </span>
+                      ) : null}
+                      {item.enlaces?.length ? (
+                        <span className="ml-2 text-xs font-normal text-wise">
+                          <Link2 className="inline h-3 w-3" /> {item.enlaces.length} enlace{item.enlaces.length > 1 ? 's' : ''}
                         </span>
                       ) : null}
                     </p>

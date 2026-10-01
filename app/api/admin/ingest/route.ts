@@ -19,6 +19,8 @@ export const dynamic = 'force-dynamic';
 // Con documentos del concesionario (fichas en PDF o foto) llega como
 // multipart/form-data: los mismos campos + archivos en "documentos". Vercel
 // corta el cuerpo en ~4,5 MB: el cliente reduce las fotos antes de subir.
+// Con "enlaces" (URLs que eligió el equipo) se leen antes que la web, como
+// fuentes principales; sirven igual sin documentos.
 const TIPOS_IMAGEN = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
 async function leerCuerpo(request: NextRequest): Promise<{ body: any; documentos: DocumentoConcesionario[] }> {
@@ -38,6 +40,25 @@ async function leerCuerpo(request: NextRequest): Promise<{ body: any; documentos
     }
   }
   return { body, documentos };
+}
+
+/**
+ * Enlaces que puso el equipo: solo http(s) públicos (el servidor los descarga,
+ * así que nada de localhost ni redes internas). Uno por línea o arreglo.
+ */
+function enlacesDe(x: unknown): string[] {
+  const lista = Array.isArray(x) ? x : typeof x === 'string' ? x.split(/[\s,]+/) : [];
+  const vistos = new Set<string>();
+  for (const crudo of lista) {
+    try {
+      const u = new URL(String(crudo).trim());
+      const host = u.hostname.toLowerCase();
+      if (!/^https?:$/.test(u.protocol)) continue;
+      if (/^(localhost|.*\.local|.*\.internal)$/.test(host) || /^(127\.|10\.|192\.168\.|169\.254\.|0\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host) || host.includes(':')) continue;
+      vistos.add(u.toString());
+    } catch {}
+  }
+  return Array.from(vistos).slice(0, 6);
 }
 
 /** Vistas ya cubiertas: arreglo en JSON o "lado,frente" en multipart. */
@@ -79,6 +100,7 @@ export async function POST(request: NextRequest) {
       year: yearNum,
       country: String(country ?? 'CO').trim().toUpperCase(),
       documentos,
+      enlaces: enlacesDe(body?.enlaces),
       angulosCubiertos: angulosDe(body?.angulosCubiertos),
     });
 
