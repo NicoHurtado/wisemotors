@@ -155,21 +155,149 @@ export function Carrera({ carriles }: { carriles: { nombre: string; segundos: nu
                 <span className={c.propio ? 'font-semibold text-tinta' : 'text-tinta-2'}>{c.nombre}</span>
                 <span className={`cifra ${llego ? (c.propio ? 'text-wise' : 'text-tinta') : 'text-tinta-2/50'}`}>{fmt(c.segundos, 1)} s</span>
               </div>
-              <div className="relative mt-1.5 h-3 rounded-full bg-tarjeta [background-image:repeating-linear-gradient(90deg,transparent_0_18px,rgba(14,12,17,0.06)_18px_20px)]">
-                <div
-                  key={vuelta}
-                  className={`absolute inset-y-0 left-0 rounded-full ${c.propio ? 'bg-wise shadow-[0_0_14px_rgba(136,28,183,0.55)]' : 'bg-tinta/30'}`}
-                  style={{
-                    width: corriendo ? '100%' : '0%',
-                    // Aceleración casi constante: la posición crece como t², de ahí el ease-in.
-                    transition: corriendo ? `width ${c.segundos}s cubic-bezier(0.45, 0, 0.85, 0.55)` : 'none',
-                  }}
-                />
+              {/* Carril: la estela crece y el carrito va en la punta. El carro
+                  avanza dentro de un riel que le deja su propio ancho al final. */}
+              <div className="relative mt-1 h-7">
+                <div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-tarjeta [background-image:repeating-linear-gradient(90deg,transparent_0_18px,rgba(14,12,17,0.06)_18px_20px)]" />
+                <div key={vuelta} className="absolute inset-y-0 left-0 right-9">
+                  <div
+                    className={`absolute left-0 top-1/2 h-2 -translate-y-1/2 rounded-full ${c.propio ? 'bg-wise shadow-[0_0_14px_rgba(136,28,183,0.55)]' : 'bg-tinta/25'}`}
+                    style={{
+                      width: corriendo ? 'calc(100% + 18px)' : '18px',
+                      // Aceleración casi constante: la posición crece como t², de ahí el ease-in.
+                      transition: corriendo ? `width ${c.segundos}s cubic-bezier(0.45, 0, 0.85, 0.55)` : 'none',
+                    }}
+                  />
+                  <span
+                    className="absolute top-1/2 -translate-y-1/2"
+                    style={{
+                      left: corriendo ? '100%' : '0%',
+                      transition: corriendo ? `left ${c.segundos}s cubic-bezier(0.45, 0, 0.85, 0.55)` : 'none',
+                    }}
+                  >
+                    <Carrito className={`h-[23px] w-9 ${c.propio ? 'text-wise' : 'text-tinta/55'}`} />
+                  </span>
+                </div>
               </div>
             </div>
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/** Carrito de perfil mirando a la derecha (el sentido de la carrera). */
+function Carrito({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 28 18" className={className} aria-hidden>
+      <path
+        d="M2 12.5V10c0-.9.6-1.6 1.5-1.8l4-.9 3.6-3.4c.6-.5 1.3-.8 2.1-.8h5.2c.8 0 1.6.3 2.1.9l3 3.2 2.4.5c1 .2 1.6 1 1.6 2v2.8c0 .6-.4 1-1 1H3c-.6 0-1-.4-1-1z"
+        fill="currentColor"
+      />
+      <path d="M12.3 5.4c.3-.3.7-.4 1.1-.4h2.6v3h-5.6zM17 5h1.5c.4 0 .8.2 1.1.5L22 8h-5z" fill="#fff" opacity=".85" />
+      <circle cx="7.5" cy="14" r="2.6" fill="#0e0c11" />
+      <circle cx="7.5" cy="14" r="1" fill="#fff" />
+      <circle cx="21" cy="14" r="2.6" fill="#0e0c11" />
+      <circle cx="21" cy="14" r="1" fill="#fff" />
+    </svg>
+  );
+}
+
+// ── Parqueadero ────────────────────────────────────────────────────────────
+// Cupo de referencia: 2,40 × 4,80 m, lo típico en edificios y centros
+// comerciales de Colombia (cada POT fija su mínimo; muchos van de 2,30 × 4,50
+// a 2,50 × 5,00). Vista desde arriba, en milímetros reales: el carro se
+// dibuja a escala dentro de su cupo, con un vecino a cada lado.
+const CUPO = { ancho: 2400, largo: 4800 };
+
+export function Parqueadero({ largo, ancho, nombre }: { largo: number; ancho: number; nombre: string }) {
+  const [ref, visto] = useEnVista<HTMLDivElement>(0.35);
+  const linea = 70;
+  const pasillo = 1500;
+  const W = CUPO.ancho * 3 + linea;
+  const H = CUPO.largo + pasillo;
+  const sobraLargo = CUPO.largo - largo; // mm, adelante + atrás
+  const porLado = (CUPO.ancho - ancho) / 2; // mm a cada lado para abrir puertas
+  const cm = (mm: number) => fmt(Math.abs(mm) / 10);
+  // Carro centrado en el cupo del medio, con la nariz hacia la pared.
+  const x = CUPO.ancho + linea / 2 + (CUPO.ancho - ancho) / 2;
+  const y = Math.max(120, sobraLargo / 2);
+  const r = Math.min(ancho * 0.16, 380);
+
+  const veredicto =
+    sobraLargo < 0
+      ? { t: `Se sale ${cm(sobraLargo)} cm del cupo`, d: 'Necesita un parqueadero más largo que el promedio.' }
+      : porLado < 300
+        ? { t: 'Entra, pero justo de lado', d: `Quedan ${cm(porLado)} cm a cada lado: abrir las puertas pide cuidado.` }
+        : sobraLargo < 400
+          ? { t: 'Entra, sin mucho espacio de sobra', d: `Le sobran ${cm(sobraLargo)} cm de largo y ${cm(porLado)} cm a cada lado.` }
+          : { t: 'Entra holgado', d: `Le sobran ${cm(sobraLargo)} cm de largo y ${cm(porLado)} cm a cada lado para abrir las puertas.` };
+
+  return (
+    <div ref={ref} className="grid items-center gap-6 md:grid-cols-[1fr_1.3fr]">
+      <div>
+        <p className="text-[28px] font-medium leading-tight tracking-[-0.03em]">{veredicto.t}</p>
+        <p className="mt-2 text-[15px] leading-snug text-tinta-2">{veredicto.d}</p>
+        <div className="mt-5 flex flex-wrap gap-2 text-[12px]">
+          <span className="rounded-full bg-blanco px-3 py-1.5">
+            {nombre}: <span className="cifra font-semibold">{fmt(largo / 1000, 2)} × {fmt(ancho / 1000, 2)} m</span>
+          </span>
+          <span className="rounded-full bg-blanco px-3 py-1.5">
+            Cupo: <span className="cifra font-semibold">4,80 × 2,40 m</span>
+          </span>
+        </div>
+        <p className="mt-4 text-[11px] text-tinta-2">Cupo típico de edificios y centros comerciales. Varía según el edificio. Ancho sin espejos.</p>
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} className="mx-auto max-h-[380px] w-full overflow-hidden rounded-[18px]" role="img" aria-label={`${nombre} dentro de un cupo de parqueadero promedio`}>
+        <rect width={W} height={H} fill="#3a3740" />
+        {/* pared y topellantas */}
+        <rect width={W} height={90} fill="#2a2830" />
+        {[0, 1, 2].map(i => (
+          <rect key={i} x={i * CUPO.ancho + linea + CUPO.ancho * 0.3} y={260} width={CUPO.ancho * 0.4 - linea} height={110} rx={50} fill="#c9c5cf" opacity={0.35} />
+        ))}
+        {/* líneas del cupo */}
+        {[0, 1, 2, 3].map(i => (
+          <rect key={i} x={i * CUPO.ancho} y={0} width={linea} height={CUPO.largo} fill="#f4f1f7" opacity={i === 1 || i === 2 ? 0.95 : 0.5} />
+        ))}
+        {/* vecinos: un carro mediano (4,30 × 1,80 m) a cada lado */}
+        {[0, 2].map(i => (
+          <rect key={i} x={i * CUPO.ancho + linea / 2 + (CUPO.ancho - 1800) / 2} y={(CUPO.largo - 4300) / 2} width={1800} height={4300} rx={300} fill="#f4f1f7" opacity={0.13} />
+        ))}
+        {/* cupo propio resaltado */}
+        <rect x={CUPO.ancho + linea} y={0} width={CUPO.ancho - linea} height={CUPO.largo} fill="#881cb7" opacity={0.12} />
+        {/* pasillo */}
+        <path d={`M ${W / 2 - 900} ${CUPO.largo + pasillo / 2} h 1500 m -380 -260 l 380 260 l -380 260`} fill="none" stroke="#f4f1f7" strokeOpacity={0.35} strokeWidth={70} strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* el carro, entrando desde el pasillo */}
+        <g
+          style={{
+            transform: visto ? 'translateY(0)' : `translateY(${H}px)`,
+            transition: 'transform 1600ms cubic-bezier(0.16,1,0.3,1) 200ms',
+          }}
+        >
+          <rect x={x} y={y} width={ancho} height={largo} rx={r} fill="#881cb7" stroke={sobraLargo < 0 ? '#fca5a5' : 'none'} strokeWidth={60} />
+          {/* parabrisas, techo y vidrio trasero */}
+          <path
+            d={`M ${x + ancho * 0.12} ${y + largo * 0.36} Q ${x + ancho / 2} ${y + largo * 0.27} ${x + ancho * 0.88} ${y + largo * 0.36} L ${x + ancho * 0.82} ${y + largo * 0.44} L ${x + ancho * 0.18} ${y + largo * 0.44} Z`}
+            fill="#e9d5ff"
+            opacity={0.9}
+          />
+          <rect x={x + ancho * 0.18} y={y + largo * 0.45} width={ancho * 0.64} height={largo * 0.3} rx={ancho * 0.08} fill="#6b1590" />
+          <path
+            d={`M ${x + ancho * 0.2} ${y + largo * 0.77} L ${x + ancho * 0.8} ${y + largo * 0.77} L ${x + ancho * 0.86} ${y + largo * 0.85} Q ${x + ancho / 2} ${y + largo * 0.89} ${x + ancho * 0.14} ${y + largo * 0.85} Z`}
+            fill="#e9d5ff"
+            opacity={0.75}
+          />
+          {/* espejos */}
+          <rect x={x - 110} y={y + largo * 0.37} width={130} height={200} rx={50} fill="#881cb7" />
+          <rect x={x + ancho - 20} y={y + largo * 0.37} width={130} height={200} rx={50} fill="#881cb7" />
+          {/* farolas */}
+          <rect x={x + ancho * 0.1} y={y + 40} width={ancho * 0.22} height={90} rx={40} fill="#fff" opacity={0.9} />
+          <rect x={x + ancho * 0.68} y={y + 40} width={ancho * 0.22} height={90} rx={40} fill="#fff" opacity={0.9} />
+        </g>
+      </svg>
     </div>
   );
 }

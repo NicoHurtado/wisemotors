@@ -25,6 +25,7 @@ import {
   Lightbulb,
   Map,
   MonitorSmartphone,
+  ParkingSquare,
   Radar,
   Ruler,
   ScanLine,
@@ -41,9 +42,10 @@ import {
 import { CarRender } from '@/components/car/CarRender';
 import { useEnVista } from '@/components/ui/useEnVista';
 import { leer, millones, rendimiento, specsDe, tanque } from '@/lib/vehiculo-datos';
+import { masParecidos } from '@/lib/similares';
 import { hayIndices, SeccionIndices } from './IndicesWise';
 import type { IndicesVehiculo } from '@/lib/indices/calculo';
-import { Anillo, BarrasPar, Carrera, Estrellas, Maletas, Nivel, Personas, Ruta, TiraCategoria, Velocimetro, type Tira } from './graficas';
+import { Anillo, BarrasPar, Carrera, Estrellas, Maletas, Nivel, Parqueadero, Personas, Ruta, TiraCategoria, Velocimetro, type Tira } from './graficas';
 
 const fmt = (n: number, dec = 0) => new Intl.NumberFormat('es-CO', { maximumFractionDigits: dec }).format(n);
 
@@ -218,14 +220,19 @@ export function SeccionesFicha({ vehicle, indices = null }: { vehicle: any; indi
   const paresPot = dePares(x => leer(x, 'combustion.maxPower', 'hybrid.maxPower', 'phev.maxPower', 'electric.maxPower'));
   const fPot = potencia !== null ? frase(potencia, paresPot.map(p => p.valor)) : null;
 
-  // Carrera: el propio contra el más rápido y el más lento de su grupo.
-  const paresAcel = dePares(x => leer(x, 'performance.acceleration0to100')).sort((a, b) => a.valor - b.valor);
+  // Carrera: el propio contra sus 3 más parecidos (precio, tipo y
+  // características, como "Carros similares"), entre los que tienen el dato.
+  const paresAcel = dePares(x => leer(x, 'performance.acceleration0to100'));
+  const rivales = masParecidos(
+    vehicle,
+    catalogo.filter(v => leer(v.s, 'performance.acceleration0to100') !== null),
+    3
+  );
   const carriles =
     cero100 !== null
       ? [
           { nombre: `${vehicle.brand} ${vehicle.model}`, segundos: cero100, propio: true },
-          ...(paresAcel.length ? [{ nombre: `${paresAcel[0].nombre} · el más rápido`, segundos: paresAcel[0].valor }] : []),
-          ...(paresAcel.length > 1 ? [{ nombre: `${paresAcel[paresAcel.length - 1].nombre} · el más lento`, segundos: paresAcel[paresAcel.length - 1].valor }] : []),
+          ...rivales.map(v => ({ nombre: `${v.brand} ${v.model}`, segundos: leer(v.s, 'performance.acceleration0to100') as number })),
         ]
       : [];
 
@@ -294,7 +301,9 @@ export function SeccionesFicha({ vehicle, indices = null }: { vehicle: any; indi
             {carriles.length > 0 && (
               <Bloque className="md:col-span-5">
                 <Titulito icono={Timer}>De 0 a 100 km/h, en tiempo real</Titulito>
-                <p className="mt-2 text-[13px] text-tinta-2">Cuenta los segundos: así de rápido responde.</p>
+                <p className="mt-2 text-[13px] text-tinta-2">
+                  {carriles.length > 1 ? 'Contra los carros más parecidos a este. Cuenta los segundos.' : 'Cuenta los segundos: así de rápido responde.'}
+                </p>
                 <div className="mt-5">
                   <Carrera carriles={carriles} />
                 </div>
@@ -548,6 +557,14 @@ export function SeccionesFicha({ vehicle, indices = null }: { vehicle: any; indi
                 )}
               </Bloque>
             )}
+            {largo !== null && ancho !== null && (
+              <Bloque tono="lila" className="md:col-span-12">
+                <Titulito icono={ParkingSquare}>¿Cabe en el parqueadero?</Titulito>
+                <div className="mt-5">
+                  <Parqueadero largo={largo} ancho={ancho} nombre={`${vehicle.brand} ${vehicle.model}`} />
+                </div>
+              </Bloque>
+            )}
           </div>
         </section>
       )}
@@ -744,11 +761,6 @@ function Medidas({
       <div className="mt-6 flex flex-wrap gap-2">
         {ancho !== null && <span className="rounded-full bg-blanco/80 px-3 py-1.5 text-[12px]">Ancho {m(ancho)}</span>}
         {altura !== null && <span className="rounded-full bg-blanco/80 px-3 py-1.5 text-[12px]">{fmt(altura / 10, 1)} cm del piso</span>}
-        {largo !== null && (
-          <span className="rounded-full bg-blanco/80 px-3 py-1.5 text-[12px]">
-            {largo < 4000 ? 'Cabe en cualquier parqueadero' : largo < 4500 ? 'Fácil de parquear' : 'Pide parqueadero amplio'}
-          </span>
-        )}
       </div>
     </div>
   );
