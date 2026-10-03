@@ -32,9 +32,17 @@ model Dealer {
   phone          String
   email          String
   status         String          @default("Activo")
+  // Ubicación (perfil tipo Google Maps): el link que pega el equipo y las
+  // coordenadas que se leen de él. Sin coordenadas no hay mapa ni distancia.
+  mapsUrl        String?
+  lat            Float?
+  lng            Float?
+  horario        String? // texto libre: "L–V 8:00–18:00 · Sáb 9:00–14:00"
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  // Los carros que vende: ESTA es la relación que usa la página (ficha, filtros).
   vehicleDealers VehicleDealer[]
+  // Relación vieja, sin uso en la página: no sumar carros aquí.
   vehicles       Vehicle[]       @relation("DealerVehicles")
   whatsappLeads  WhatsAppLead[]
 

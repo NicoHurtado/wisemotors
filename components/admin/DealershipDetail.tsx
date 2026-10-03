@@ -151,6 +151,14 @@ export function DealershipDetail({ dealershipId }: DealershipDetailProps) {
             </div>
           </div>
           <div className="flex items-center space-x-3">
+            <a
+              href={`/concesionarios/${dealership.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center px-4 py-2 border border-linea bg-blanco rounded-2xl hover:border-tinta transition-colors"
+            >
+              Ver su página
+            </a>
             <button
               onClick={() => router.push(`/admin/dealerships/${dealership.id}/edit`)}
               className="inline-flex items-center px-4 py-2 bg-wise text-white rounded-2xl hover:bg-wise-profundo transition-colors"

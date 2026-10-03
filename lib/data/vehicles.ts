@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { cache } from 'react';
 
 /** Celular colombiano en formato wa.me (57 + 10 dígitos que empiezan por 3), o null si es fijo / no se entiende. */
-function whatsappDe(telefono?: string | null): string | null {
+export function whatsappDe(telefono?: string | null): string | null {
   const d = (telefono ?? '').replace(/\D/g, '');
   if (/^3\d{9}$/.test(d)) return `57${d}`;
   if (/^573\d{9}$/.test(d)) return d;
@@ -127,12 +127,22 @@ export const getVehicle = cache(async (id: string) => {
     cityConsumption: parsedSpecs?.efficiency?.consumoCiudad,
     rating: 4.3,
     slogan: `${vehicle.brand} ${vehicle.model} - Experiencia de conducción excepcional`,
-    dealerships: vehicle.vehicleDealers?.map((vd: any) => ({
-      id: vd.dealer.id,
-      name: vd.dealer.name,
-      location: vd.dealer.location,
-      whatsapp: whatsappDe(vd.dealer.phone),
-    })) || [],
+    // Quién lo vende (los inactivos no se muestran), con lo necesario para el
+    // mapa, "Cómo llegar" y la distancia a la persona.
+    dealerships: (vehicle.vehicleDealers ?? [])
+      .filter((vd: any) => vd.dealer.status !== 'Inactivo')
+      .map((vd: any) => ({
+        id: vd.dealer.id,
+        name: vd.dealer.name,
+        location: vd.dealer.location,
+        address: vd.dealer.address,
+        horario: vd.dealer.horario ?? null,
+        lat: vd.dealer.lat ?? null,
+        lng: vd.dealer.lng ?? null,
+        mapsUrl: vd.dealer.mapsUrl ?? null,
+        phone: vd.dealer.phone,
+        whatsapp: whatsappDe(vd.dealer.phone),
+      })),
     specifications: parsedSpecs || {},
     wisemetrics: parsedSpecs?.wisemetrics || null,
     fuelType: vehicle.fuelType, // Raw string

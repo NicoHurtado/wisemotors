@@ -25,6 +25,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB unreachable (e.g. during build) - use static URLs only
   }
 
+  // Perfiles de concesionarios: búsquedas tipo "concesionario Mazda Medellín"
+  let dealerUrls: MetadataRoute.Sitemap = []
+  try {
+    const dealers = await prisma.dealer.findMany({ where: { status: { not: 'Inactivo' } }, select: { id: true, updatedAt: true } })
+    dealerUrls = [
+      { url: `${baseUrl}/concesionarios`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.6 },
+      ...dealers.map(d => ({ url: `${baseUrl}/concesionarios/${d.id}`, lastModified: d.updatedAt, changeFrequency: 'weekly' as const, priority: 0.6 })),
+    ]
+  } catch {
+    // sin BD: sin concesionarios en el sitemap
+  }
+
   const staticUrls = [
     {
       url: baseUrl,
@@ -46,5 +58,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
-  return [...staticUrls, ...vehicleUrls]
+  return [...staticUrls, ...vehicleUrls, ...dealerUrls]
 }

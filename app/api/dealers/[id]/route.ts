@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { dealerUpdateSchema } from '@/lib/schemas/dealer';
 import { requireAdmin } from '@/lib/api-auth';
+import { sincronizarCarros } from '@/lib/concesionarios';
 
 // GET /api/dealers/[id] - Obtener concesionario por ID
 export async function GET(
@@ -11,18 +12,7 @@ export async function GET(
   try {
     const dealer = await prisma.dealer.findUnique({
       where: { id: params.id },
-      include: {
-        vehicles: {
-          include: {
-            images: true
-          }
-        },
-        _count: {
-          select: {
-            vehicles: true
-          }
-        }
-      }
+      include: { vehicleDealers: { select: { vehicleId: true } } },
     });
 
     if (!dealer) {
@@ -32,7 +22,8 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(dealer);
+    const { vehicleDealers, ...resto } = dealer;
+    return NextResponse.json({ ...resto, vehicleIds: vehicleDealers.map(v => v.vehicleId), _count: { vehicles: vehicleDealers.length } });
   } catch (error) {
     console.error('Error fetching dealer:', error);
     return NextResponse.json(
@@ -54,7 +45,7 @@ export async function PUT(
     const body = await request.json();
     
     // Validar datos de entrada
-    const validatedData = dealerUpdateSchema.parse(body);
+    const { vehicleIds, ...validatedData } = dealerUpdateSchema.parse(body);
     
     // Verificar que el concesionario existe
     const existingDealer = await prisma.dealer.findUnique({
@@ -69,9 +60,10 @@ export async function PUT(
     }
     
     // Actualizar concesionario
-    const dealer = await prisma.dealer.update({
-      where: { id: params.id },
-      data: validatedData
+    const dealer = await prisma.$transaction(async tx => {
+      const d = await tx.dealer.update({ where: { id: params.id }, data: validatedData });
+      if (vehicleIds) await sincronizarCarros(tx, d.id, vehicleIds);
+      return d;
     });
     
     return NextResponse.json(dealer);
@@ -103,13 +95,7 @@ export async function DELETE(
     // Verificar que el concesionario existe
     const existingDealer = await prisma.dealer.findUnique({
       where: { id: params.id },
-      include: {
-        _count: {
-          select: {
-            vehicles: true
-          }
-        }
-      }
+      include: { _count: { select: { vehicleDealers: true } } },
     });
 
     if (!existingDealer) {
@@ -120,9 +106,9 @@ export async function DELETE(
     }
 
     // Verificar si tiene vehículos asociados
-    if (existingDealer._count.vehicles > 0) {
+    if (existingDealer._count.vehicleDealers > 0) {
       return NextResponse.json(
-        { error: 'No se puede eliminar un concesionario con vehículos asociados' },
+        { error: 'Este concesionario todavía tiene carros asociados: quítalos en "Editar" y vuelve a intentarlo.' },
         { status: 400 }
       );
     }

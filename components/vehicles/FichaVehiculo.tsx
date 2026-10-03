@@ -41,6 +41,9 @@ import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWhatsAppLeads } from '@/hooks/useWhatsAppLeads';
+import { useMiUbicacion } from '@/hooks/useMiUbicacion';
+import { porCercania } from '@/lib/distancia';
+import { BotonCercania, TarjetaConcesionario, tieneUbicacion, type Concesionario } from '@/components/concesionarios/piezas';
 import { leer, precioCompleto, rendimiento, specsDe } from '@/lib/vehiculo-datos';
 import { fotoDe, pinturaDe } from '@/components/car/CarRender';
 
@@ -201,9 +204,11 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
   // Qué quiere (prueba de manejo o información) y desde dónde lo pidió: el
   // formulario del nombre se abre junto al botón que se tocó.
   const [contacto, setContacto] = useState<{ motivo: 'prueba' | 'info'; lugar: 'arriba' | 'abajo' } | null>(null);
-  const concesionarios: { id: string; name: string; location: string; whatsapp: string | null }[] = vehicle.dealerships ?? [];
-  const [elegido, setElegido] = useState(0);
-  const concesionario = concesionarios[elegido] ?? null;
+  // Quién lo vende: si la persona comparte su ubicación, del más cercano al más lejano.
+  const { yo, estado: estadoUbicacion, pedir: pedirUbicacion } = useMiUbicacion();
+  const concesionarios = useMemo(() => porCercania<Concesionario>(vehicle.dealerships ?? [], yo), [vehicle.dealerships, yo]);
+  const [elegidoId, setElegidoId] = useState<string | null>(null);
+  const concesionario = concesionarios.find(c => c.id === elegidoId) ?? concesionarios[0] ?? null;
   const [nombre, setNombre] = useState(user?.username ?? '');
   const fav = isFavorite(vehicle.id);
   const actual = cats[cat];
@@ -383,7 +388,7 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
 
       {/* ── Contacto: hablar con quien lo vende (verde = una persona al otro lado) ── */}
       <section className="mx-auto mt-24 max-w-[1440px] px-5 md:px-8">
-        <div className="grid gap-8 rounded-[36px] bg-blanco p-8 md:grid-cols-[1.2fr_1fr] md:items-center md:p-12">
+        <div className="grid gap-8 rounded-[36px] bg-blanco p-8 md:grid-cols-[1.2fr_1fr] md:items-start md:p-12">
           <div>
             <h2 className="t-titulo text-[32px] md:text-[44px]">
               ¿Te gustó el {vehicle.model}? <span className="text-tinta-2/50">Habla con quien lo vende.</span>
@@ -391,24 +396,33 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
             <p className="mt-4 max-w-[520px] text-[16px] leading-relaxed text-tinta-2">
               Te responden por WhatsApp: precio final, colores disponibles, financiación y cuándo puedes probarlo.
             </p>
-            {concesionarios.length > 1 && (
-              <div className="mt-6 flex flex-wrap gap-2" role="radiogroup" aria-label="Concesionario">
-                {concesionarios.map((c, i) => (
-                  <button key={c.id} type="button" role="radio" aria-checked={i === elegido} data-activa={i === elegido} onClick={() => setElegido(i)} className="pastilla h-11 px-4 text-[14px]">
-                    {c.name}
-                    {c.location ? <span className="text-tinta-2"> · {c.location}</span> : null}
-                  </button>
+            {concesionarios.some(tieneUbicacion) && (
+              <div className="mt-6">
+                <BotonCercania estado={estadoUbicacion} pedir={pedirUbicacion} />
+              </div>
+            )}
+            {concesionarios.length > 0 && (
+              <div className="mt-6 space-y-3">
+                {concesionarios.length > 1 && <p className="text-[14px] text-tinta-2">Lo venden {concesionarios.length} concesionarios. Elige a cuál escribirle:</p>}
+                {concesionarios.map(c => (
+                  <TarjetaConcesionario
+                    key={c.id}
+                    c={c}
+                    yo={yo}
+                    elegido={concesionarios.length > 1 ? c.id === concesionario?.id : undefined}
+                    onElegir={concesionarios.length > 1 ? () => setElegidoId(c.id) : undefined}
+                    conMapa={c.id === concesionario?.id}
+                  />
                 ))}
               </div>
             )}
-            {concesionarios.length === 1 && concesionario && (
-              <p className="mt-6 text-[14px] text-tinta-2">
-                Lo vende <span className="font-semibold text-tinta">{concesionario.name}</span>
-                {concesionario.location ? ` · ${concesionario.location}` : ''}
+          </div>
+          <div className="flex flex-col gap-3 md:sticky md:top-28">
+            {concesionario && (
+              <p className="text-[14px] text-tinta-2">
+                Le escribes a <span className="font-semibold text-tinta">{concesionario.name}</span>
               </p>
             )}
-          </div>
-          <div className="flex flex-col gap-3">
             <button
               onClick={() => pedir('info', 'abajo')}
               aria-expanded={contacto?.lugar === 'abajo' && contacto.motivo === 'info'}

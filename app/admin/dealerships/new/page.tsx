@@ -1,4 +1,4 @@
-import { AddDealershipForm } from '@/components/admin/AddDealershipForm';
+import { FormConcesionario } from '@/components/admin/FormConcesionario';
 
 export default function NewDealershipPage() {
   return (
@@ -10,11 +10,11 @@ export default function NewDealershipPage() {
             Nuevo concesionario
           </h1>
           <p className="mt-2 text-tinta-2">
-            Completa todos los campos para agregar un nuevo concesionario
+            Sus datos, dónde queda (para el mapa y la distancia) y los carros que vende.
           </p>
         </div>
 
-        <AddDealershipForm />
+        <FormConcesionario />
       </div>
     </div>
   );

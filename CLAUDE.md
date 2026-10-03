@@ -167,6 +167,18 @@ cobertura, migración, seeds, motor de cohortes.
   concesionario". Van directo al WhatsApp del concesionario si su teléfono es celular
   colombiano; si no, al de WiseMotors con el concesionario en el mensaje. El lead guarda
   `dealershipId` y `source` (`ficha_prueba` / `ficha_concesionario`).
+- **Concesionarios con perfil tipo Google Maps:** `Dealer` tiene `mapsUrl`, `lat`, `lng`,
+  `horario`. El admin pega el link de Google Maps y `/api/admin/ubicacion` lee las coordenadas
+  (resuelve maps.app.goo.gl siguiendo redirecciones SOLO a dominios de Google:
+  `lib/mapas-servidor.ts`). Mapa = Maps Embed API si hay `NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY`,
+  si no el embed clásico sin clave; "Cómo llegar" y "Reseñas en Google" son links (gratis).
+  Distancia en línea recta calculada EN EL NAVEGADOR (`hooks/useMiUbicacion`, solo al tocar el
+  botón; nunca llega al servidor). Páginas públicas `/concesionarios` y `/concesionarios/[id]`
+  (sus carros + JSON-LD AutoDealer, en el sitemap). Test: `verify-mapas.ts`.
+- **Carros de un concesionario:** se eligen en su formulario (`FormConcesionario.tsx`:
+  buscar, "Todos los Mazda") y se guardan en `VehicleDealer` (`lib/concesionarios.ts`
+  `sincronizarCarros`). OJO: `Dealer.vehicles` ("DealerVehicles") es una relación VIEJA sin
+  uso; conteos y borrado ya usan `vehicleDealers`.
 
 ## Backlog en orden (del plan, secciones 8-9)
 
@@ -203,7 +215,7 @@ cobertura, migración, seeds, motor de cohortes.
   BD** — el registro nuevo (`FT` en `lib/attributes/registry.ts`) ya la usa. Unificar hacia ella.
 - `getMarketStats()` en `lib/ai/features.ts` trae TODO el catálogo por búsqueda, sin
   caché — cuello de botella conocido.
-- Tests (npx tsx, sin BD ni API): `scripts/verify-scoring.ts`, `verify-indices.ts`, `verify-clave.ts`, `verify-demanda.ts`.
+- Tests (npx tsx, sin BD ni API): `scripts/verify-scoring.ts`, `verify-indices.ts`, `verify-clave.ts`, `verify-demanda.ts`, `verify-mapas.ts`.
 - Git: push directo a `main` (sin ramas ni PRs), decisión del usuario.
 - Prueba local sin tocar producción: Postgres en Docker (`wise-pg`, puerto 55432) + la
   configuración `wisemotors-local-db` de `.claude/launch.json` (puerto 3007).

@@ -82,6 +82,7 @@ export function Navbar() {
     { href: '/', texto: 'Inicio' },
     { href: '/vehicles', texto: 'Catálogo' },
     { href: '/compare', texto: 'Comparar' },
+    { href: '/concesionarios', texto: 'Concesionarios' },
   ];
 
   const activo = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));

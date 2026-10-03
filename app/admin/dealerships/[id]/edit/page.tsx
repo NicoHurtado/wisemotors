@@ -1,4 +1,4 @@
-import { EditDealershipForm } from '@/components/admin/EditDealershipForm';
+import { FormConcesionario } from '@/components/admin/FormConcesionario';
 
 interface EditDealershipPageProps {
   params: {
@@ -16,11 +16,11 @@ export default function EditDealershipPage({ params }: EditDealershipPageProps) 
             Editar concesionario
           </h1>
           <p className="mt-2 text-tinta-2">
-            Modifica los campos del concesionario según sea necesario
+            Sus datos, dónde queda (para el mapa y la distancia) y los carros que vende.
           </p>
         </div>
 
-        <EditDealershipForm dealershipId={params.id} />
+        <FormConcesionario id={params.id} />
       </div>
     </div>
   );
