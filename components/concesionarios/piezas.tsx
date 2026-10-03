@@ -6,9 +6,9 @@
 // ============================================================================
 
 import Link from 'next/link';
-import { ArrowUpRight, Clock, Loader2, LocateFixed, MapPin, Navigation, Phone } from 'lucide-react';
+import { ArrowUpRight, Clock, Loader2, LocateFixed, MapPin, Navigation } from 'lucide-react';
 import { kmEntre, textoDistancia, type Coordenadas } from '@/lib/distancia';
-import { urlComoLlegar, urlEnGoogleMaps, urlMapaIncrustado } from '@/lib/mapas';
+import { urlComoLlegar, urlMapaIncrustado } from '@/lib/mapas';
 
 export interface Concesionario {
   id: string;
@@ -63,23 +63,28 @@ export function Distancia({ km, grande = false }: { km: number | null; grande?: 
   );
 }
 
+/**
+ * El mapa como imagen: se ve dónde queda, pero no se puede tocar. Así ningún
+ * clic manda a la persona a Google Maps (fotos, reseñas, otros lugares) y
+ * perdemos el lead. El único camino es el botón verde.
+ */
 export function MapaConcesionario({ c, className = 'h-[280px]' }: { c: Concesionario; className?: string }) {
   const src = urlMapaIncrustado(c);
   if (!src) return null;
   return (
-    <iframe
-      title={`Mapa de ${c.name}`}
-      src={src}
-      className={`w-full rounded-[22px] border-0 bg-tarjeta ${className}`}
-      loading="lazy"
-      referrerPolicy="no-referrer-when-downgrade"
-      allowFullScreen
-    />
+    <div className={`relative overflow-hidden rounded-[22px] bg-tarjeta ${className}`}>
+      <iframe title={`Mapa de ${c.name}`} src={src} className="pointer-events-none h-full w-full border-0" loading="lazy" tabIndex={-1} aria-hidden referrerPolicy="no-referrer-when-downgrade" />
+      <div className="absolute inset-0" aria-hidden />
+    </div>
   );
 }
 
-/** Datos + acciones: dirección, horario, distancia, "Cómo llegar", llamar, perfil en Google Maps. */
-export function DatosConcesionario({ c, yo }: { c: Concesionario; yo: Coordenadas | null }) {
+/**
+ * Dirección, horario y distancia. "Cómo llegar" (abre Google Maps) solo donde
+ * la persona ya escribió o en la página del concesionario: antes del contacto
+ * no hay links que la saquen de WiseMotors.
+ */
+export function DatosConcesionario({ c, yo, comoLlegar = false }: { c: Concesionario; yo: Coordenadas | null; comoLlegar?: boolean }) {
   return (
     <div className="space-y-3">
       <Distancia km={kmA(c, yo)} />
@@ -98,21 +103,11 @@ export function DatosConcesionario({ c, yo }: { c: Concesionario; yo: Coordenada
           <Clock className="mt-0.5 h-4 w-4 shrink-0 text-tinta-2" /> {c.horario}
         </p>
       )}
-      <div className="flex flex-wrap gap-2 pt-1">
-        {(tieneUbicacion(c) || c.address) && (
-          <a href={urlComoLlegar(c)} target="_blank" rel="noopener noreferrer" className="pastilla h-10 px-4 text-[13px]">
-            <Navigation className="h-4 w-4" /> Cómo llegar
-          </a>
-        )}
-        {c.phone && (
-          <a href={`tel:${c.phone.replace(/[^\d+]/g, '')}`} className="pastilla h-10 px-4 text-[13px]">
-            <Phone className="h-4 w-4" /> Llamar
-          </a>
-        )}
-        <a href={urlEnGoogleMaps(c)} target="_blank" rel="noopener noreferrer" className="pastilla h-10 px-4 text-[13px]">
-          Reseñas en Google <ArrowUpRight className="h-4 w-4" />
+      {comoLlegar && (tieneUbicacion(c) || c.address) && (
+        <a href={urlComoLlegar(c)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[13px] text-tinta-2 underline-offset-2 hover:text-tinta hover:underline">
+          <Navigation className="h-3.5 w-3.5" /> Cómo llegar
         </a>
-      </div>
+      )}
     </div>
   );
 }
@@ -121,24 +116,24 @@ export function DatosConcesionario({ c, yo }: { c: Concesionario; yo: Coordenada
 export function TarjetaConcesionario({
   c,
   yo,
-  elegido,
-  onElegir,
   conMapa = false,
   carros,
+  enlace = true,
+  etiqueta,
 }: {
   c: Concesionario;
   yo: Coordenadas | null;
-  elegido?: boolean;
-  onElegir?: () => void;
   conMapa?: boolean;
   carros?: number;
+  /** Link a su página dentro de WiseMotors (en la ficha no: distrae del contacto). */
+  enlace?: boolean;
+  etiqueta?: string;
 }) {
   return (
-    <div
-      className={`rounded-[26px] border bg-blanco p-5 transition-colors ${elegido ? 'border-wise shadow-[0_0_0_3px_rgba(136,28,183,0.15)]' : 'border-linea'}`}
-    >
+    <div className="rounded-[26px] border border-linea bg-blanco p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
+          {etiqueta && <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-tinta-2">{etiqueta}</p>}
           <p className="text-[17px] font-semibold tracking-[-0.02em]">{c.name}</p>
           {typeof carros === 'number' && (
             <p className="text-[13px] text-tinta-2">
@@ -146,16 +141,11 @@ export function TarjetaConcesionario({
             </p>
           )}
         </div>
-        <div className="flex gap-2">
-          {onElegir && (
-            <button type="button" onClick={onElegir} aria-pressed={elegido} className="pastilla h-9 px-3 text-[13px]" data-activa={elegido}>
-              {elegido ? 'Elegido' : 'Elegir'}
-            </button>
-          )}
+        {enlace && (
           <Link href={`/concesionarios/${c.id}`} className="pastilla h-9 px-3 text-[13px]">
             Ver concesionario <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
-        </div>
+        )}
       </div>
       {conMapa && tieneUbicacion(c) && <MapaConcesionario c={c} className="mt-4 h-[200px]" />}
       <div className="mt-4">

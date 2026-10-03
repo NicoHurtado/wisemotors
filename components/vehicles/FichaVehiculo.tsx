@@ -15,7 +15,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -40,14 +40,13 @@ import type { IndicesVehiculo } from '@/lib/indices/calculo';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
-import { useWhatsAppLeads } from '@/hooks/useWhatsAppLeads';
 import { useMiUbicacion } from '@/hooks/useMiUbicacion';
 import { porCercania } from '@/lib/distancia';
 import { BotonCercania, TarjetaConcesionario, tieneUbicacion, type Concesionario } from '@/components/concesionarios/piezas';
+import { ListaContacto, useContactar, type Motivo } from '@/components/concesionarios/Contacto';
 import { leer, precioCompleto, rendimiento, specsDe } from '@/lib/vehiculo-datos';
 import { fotoDe, pinturaDe } from '@/components/car/CarRender';
 
-const WHATSAPP = '573103818615';
 
 type Punto = { x: number; y: number };
 // Puntos genéricos sobre un perfil lateral mirando a la derecha.
@@ -197,18 +196,18 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
   const router = useRouter();
   const { user } = useAuth();
   const { isFavorite, toggleFavorite } = useFavorites();
-  const { createLead } = useWhatsAppLeads();
   const s = useMemo(() => specsDe(vehicle.specifications), [vehicle.specifications]);
   const cats = useMemo(() => categorias(vehicle.fuelType, s), [vehicle.fuelType, s]);
   const [cat, setCat] = useState(0);
-  // Qué quiere (prueba de manejo o información) y desde dónde lo pidió: el
-  // formulario del nombre se abre junto al botón que se tocó.
-  const [contacto, setContacto] = useState<{ motivo: 'prueba' | 'info'; lugar: 'arriba' | 'abajo' } | null>(null);
-  // Quién lo vende: si la persona comparte su ubicación, del más cercano al más lejano.
-  const { yo, estado: estadoUbicacion, pedir: pedirUbicacion } = useMiUbicacion();
-  const concesionarios = useMemo(() => porCercania<Concesionario>(vehicle.dealerships ?? [], yo), [vehicle.dealerships, yo]);
-  const [elegidoId, setElegidoId] = useState<string | null>(null);
-  const concesionario = concesionarios.find(c => c.id === elegidoId) ?? concesionarios[0] ?? null;
+  // Un solo concesionario (o ninguno): el nombre junto al botón que se tocó y
+  // directo a WhatsApp. Varios: la lista para elegir, ordenada por distancia.
+  const [contacto, setContacto] = useState<{ motivo: Motivo; lugar: 'arriba' | 'abajo' } | null>(null);
+  const [lista, setLista] = useState<Motivo | null>(null);
+  const ubicacion = useMiUbicacion();
+  const concesionarios = useMemo(() => porCercania<Concesionario>(vehicle.dealerships ?? [], ubicacion.yo), [vehicle.dealerships, ubicacion.yo]);
+  const varios = concesionarios.length > 1;
+  const contactar = useContactar('ficha');
+  const carro = { id: vehicle.id, brand: vehicle.brand, model: vehicle.model, year: vehicle.year };
   const [nombre, setNombre] = useState(user?.username ?? '');
   const fav = isFavorite(vehicle.id);
   const actual = cats[cat];
@@ -223,37 +222,17 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
     await toggleFavorite(vehicle.id);
   };
 
-  const pedir = (motivo: 'prueba' | 'info', lugar: 'arriba' | 'abajo') =>
+  const pedir = (motivo: Motivo, lugar: 'arriba' | 'abajo') => {
+    if (varios) return setLista(motivo);
     setContacto(c => (c?.motivo === motivo && c.lugar === lugar ? null : { motivo, lugar }));
+  };
 
-  const escribir = async (e: React.FormEvent) => {
+  const cerrarLista = useCallback(() => setLista(null), []);
+
+  const escribir = (e: React.FormEvent) => {
     e.preventDefault();
     if (!contacto) return;
-    const quien = nombre.trim() || 'Cliente';
-    const etiqueta = `${vehicle.brand} ${vehicle.model} ${vehicle.year}`;
-    const donde = concesionario ? ` en ${concesionario.name}${concesionario.location ? ` (${concesionario.location})` : ''}` : '';
-    const mensaje =
-      contacto.motivo === 'prueba'
-        ? `Hola, me interesa el ${etiqueta}. Mi nombre es ${quien} y quiero agendar una prueba de manejo${donde}.`
-        : `Hola, me interesa el ${etiqueta}${donde}. Mi nombre es ${quien} y quiero más información: precio, disponibilidad y financiación.`;
-    try {
-      await createLead({
-        name: quien,
-        username: user?.username || undefined,
-        email: user?.email || undefined,
-        vehicleId: vehicle.id,
-        vehicleBrand: vehicle.brand,
-        vehicleModel: vehicle.model,
-        dealershipId: concesionario?.id,
-        dealershipName: concesionario?.name,
-        message: mensaje,
-        source: contacto.motivo === 'prueba' ? 'ficha_prueba' : 'ficha_concesionario',
-      });
-    } catch {
-      // El lead es para el concesionario; si falla, igual se abre WhatsApp.
-    }
-    // Directo al WhatsApp del concesionario si tiene celular; si no, al de WiseMotors, que lo pasa.
-    window.open(`https://wa.me/${concesionario?.whatsapp ?? WHATSAPP}?text=${encodeURIComponent(mensaje)}`, '_blank');
+    contactar(contacto.motivo, nombre, carro, concesionarios[0] ?? null);
     setContacto(null);
   };
 
@@ -295,7 +274,8 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
             </div>
             <button
               onClick={() => pedir('prueba', 'arriba')}
-              aria-expanded={contacto?.lugar === 'arriba'}
+              aria-expanded={varios ? lista === 'prueba' : contacto?.lugar === 'arriba'}
+              aria-haspopup={varios ? 'dialog' : undefined}
               className="pastilla pastilla--verde h-14 w-full justify-center px-8 text-[17px] font-semibold md:w-auto"
             >
               <CalendarCheck className="h-5 w-5" /> Agendar prueba de manejo
@@ -396,43 +376,44 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
             <p className="mt-4 max-w-[520px] text-[16px] leading-relaxed text-tinta-2">
               Te responden por WhatsApp: precio final, colores disponibles, financiación y cuándo puedes probarlo.
             </p>
-            {concesionarios.some(tieneUbicacion) && (
-              <div className="mt-6">
-                <BotonCercania estado={estadoUbicacion} pedir={pedirUbicacion} />
-              </div>
-            )}
             {concesionarios.length > 0 && (
               <div className="mt-6 space-y-3">
-                {concesionarios.length > 1 && <p className="text-[14px] text-tinta-2">Lo venden {concesionarios.length} concesionarios. Elige a cuál escribirle:</p>}
-                {concesionarios.map(c => (
-                  <TarjetaConcesionario
-                    key={c.id}
-                    c={c}
-                    yo={yo}
-                    elegido={concesionarios.length > 1 ? c.id === concesionario?.id : undefined}
-                    onElegir={concesionarios.length > 1 ? () => setElegidoId(c.id) : undefined}
-                    conMapa={c.id === concesionario?.id}
-                  />
-                ))}
+                {varios && concesionarios.some(tieneUbicacion) && (
+                  <BotonCercania estado={ubicacion.estado} pedir={ubicacion.pedir} />
+                )}
+                <TarjetaConcesionario
+                  c={concesionarios[0]}
+                  yo={ubicacion.yo}
+                  conMapa
+                  enlace={false}
+                  etiqueta={varios ? (ubicacion.yo ? 'El más cercano' : 'Uno de los que lo venden') : 'Lo vende'}
+                />
+                {varios && (
+                  <p className="text-[14px] text-tinta-2">
+                    Y {concesionarios.length - 1} {concesionarios.length - 1 === 1 ? 'concesionario más' : 'concesionarios más'}: al contactar eliges a cuál (o a cuáles) escribirle.
+                  </p>
+                )}
               </div>
             )}
           </div>
           <div className="flex flex-col gap-3 md:sticky md:top-28">
-            {concesionario && (
+            {!varios && concesionarios[0] && (
               <p className="text-[14px] text-tinta-2">
-                Le escribes a <span className="font-semibold text-tinta">{concesionario.name}</span>
+                Le escribes a <span className="font-semibold text-tinta">{concesionarios[0].name}</span>
               </p>
             )}
             <button
               onClick={() => pedir('info', 'abajo')}
-              aria-expanded={contacto?.lugar === 'abajo' && contacto.motivo === 'info'}
+              aria-expanded={varios ? lista === 'info' : contacto?.lugar === 'abajo' && contacto.motivo === 'info'}
+              aria-haspopup={varios ? 'dialog' : undefined}
               className="pastilla pastilla--verde h-14 justify-center px-8 text-[17px] font-semibold"
             >
               <MessageCircle className="h-5 w-5" /> Contactar al concesionario
             </button>
             <button
               onClick={() => pedir('prueba', 'abajo')}
-              aria-expanded={contacto?.lugar === 'abajo' && contacto.motivo === 'prueba'}
+              aria-expanded={varios ? lista === 'prueba' : contacto?.lugar === 'abajo' && contacto.motivo === 'prueba'}
+              aria-haspopup={varios ? 'dialog' : undefined}
               className="pastilla pastilla--verde h-14 justify-center px-8 text-[17px] font-semibold"
             >
               <CalendarCheck className="h-5 w-5" /> Agendar prueba de manejo
@@ -441,6 +422,17 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
           </div>
         </div>
       </section>
+      <ListaContacto
+        abierta={lista !== null}
+        motivo={lista ?? 'info'}
+        carro={carro}
+        concesionarios={concesionarios}
+        nombre={nombre}
+        setNombre={setNombre}
+        onCerrar={cerrarLista}
+        ubicacion={ubicacion}
+      />
+
       {/* ── Similares: los 3 más parecidos en tipo, precio y características ── */}
       {similares.length > 0 && (
         <section className="mx-auto mt-24 max-w-[1440px] px-5 md:px-8">

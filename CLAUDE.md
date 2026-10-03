@@ -171,10 +171,18 @@ cobertura, migración, seeds, motor de cohortes.
   `horario`. El admin pega el link de Google Maps y `/api/admin/ubicacion` lee las coordenadas
   (resuelve maps.app.goo.gl siguiendo redirecciones SOLO a dominios de Google:
   `lib/mapas-servidor.ts`). Mapa = Maps Embed API si hay `NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY`,
-  si no el embed clásico sin clave; "Cómo llegar" y "Reseñas en Google" son links (gratis).
+  si no el embed clásico sin clave, SIN interacción (pointer-events: none). Regla de
+  producto: nada saca a la persona de WiseMotors antes del lead (ni reseñas, ni llamar, ni
+  fotos de Google); "Cómo llegar" solo aparece después de escribirle (perfil del concesionario).
   Distancia en línea recta calculada EN EL NAVEGADOR (`hooks/useMiUbicacion`, solo al tocar el
   botón; nunca llega al servidor). Páginas públicas `/concesionarios` y `/concesionarios/[id]`
   (sus carros + JSON-LD AutoDealer, en el sitemap). Test: `verify-mapas.ts`.
+- **Contacto con varios concesionarios** (`components/concesionarios/Contacto.tsx`): si el carro
+  lo vende uno (o ninguno), directo a WhatsApp; si son varios, `ListaContacto` (diálogo / hoja
+  en el celular) ordenada por distancia con un botón verde por concesionario: puede escribirle
+  a uno o a varios (un toque cada uno: el navegador bloquea abrir varios WhatsApp a la vez).
+  `useContactar` abre WhatsApp DENTRO del toque (si no, el bloqueador de ventanas lo frena) y
+  guarda el lead en paralelo, con concesionario y `source` (`ficha_*` / `perfil_*`).
 - **Carros de un concesionario:** se eligen en su formulario (`FormConcesionario.tsx`:
   buscar, "Todos los Mazda") y se guardan en `VehicleDealer` (`lib/concesionarios.ts`
   `sincronizarCarros`). OJO: `Dealer.vehicles` ("DealerVehicles") es una relación VIEJA sin

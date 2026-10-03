@@ -1,23 +1,25 @@
 'use client';
 
 // ============================================================================
-// Página de un concesionario, como su perfil de Google Maps dentro de
-// WiseMotors: mapa grande, dirección, horario, a cuántos km estás, "Cómo
-// llegar", llamar, WhatsApp (verde) y los carros que vende.
+// Página de un concesionario, como su perfil de Google Maps pero dentro de
+// WiseMotors: mapa (que no se puede tocar, para no irse a Google), dirección,
+// horario, a cuántos km estás y UN llamado claro: escribirles por WhatsApp,
+// que queda como lead. "Cómo llegar" aparece solo después de escribirles.
 // ============================================================================
 
 import Link from 'next/link';
-import { ArrowLeft, MessageCircle } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, Check, MessageCircle } from 'lucide-react';
 import { TarjetaCarro, type VehiculoTarjeta } from '@/components/car/TarjetaCarro';
 import { useMiUbicacion } from '@/hooks/useMiUbicacion';
 import { BotonCercania, DatosConcesionario, MapaConcesionario, tieneUbicacion, type Concesionario } from './piezas';
-
-const WHATSAPP_WISE = '573103818615';
+import { useContactar } from './Contacto';
 
 export function PerfilConcesionario({ c, carros }: { c: Concesionario; carros: VehiculoTarjeta[] }) {
   const { yo, estado, pedir } = useMiUbicacion();
-  const mensaje = `Hola ${c.name}, los encontré en WiseMotors y quiero información sobre sus carros.`;
-  const destino = c.whatsapp ?? WHATSAPP_WISE;
+  const contactar = useContactar('perfil');
+  const [nombre, setNombre] = useState('');
+  const [escrito, setEscrito] = useState(false);
 
   return (
     <div className="pb-20">
@@ -31,15 +33,29 @@ export function PerfilConcesionario({ c, carros }: { c: Concesionario; carros: V
             <h1 className="t-titulo mt-2 text-[44px] md:text-[72px]">{c.name}</h1>
             <div className="mt-6 space-y-5">
               {tieneUbicacion(c) && <BotonCercania estado={estado} pedir={pedir} />}
-              <DatosConcesionario c={c} yo={yo} />
-              <a
-                href={`https://wa.me/${destino}?text=${encodeURIComponent(mensaje)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pastilla pastilla--verde h-14 w-full justify-center px-8 text-[17px] font-semibold md:w-auto"
+              <DatosConcesionario c={c} yo={yo} comoLlegar={escrito} />
+              <form
+                className="flex flex-col gap-2 sm:flex-row"
+                onSubmit={e => {
+                  e.preventDefault();
+                  contactar('info', nombre, null, c);
+                  setEscrito(true);
+                }}
               >
-                <MessageCircle className="h-5 w-5" /> Escribirles por WhatsApp
-              </a>
+                <label htmlFor="nombre-perfil" className="sr-only">
+                  Tu nombre
+                </label>
+                <input
+                  id="nombre-perfil"
+                  value={nombre}
+                  onChange={e => setNombre(e.target.value)}
+                  placeholder="¿Cómo te llamas?"
+                  className="h-14 min-w-0 flex-1 rounded-full border border-linea bg-blanco px-5 text-[15px] outline-none focus:border-tinta"
+                />
+                <button type="submit" className="pastilla pastilla--verde h-14 justify-center px-8 text-[17px] font-semibold">
+                  {escrito ? <Check className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />} {escrito ? 'Escribirles otra vez' : 'Escribirles por WhatsApp'}
+                </button>
+              </form>
             </div>
           </div>
           <div className="sube" style={{ '--d': '120ms' } as React.CSSProperties}>

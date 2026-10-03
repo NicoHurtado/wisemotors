@@ -5,7 +5,8 @@
 //     servidor: lib/mapas-servidor.ts).
 //   - El mapa se incrusta con la Maps Embed API (gratis, sin límite de uso) si
 //     hay NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY; si no, con el embed clásico sin clave.
-//   - "Cómo llegar" es un link de Google Maps (gratis, abre la app en el celular).
+//   - "Cómo llegar" es un link de Google Maps (gratis): solo DESPUÉS de que la
+//     persona escribió, para no sacarla de WiseMotors antes del lead.
 //   - La distancia a la persona se calcula EN SU NAVEGADOR (lib/distancia.ts):
 //     su ubicación nunca llega al servidor.
 // ============================================================================
@@ -85,10 +86,4 @@ export function urlMapaIncrustado(p: PuntoMapa, clave = process.env.NEXT_PUBLIC_
 export function urlComoLlegar(p: PuntoMapa): string {
   const destino = typeof p.lat === 'number' && typeof p.lng === 'number' ? `${p.lat},${p.lng}` : consulta(p);
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destino)}`;
-}
-
-/** Abrir el perfil del lugar en Google Maps (reseñas, fotos, horario de Google). */
-export function urlEnGoogleMaps(p: PuntoMapa & { mapsUrl?: string | null }): string {
-  if (p.mapsUrl && esLinkDeMaps(p.mapsUrl)) return p.mapsUrl;
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(consulta(p) || `${p.lat},${p.lng}`)}`;
 }
