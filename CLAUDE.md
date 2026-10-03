@@ -153,6 +153,21 @@ cobertura, migración, seeds, motor de cohortes.
   `demo_cargado` en `estado_sistema`); `CARGAR_DEMO=no` los apaga.
 - **Inicio:** solo los renders dibujados rotando, sin cifras (las fotos se pixelaban).
 
+**3-oct-2026:**
+- **Demanda (base de los informes para concesionarios y marcas):** cada búsqueda con IA se
+  guarda en `busquedas` (`lib/demanda.ts` puro + `lib/demanda-servidor.ts`) con lo que la IA
+  entendió y se agrupa por INTENCIÓN = necesidad (perfiles del router determinístico) ·
+  carrocería · banda de presupuesto. Si la IA no saca carrocería/presupuesto, se leen del
+  texto ("camioneta"→SUV salvo platón, "120 palos"). Sin nombre ni IP: sesión anónima con
+  hash y ciudad aproximada de Vercel. Pestaña "Demanda" en el panel + CSV con SOLO
+  agregados (nunca el texto libre: la gente escribe datos propios). Test: `verify-demanda.ts`.
+- **Ficha:** sin "Ficha técnica completa". En su lugar, bloque para hablar con el
+  concesionario. Botones verdes (`.pastilla--verde`, verde oscuro por contraste AA) =
+  hablar con una persona: "Agendar prueba de manejo" (cabecera y abajo) y "Contactar al
+  concesionario". Van directo al WhatsApp del concesionario si su teléfono es celular
+  colombiano; si no, al de WiseMotors con el concesionario en el mensaje. El lead guarda
+  `dealershipId` y `source` (`ficha_prueba` / `ficha_concesionario`).
+
 ## Backlog en orden (del plan, secciones 8-9)
 
 1. **Fase 0 — SEGURIDAD (pospuesta por decisión del usuario, pero es LEGALMENTE urgente):**
@@ -188,7 +203,7 @@ cobertura, migración, seeds, motor de cohortes.
   BD** — el registro nuevo (`FT` en `lib/attributes/registry.ts`) ya la usa. Unificar hacia ella.
 - `getMarketStats()` en `lib/ai/features.ts` trae TODO el catálogo por búsqueda, sin
   caché — cuello de botella conocido.
-- Tests (npx tsx, sin BD ni API): `scripts/verify-scoring.ts`, `verify-indices.ts`, `verify-clave.ts`.
+- Tests (npx tsx, sin BD ni API): `scripts/verify-scoring.ts`, `verify-indices.ts`, `verify-clave.ts`, `verify-demanda.ts`.
 - Git: push directo a `main` (sin ramas ni PRs), decisión del usuario.
 - Prueba local sin tocar producción: Postgres en Docker (`wise-pg`, puerto 55432) + la
   configuración `wisemotors-local-db` de `.claude/launch.json` (puerto 3007).

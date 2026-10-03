@@ -10,19 +10,7 @@
 import { useEffect, useState } from 'react';
 import { ThumbsDown, ThumbsUp } from 'lucide-react';
 import { getAuthToken } from '@/lib/admin-fetch';
-
-function sesionAnonima(): string {
-  try {
-    let s = localStorage.getItem('wise.sesion');
-    if (!s) {
-      s = crypto.randomUUID();
-      localStorage.setItem('wise.sesion', s);
-    }
-    return s;
-  } catch {
-    return crypto.randomUUID();
-  }
-}
+import { sesionAnonima } from '@/lib/sesion-anonima';
 
 export function CalificarIA({
   tipo,

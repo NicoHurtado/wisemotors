@@ -36,6 +36,9 @@ const sourceLabels = {
   'website': 'Sitio Web',
   'specific_dealership': 'Concesionario Específico',
   'home_delivery': 'Testdrive a Casa',
+  'ficha': 'Ficha del carro',
+  'ficha_prueba': 'Ficha · Prueba de manejo',
+  'ficha_concesionario': 'Ficha · Contacto al concesionario',
 };
 
 export function WhatsAppLeadsTable({ className = '' }: WhatsAppLeadsTableProps) {

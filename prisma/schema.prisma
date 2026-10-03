@@ -263,3 +263,32 @@ model CalificacionIA {
   @@index([tipo, createdAt])
   @@map("calificaciones_ia")
 }
+
+// Cada búsqueda del buscador con IA y lo que la IA entendió que la persona
+// quiere: la materia prima de los informes de demanda (lib/demanda.ts).
+// Sin datos personales: ni nombre ni IP; la sesión va con hash y la ciudad es
+// la que da Vercel por IP (aproximada, nunca la IP).
+model Busqueda {
+  id              String   @id @default(cuid())
+  texto           String // como la escribió la persona (recortada a 300)
+  normalizado     String // minúsculas, sin tildes ni espacios dobles: para contar repetidas
+  tipoConsulta    String // SUBJECTIVE_PREFERENCE | OBJECTIVE_FEATURE | HYBRID
+  necesidades     String[] // perfiles detectados: familia, economia, ciudad…
+  carrocerias     String[]
+  combustibles    String[]
+  marcas          String[]
+  marcasFaltantes String[] // marcas pedidas que no están en el catálogo
+  presupuestoMin  Float?
+  presupuestoMax  Float?
+  intencion       String // clave del grupo: necesidades|carrocería|banda de presupuesto
+  resultados      Int
+  mostrados       String[] // ids de los 3 primeros que se le mostraron
+  sesion          String? // hash del id anónimo del navegador (personas únicas)
+  ciudad          String?
+  conCuenta       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([intencion, createdAt])
+  @@map("busquedas")
+}

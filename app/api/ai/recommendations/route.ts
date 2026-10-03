@@ -1,12 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { categorizeQuery } from '@/lib/ai/categorization';
 import { processResults } from '@/lib/ai/results';
+import { registrarBusqueda } from '@/lib/demanda-servidor';
+import { verifyToken } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
+function conCuenta(request: NextRequest) {
+  const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return false;
+  try {
+    return !!verifyToken(token)?.userId;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { prompt } = await request.json();
+    const { prompt, sesion } = await request.json();
     
     if (!prompt || typeof prompt !== 'string') {
       return NextResponse.json({ error: 'Prompt inválido' }, { status: 400 });
@@ -25,6 +37,18 @@ export async function POST(request: NextRequest) {
     // STEP 2: Process results based on query type
     const processedResults = await processResults(categorizedIntent);
     
+    // Demanda: se guarda qué quería la persona (agrupado por intención) para
+    // los informes. Sin nombre ni IP; la ciudad es la que estima Vercel.
+    const primeros = [...(processedResults.top_recommendations?.vehicles ?? []), ...(processedResults.all_matches?.vehicles ?? [])]
+      .map((v: any) => v?.id)
+      .filter(Boolean);
+    const ciudad = request.headers.get('x-vercel-ip-city');
+    await registrarBusqueda(prompt, categorizedIntent, { total: processedResults.total_matches, mostrados: primeros }, {
+      sesion: typeof sesion === 'string' && /^[a-z0-9-]{8,64}$/i.test(sesion) ? sesion : null,
+      ciudad: ciudad ? decodeURIComponent(ciudad) : null,
+      conCuenta: conCuenta(request),
+    });
+
     // Ya no retornamos resultados vacíos, el sistema de fallback siempre devuelve algo
     // if (processedResults.total_matches === 0) {
     //   return NextResponse.json({ 

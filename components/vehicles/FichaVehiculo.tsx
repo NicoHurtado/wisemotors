@@ -6,8 +6,10 @@
 // Marca enorme + modelo en gris. Categorías en pastillas a la izquierda; al
 // elegir una, los puntos de interés se reacomodan SOBRE el carro con datos
 // reales de esa categoría, y la tarjeta negra de la derecha explica en
-// palabras de persona qué significan. Debajo: datos destacados, ficha técnica
-// completa agrupada y los 3 más parecidos, con botón para compararlos.
+// palabras de persona qué significan. Debajo: datos destacados, el bloque
+// para hablar con el concesionario (botones verdes: prueba de manejo y
+// contacto, directo a su WhatsApp) y los 3 más parecidos, con botón para
+// compararlos.
 // Una categoría sin datos no aparece; un dato faltante no se inventa.
 // ============================================================================
 
@@ -19,7 +21,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   Armchair,
-  Check,
+  CalendarCheck,
   Fuel,
   Gauge,
   Heart,
@@ -39,7 +41,6 @@ import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWhatsAppLeads } from '@/hooks/useWhatsAppLeads';
-import { ATTRIBUTE_REGISTRY } from '@/lib/attributes/registry';
 import { leer, precioCompleto, rendimiento, specsDe } from '@/lib/vehiculo-datos';
 import { fotoDe, pinturaDe } from '@/components/car/CarRender';
 
@@ -167,27 +168,26 @@ function categorias(fuelType: string, s: Record<string, any>): Categoria[] {
   return lista.filter(c => c.puntos.length > 0);
 }
 
-/** Ficha técnica completa agrupada por el registro de atributos. */
-function fichaTecnica(s: Record<string, any>) {
-  const grupos = new Map<string, { etiqueta: string; valor: string; numero: boolean }[]>();
-  for (const def of ATTRIBUTE_REGISTRY) {
-    if (def.displayGroup === 'WiseMetrics' || def.key === 'commercial.priceCop') continue;
-    let cur: any = s;
-    for (const k of def.key.split('.')) cur = cur?.[k];
-    if (cur === undefined || cur === null || cur === '' || cur === false) continue;
-    let valor: string;
-    if (def.dataType === 'boolean') valor = 'Sí';
-    else if (def.dataType === 'numeric') {
-      const nnum = typeof cur === 'number' ? cur : parseFloat(String(cur));
-      if (!Number.isFinite(nnum) || nnum <= 0) continue;
-      valor = `${fmt(nnum, 1)}${def.unit ? ` ${def.unit}` : ''}`;
-    } else valor = String(cur);
-    const lista = grupos.get(def.displayGroup) ?? [];
-    // "(HEV)", "(PHEV)"... es jerga: el tren motriz ya se dice arriba.
-    lista.push({ etiqueta: def.labelEs.replace(/\s*\((HEV|PHEV|EV|ICE)\)/g, ''), valor, numero: def.dataType === 'numeric' });
-    grupos.set(def.displayGroup, lista);
-  }
-  return Array.from(grupos.entries());
+/** El nombre antes de abrir WhatsApp: el concesionario sabe con quién habla. */
+function FormNombre({ nombre, setNombre, onSubmit }: { nombre: string; setNombre: (v: string) => void; onSubmit: (e: React.FormEvent) => void }) {
+  return (
+    <form onSubmit={onSubmit} className="sube flex w-full max-w-[420px] gap-2 md:justify-end">
+      <label htmlFor="nombre-lead" className="sr-only">
+        Tu nombre
+      </label>
+      <input
+        id="nombre-lead"
+        autoFocus
+        value={nombre}
+        onChange={e => setNombre(e.target.value)}
+        placeholder="¿Cómo te llamas?"
+        className="h-12 min-w-0 flex-1 rounded-full border border-linea bg-blanco px-5 text-[15px] outline-none focus:border-tinta"
+      />
+      <button type="submit" className="pastilla pastilla--tinta h-12 px-5">
+        Abrir WhatsApp <ArrowUpRight className="h-4 w-4" />
+      </button>
+    </form>
+  );
 }
 
 export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indices?: IndicesVehiculo | null }) {
@@ -198,9 +198,12 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
   const s = useMemo(() => specsDe(vehicle.specifications), [vehicle.specifications]);
   const cats = useMemo(() => categorias(vehicle.fuelType, s), [vehicle.fuelType, s]);
   const [cat, setCat] = useState(0);
-  const ficha = useMemo(() => fichaTecnica(s), [s]);
-  const [contacto, setContacto] = useState(false);
-  const [fichaAbierta, setFichaAbierta] = useState(false);
+  // Qué quiere (prueba de manejo o información) y desde dónde lo pidió: el
+  // formulario del nombre se abre junto al botón que se tocó.
+  const [contacto, setContacto] = useState<{ motivo: 'prueba' | 'info'; lugar: 'arriba' | 'abajo' } | null>(null);
+  const concesionarios: { id: string; name: string; location: string; whatsapp: string | null }[] = vehicle.dealerships ?? [];
+  const [elegido, setElegido] = useState(0);
+  const concesionario = concesionarios[elegido] ?? null;
   const [nombre, setNombre] = useState(user?.username ?? '');
   const fav = isFavorite(vehicle.id);
   const actual = cats[cat];
@@ -215,11 +218,19 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
     await toggleFavorite(vehicle.id);
   };
 
+  const pedir = (motivo: 'prueba' | 'info', lugar: 'arriba' | 'abajo') =>
+    setContacto(c => (c?.motivo === motivo && c.lugar === lugar ? null : { motivo, lugar }));
+
   const escribir = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!contacto) return;
     const quien = nombre.trim() || 'Cliente';
-    const etiqueta = `${vehicle.brand} ${vehicle.model}`;
-    const mensaje = `Hola, me interesa el ${etiqueta}. Mi nombre es ${quien} y quiero agendar una prueba de manejo.`;
+    const etiqueta = `${vehicle.brand} ${vehicle.model} ${vehicle.year}`;
+    const donde = concesionario ? ` en ${concesionario.name}${concesionario.location ? ` (${concesionario.location})` : ''}` : '';
+    const mensaje =
+      contacto.motivo === 'prueba'
+        ? `Hola, me interesa el ${etiqueta}. Mi nombre es ${quien} y quiero agendar una prueba de manejo${donde}.`
+        : `Hola, me interesa el ${etiqueta}${donde}. Mi nombre es ${quien} y quiero más información: precio, disponibilidad y financiación.`;
     try {
       await createLead({
         name: quien,
@@ -228,14 +239,17 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
         vehicleId: vehicle.id,
         vehicleBrand: vehicle.brand,
         vehicleModel: vehicle.model,
+        dealershipId: concesionario?.id,
+        dealershipName: concesionario?.name,
         message: mensaje,
-        source: 'ficha',
+        source: contacto.motivo === 'prueba' ? 'ficha_prueba' : 'ficha_concesionario',
       });
     } catch {
       // El lead es para el concesionario; si falla, igual se abre WhatsApp.
     }
-    window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(mensaje)}`, '_blank');
-    setContacto(false);
+    // Directo al WhatsApp del concesionario si tiene celular; si no, al de WiseMotors, que lo pasa.
+    window.open(`https://wa.me/${concesionario?.whatsapp ?? WHATSAPP}?text=${encodeURIComponent(mensaje)}`, '_blank');
+    setContacto(null);
   };
 
   return (
@@ -252,7 +266,7 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
               {vehicle.model} · {vehicle.year}
             </p>
           </div>
-          <div className="sube flex flex-col items-start gap-4 md:items-end" style={{ '--d': '120ms' } as React.CSSProperties}>
+          <div className="sube flex w-full flex-col items-start gap-4 md:w-auto md:items-end" style={{ '--d': '120ms' } as React.CSSProperties}>
             <div className="md:text-right">
               <p className="text-[13px] text-tinta-2">Precio de lista</p>
               <p className="cifra text-[32px] font-semibold md:text-[40px]">
@@ -273,28 +287,15 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
               <Link href="/compare" className="pastilla h-12 px-5">
                 Comparar
               </Link>
-              <button onClick={() => setContacto(c => !c)} className="pastilla pastilla--wise h-12 px-5">
-                <MessageCircle className="h-4 w-4" /> Prueba de manejo
-              </button>
             </div>
-            {contacto && (
-              <form onSubmit={escribir} className="sube flex w-full max-w-[420px] gap-2 md:justify-end">
-                <label htmlFor="nombre-lead" className="sr-only">
-                  Tu nombre
-                </label>
-                <input
-                  id="nombre-lead"
-                  autoFocus
-                  value={nombre}
-                  onChange={e => setNombre(e.target.value)}
-                  placeholder="¿Cómo te llamas?"
-                  className="h-12 min-w-0 flex-1 rounded-full border border-linea bg-blanco px-5 text-[15px] outline-none focus:border-tinta"
-                />
-                <button type="submit" className="pastilla pastilla--tinta h-12 px-5">
-                  Abrir WhatsApp <ArrowUpRight className="h-4 w-4" />
-                </button>
-              </form>
-            )}
+            <button
+              onClick={() => pedir('prueba', 'arriba')}
+              aria-expanded={contacto?.lugar === 'arriba'}
+              className="pastilla pastilla--verde h-14 w-full justify-center px-8 text-[17px] font-semibold md:w-auto"
+            >
+              <CalendarCheck className="h-5 w-5" /> Agendar prueba de manejo
+            </button>
+            {contacto?.lugar === 'arriba' && <FormNombre nombre={nombre} setNombre={setNombre} onSubmit={escribir} />}
           </div>
         </div>
       </section>
@@ -380,40 +381,52 @@ export function FichaVehiculo({ vehicle, indices = null }: { vehicle: any; indic
 
       <SeccionesFicha vehicle={vehicle} indices={indices} />
 
-      {/* ── Ficha técnica completa (plegada: es para quien la quiera) ───── */}
-      {ficha.length > 0 && (
-        <section className="mx-auto mt-24 max-w-[1440px] px-5 md:px-8">
-          <div className="grid gap-6 border-t border-linea pt-10 md:grid-cols-12">
-            <h2 className="t-titulo text-[32px] md:col-span-12 md:text-[44px]">
-              Ficha técnica completa. <span className="text-tinta-2/50">Para quien quiera cada detalle.</span>
+      {/* ── Contacto: hablar con quien lo vende (verde = una persona al otro lado) ── */}
+      <section className="mx-auto mt-24 max-w-[1440px] px-5 md:px-8">
+        <div className="grid gap-8 rounded-[36px] bg-blanco p-8 md:grid-cols-[1.2fr_1fr] md:items-center md:p-12">
+          <div>
+            <h2 className="t-titulo text-[32px] md:text-[44px]">
+              ¿Te gustó el {vehicle.model}? <span className="text-tinta-2/50">Habla con quien lo vende.</span>
             </h2>
-          </div>
-          <button onClick={() => setFichaAbierta(v => !v)} className="pastilla mt-8 h-12 px-6" aria-expanded={fichaAbierta}>
-            {fichaAbierta ? 'Ocultar la ficha técnica' : 'Ver todos los datos técnicos'}
-            <ArrowUpRight className={`h-4 w-4 transition-transform duration-500 ${fichaAbierta ? 'rotate-[135deg]' : ''}`} />
-          </button>
-          {fichaAbierta && (
-          <div className="sube mt-10 columns-1 gap-8 md:columns-2 xl:columns-3">
-            {ficha.map(([grupo, filas]) => (
-              <div key={grupo} className="mb-8 break-inside-avoid rounded-[24px] bg-blanco p-6">
-                <p className="text-[17px] font-semibold tracking-[-0.02em]">{grupo}</p>
-                <dl className="mt-3">
-                  {filas.map(f => (
-                    <div key={f.etiqueta} className="flex items-baseline justify-between gap-4 border-b border-linea/70 py-2.5 last:border-0">
-                      <dt className="text-[14px] text-tinta-2">{f.etiqueta}</dt>
-                      <dd className={`text-right text-[14px] text-tinta ${f.numero ? 'cifra' : ''}`}>
-                        {f.valor === 'Sí' ? <Check className="ml-auto h-4 w-4 text-wise" strokeWidth={2.5} aria-label="Sí" /> : f.valor}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
+            <p className="mt-4 max-w-[520px] text-[16px] leading-relaxed text-tinta-2">
+              Te responden por WhatsApp: precio final, colores disponibles, financiación y cuándo puedes probarlo.
+            </p>
+            {concesionarios.length > 1 && (
+              <div className="mt-6 flex flex-wrap gap-2" role="radiogroup" aria-label="Concesionario">
+                {concesionarios.map((c, i) => (
+                  <button key={c.id} type="button" role="radio" aria-checked={i === elegido} data-activa={i === elegido} onClick={() => setElegido(i)} className="pastilla h-11 px-4 text-[14px]">
+                    {c.name}
+                    {c.location ? <span className="text-tinta-2"> · {c.location}</span> : null}
+                  </button>
+                ))}
               </div>
-            ))}
+            )}
+            {concesionarios.length === 1 && concesionario && (
+              <p className="mt-6 text-[14px] text-tinta-2">
+                Lo vende <span className="font-semibold text-tinta">{concesionario.name}</span>
+                {concesionario.location ? ` · ${concesionario.location}` : ''}
+              </p>
+            )}
           </div>
-          )}
-        </section>
-      )}
-
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => pedir('info', 'abajo')}
+              aria-expanded={contacto?.lugar === 'abajo' && contacto.motivo === 'info'}
+              className="pastilla pastilla--verde h-14 justify-center px-8 text-[17px] font-semibold"
+            >
+              <MessageCircle className="h-5 w-5" /> Contactar al concesionario
+            </button>
+            <button
+              onClick={() => pedir('prueba', 'abajo')}
+              aria-expanded={contacto?.lugar === 'abajo' && contacto.motivo === 'prueba'}
+              className="pastilla pastilla--verde h-14 justify-center px-8 text-[17px] font-semibold"
+            >
+              <CalendarCheck className="h-5 w-5" /> Agendar prueba de manejo
+            </button>
+            {contacto?.lugar === 'abajo' && <FormNombre nombre={nombre} setNombre={setNombre} onSubmit={escribir} />}
+          </div>
+        </div>
+      </section>
       {/* ── Similares: los 3 más parecidos en tipo, precio y características ── */}
       {similares.length > 0 && (
         <section className="mx-auto mt-24 max-w-[1440px] px-5 md:px-8">

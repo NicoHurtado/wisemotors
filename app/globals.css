@@ -163,6 +163,15 @@
   color: #fff;
 }
 .pastilla--wise:hover { background: #7415a0; border-color: #7415a0; }
+/* Verde = hablar con una persona (concesionario, prueba de manejo). Más oscuro
+   que el de WhatsApp para que el texto blanco pase contraste AA. */
+.pastilla--verde {
+  background: #15803d;
+  border-color: #15803d;
+  color: #fff;
+  box-shadow: 0 12px 30px -14px rgba(21, 128, 61, 0.8);
+}
+.pastilla--verde:hover { background: #166534; border-color: #166534; }
 .pastilla--oscura {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.16);

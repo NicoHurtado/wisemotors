@@ -4,6 +4,14 @@ import { urlImagen } from '@/lib/data/imagen';
 import { prisma } from '@/lib/prisma';
 import { cache } from 'react';
 
+/** Celular colombiano en formato wa.me (57 + 10 dígitos que empiezan por 3), o null si es fijo / no se entiende. */
+function whatsappDe(telefono?: string | null): string | null {
+  const d = (telefono ?? '').replace(/\D/g, '');
+  if (/^3\d{9}$/.test(d)) return `57${d}`;
+  if (/^573\d{9}$/.test(d)) return d;
+  return null;
+}
+
 // Cachear la obtención de un vehículo para evitar dupicados en generateMetadata y page
 export const getVehicle = cache(async (id: string) => {
   const startTotal = performance.now();
@@ -122,7 +130,8 @@ export const getVehicle = cache(async (id: string) => {
     dealerships: vehicle.vehicleDealers?.map((vd: any) => ({
       id: vd.dealer.id,
       name: vd.dealer.name,
-      location: vd.dealer.location
+      location: vd.dealer.location,
+      whatsapp: whatsappDe(vd.dealer.phone),
     })) || [],
     specifications: parsedSpecs || {},
     wisemetrics: parsedSpecs?.wisemetrics || null,

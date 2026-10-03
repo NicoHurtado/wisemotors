@@ -8,6 +8,8 @@ import type { VehiculoTarjeta } from '@/components/car/TarjetaCarro';
 import { AIResultsLoader } from '@/components/vehicles/AIResultsLoader';
 import { ResultadosIA } from '@/components/home/ResultadosIA';
 import { FilterButtons } from '@/components/landing/FilterButtons';
+import { getAuthToken } from '@/lib/admin-fetch';
+import { sesionAnonima } from '@/lib/sesion-anonima';
 
 function Inicio() {
   const router = useRouter();
@@ -35,10 +37,12 @@ function Inicio() {
     }
     setCargandoIA(true);
     setResultados(null);
+    const token = getAuthToken();
     fetch('/api/ai/recommendations', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: query }),
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      // La sesión anónima cuenta personas únicas en la demanda (se guarda con hash).
+      body: JSON.stringify({ prompt: query, sesion: sesionAnonima() }),
     })
       .then(r => r.json())
       .then(d => setResultados(d.results || d))
