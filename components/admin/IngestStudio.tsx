@@ -322,12 +322,26 @@ export function IngestStudio() {
             }),
           });
         }
-        const data = await res.json();
+        // Si Vercel corta la función (tiempo o memoria) responde con su página
+        // de error en texto, no JSON: se explica en vez de "Unexpected token".
+        const texto = await res.text();
+        let data: { error?: string; draft?: Draft } = {};
+        try {
+          data = JSON.parse(texto);
+        } catch {
+          throw new Error(
+            res.status === 504 || /timeout|timed out|FUNCTION_INVOCATION/i.test(texto) || /An error o/.test(texto)
+              ? 'El servidor cortó la ingesta por tiempo (más de 5 minutos). Reintenta; si vuelve a pasar, sube menos enlaces o documentos a la vez.'
+              : `El servidor respondió con un error (${res.status}). Reintenta en un momento.`
+          );
+        }
         if (!res.ok) throw new Error(mensajeDeErrorDeAuth(res) ?? data.error ?? 'Falló la ingesta');
+        if (!data.draft) throw new Error('El servidor respondió sin borrador. Reintenta.');
+        const draft = data.draft;
         // Las fotos del concesionario van primero: ocupan su vista en la revisión.
         const draftConFotos = item.fotosPropias?.length
-          ? { ...data.draft, fotos: [...item.fotosPropias, ...(data.draft.fotos ?? [])] }
-          : data.draft;
+          ? { ...draft, fotos: [...item.fotosPropias, ...(draft.fotos ?? [])] }
+          : draft;
         actualizar({ estado: 'listo', draft: draftConFotos });
       } catch (err) {
         actualizar({ estado: 'error', error: err instanceof Error ? err.message : 'Error inesperado' });

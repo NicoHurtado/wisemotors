@@ -35,6 +35,10 @@ export function claude(): Anthropic {
   const workspace = process.env.ANTHROPIC_WORKSPACE_ID;
   cliente = new Anthropic({
     defaultHeaders: workspace ? { 'anthropic-workspace-id': workspace } : undefined,
+    // Por defecto el SDK espera hasta 10 min y reintenta 2 veces: una sola
+    // llamada pegada se comería los 300 s de la función. 2 min y un reintento.
+    timeout: 120_000,
+    maxRetries: 1,
   });
   return cliente;
 }

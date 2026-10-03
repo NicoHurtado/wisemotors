@@ -87,7 +87,7 @@ async function main() {
   const carros = await prisma.vehicle.findMany({ select: { id: true, brand: true, model: true }, orderBy: [{ brand: 'asc' }, { model: 'asc' }] });
   if (!carros.length) throw new Error('No hay carros en la base.');
 
-  const creados = [];
+  const creados: { id: string }[] = [];
   for (const c of CONCESIONARIOS) {
     const slug = c.name.toLowerCase().normalize('NFD').replace(/[^a-z]+/g, '');
     creados.push(

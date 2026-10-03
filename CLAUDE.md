@@ -104,6 +104,13 @@ cobertura, migración, seeds, motor de cohortes.
   extraen como documento. Toda cita de página HTML se verifica contra el texto (si no
   aparece, el dato muere). Probado: Onix RS 33 datos, CX-30 36, Dolphin 41, ~50 s.
   La ruta de ingesta tiene `maxDuration: 300`.
+  Documentos, enlaces del equipo y búsqueda web corren EN PARALELO (el orden de
+  prioridad se arma después: documentos → enlaces → web). Presupuesto de tiempo en
+  `runIngestPipeline`: después de 150 s se salta la búsqueda de datos faltantes y
+  después de 250 s la verificación del precio (con aviso en el borrador). Cliente de
+  Anthropic con `timeout: 120 s` y `maxRetries: 1`. No volver a encadenar etapas en
+  serie: con 1 documento + 2 enlaces se pasaba de 300 s y Vercel respondía su página
+  de error en texto ("Unexpected token 'A'… not valid JSON" en la cola).
 - **Fotos en la ingesta (sep-2026):** `lib/ingest/fotos.ts` saca imágenes del HTML de las fuentes
   ya leídas (oficial primero); si hay < 4, Haiku busca una página de fotos (1 búsqueda). Haiku
   clasifica con visión (primero `queSeVe`, luego ángulo/estudio/calidad; si es el modelo lo decide

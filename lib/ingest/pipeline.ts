@@ -263,6 +263,12 @@ export async function runIngestPipeline(input: {
   angulosCubiertos?: Angulo[];
 }): Promise<VehicleDraft> {
   const warningsEs: string[] = [];
+  // Presupuesto de tiempo: la función tiene 300 s (vercel.json). Lo opcional
+  // (segunda búsqueda, verificación del precio) se salta si se acerca el
+  // límite, en vez de que Vercel corte todo y se pierda la ingesta.
+  const inicio = Date.now();
+  const segundos = () => (Date.now() - inicio) / 1000;
+  const hayTiempo = (hastaSegundo: number) => segundos() < hastaSegundo;
 
   // 1. Identidad canónica
   const identity = await resolveIdentity(input.brand, input.model, input.year, input.country);
@@ -285,19 +291,23 @@ export async function runIngestPipeline(input: {
 
   // 2. Fuentes reales: búsqueda web (solo URLs que salieron en los resultados).
   //    Si la búsqueda falla o trae muy poco, se completa con las rutas conocidas.
-  let candidates = await buscarFuentes(identity.brand, identity.model, versionObjetivo, input.year).catch(err => {
-    // Sin saldo o con la clave mala no tiene sentido seguir: todo lo demás también fallaría.
-    if (esErrorDeCuenta(err)) throw new Error(explicarErrorClaude(err));
-    warningsEs.push(`La búsqueda web falló (${explicarErrorClaude(err).slice(0, 120)}); se usaron fuentes conocidas.`);
-    return [];
-  });
-  if (candidates.length < 2) {
-    const conocidas = await discoverSources(identity.brand, identity.model, input.year);
-    candidates = [...candidates, ...conocidas.filter(c => !candidates.some(x => x.url === c.url))];
-  }
-  if (candidates.length === 0) {
-    warningsEs.push('No se encontraron fuentes candidatas. Revisar el nombre del modelo.');
-  }
+  //    Arranca YA y corre en paralelo con los documentos y los enlaces.
+  const candidatosWeb = (async () => {
+    let candidates = await buscarFuentes(identity.brand, identity.model, versionObjetivo, input.year).catch(err => {
+      // Sin saldo o con la clave mala no tiene sentido seguir: todo lo demás también fallaría.
+      if (esErrorDeCuenta(err)) throw new Error(explicarErrorClaude(err));
+      warningsEs.push(`La búsqueda web falló (${explicarErrorClaude(err).slice(0, 120)}); se usaron fuentes conocidas.`);
+      return [] as DiscoveredSource[];
+    });
+    if (candidates.length < 2) {
+      const conocidas = await discoverSources(identity.brand, identity.model, input.year);
+      candidates = [...candidates, ...conocidas.filter(c => !candidates.some(x => x.url === c.url))];
+    }
+    if (candidates.length === 0) {
+      warningsEs.push('No se encontraron fuentes candidatas. Revisar el nombre del modelo.');
+    }
+    return candidates;
+  })();
 
   // 3+4. Lectura + extracción, fuentes en paralelo (máx 4, por costo).
   //   a) descarga directa (rápida y gratis);
@@ -309,7 +319,7 @@ export async function runIngestPipeline(input: {
   // 3a. Documentos del concesionario primero: tier 1 y de primeros en la lista,
   //     así ganan cualquier empate con la web en la reconciliación.
   const docs = (input.documentos ?? []).slice(0, 6);
-  const leidosDocs = await Promise.allSettled(
+  const leidosDocsP = Promise.allSettled(
     docs.map(async d => {
       const url = `concesionario://${d.nombre}`;
       const r = await extractFromPage(d.contenido, url, 1, label, versionObjetivo);
@@ -317,6 +327,37 @@ export async function runIngestPipeline(input: {
       return { d, url, r, anioViejo };
     })
   );
+  const procesar = (source: DiscoveredSource, soloKeys?: string[]) =>
+    procesarFuente(source, { label, versionObjetivo, anio: input.year }, soloKeys);
+  const reportar = (results: PromiseSettledResult<Awaited<ReturnType<typeof procesar>>>[]) => {
+    for (const r of results) {
+      if (r.status === 'fulfilled') {
+        sourcesReport.push({ url: r.value.source.url, nameEs: r.value.source.nameEs, tier: r.value.source.tier, ok: r.value.ok, note: r.value.note });
+        rawFacts.push(...r.value.facts);
+      } else {
+        if (esErrorDeCuenta(r.reason)) throw new Error(explicarErrorClaude(r.reason));
+        warningsEs.push(`Una fuente falló: ${String(r.reason).slice(0, 120)}`);
+      }
+    }
+  };
+
+  // 3b. Enlaces que puso el equipo: también tier 1 y antes que la web.
+  const enlaces: DiscoveredSource[] = (input.enlaces ?? []).slice(0, 6).map(url => ({
+    url,
+    tier: 1,
+    nameEs: `Enlace del equipo: ${new URL(url).hostname.replace(/^www\./, '')}`,
+  }));
+  const leidosEnlacesP = Promise.allSettled(enlaces.map(source => procesar(source)));
+
+  // 3c. La web complementa (sin repetir los enlaces del equipo).
+  const webP = candidatosWeb.then(candidates => {
+    const deLaWeb = candidates.filter(c => !enlaces.some(e => e.url === c.url)).slice(0, 4);
+    return Promise.allSettled(deLaWeb.map(source => procesar(source))).then(leidas => ({ deLaWeb, leidas }));
+  });
+
+  // Todo corre a la vez; el informe se arma en orden de prioridad
+  // (documentos → enlaces → web) para que ganen los empates.
+  const [leidosDocs, leidosEnlaces, { deLaWeb, leidas: leidasWeb }] = await Promise.all([leidosDocsP, leidosEnlacesP, webP]);
   for (const x of leidosDocs) {
     if (x.status !== 'fulfilled') {
       if (esErrorDeCuenta(x.reason)) throw new Error(explicarErrorClaude(x.reason));
@@ -339,31 +380,8 @@ export async function runIngestPipeline(input: {
     rawFacts.push(...facts);
   }
 
-  const procesar = (source: DiscoveredSource, soloKeys?: string[]) =>
-    procesarFuente(source, { label, versionObjetivo, anio: input.year }, soloKeys);
-  const reportar = (results: PromiseSettledResult<Awaited<ReturnType<typeof procesar>>>[]) => {
-    for (const r of results) {
-      if (r.status === 'fulfilled') {
-        sourcesReport.push({ url: r.value.source.url, nameEs: r.value.source.nameEs, tier: r.value.source.tier, ok: r.value.ok, note: r.value.note });
-        rawFacts.push(...r.value.facts);
-      } else {
-        if (esErrorDeCuenta(r.reason)) throw new Error(explicarErrorClaude(r.reason));
-        warningsEs.push(`Una fuente falló: ${String(r.reason).slice(0, 120)}`);
-      }
-    }
-  };
-
-  // 3b. Enlaces que puso el equipo: también tier 1 y antes que la web.
-  const enlaces: DiscoveredSource[] = (input.enlaces ?? []).slice(0, 6).map(url => ({
-    url,
-    tier: 1,
-    nameEs: `Enlace del equipo: ${new URL(url).hostname.replace(/^www\./, '')}`,
-  }));
-  reportar(await Promise.allSettled(enlaces.map(source => procesar(source))));
-
-  // 3c. La web complementa (sin repetir los enlaces ya leídos).
-  const deLaWeb = candidates.filter(c => !enlaces.some(e => e.url === c.url)).slice(0, 4);
-  reportar(await Promise.allSettled(deLaWeb.map(source => procesar(source))));
+  reportar(leidosEnlaces);
+  reportar(leidasWeb);
   // Leídas: los enlaces cuentan para las fotos y para no releerlos en la búsqueda dirigida.
   const toProcess = [...enlaces, ...deLaWeb];
 
@@ -378,7 +396,9 @@ export async function runIngestPipeline(input: {
   //     segunda búsqueda dirigida SOLO a esos datos, en páginas nuevas.
   const valoresDe = (facts: RawFact[]) => Object.fromEntries(facts.map(f => [f.key, f.value]));
   const faltanAntes = clavesFaltantes(identity.fuelType, valoresDe(rawFacts));
-  if (faltanAntes.length > 0) {
+  if (faltanAntes.length > 0 && !hayTiempo(150)) {
+    warningsEs.push(`No alcanzó el tiempo para buscar los datos que faltan (${faltanAntes.length}): complétalos en la revisión o usa "Complementar" después de publicar.`);
+  } else if (faltanAntes.length > 0) {
     const extra = await buscarFuentesPara(
       identity.brand,
       identity.model,
@@ -441,7 +461,9 @@ export async function runIngestPipeline(input: {
   let price = precioCrudo;
   let comparablesPrecio: { etiqueta: string; precio: number }[] = [];
 
-  if (precioCrudo) {
+  if (precioCrudo && !hayTiempo(250)) {
+    warningsEs.push('No alcanzó el tiempo para verificar el precio contra el catálogo: confírmalo antes de publicar.');
+  } else if (precioCrudo) {
     const revision = await verificarPrecio(precioCrudo, { ...identity, trim: versionObjetivo, year: input.year });
     price = revision.price;
     comparablesPrecio = revision.comparables;
